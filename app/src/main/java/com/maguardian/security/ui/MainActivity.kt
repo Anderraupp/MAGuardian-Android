@@ -122,26 +122,65 @@ class MainActivity : AppCompatActivity() {
         btnScan.isEnabled = false
         btnScan.text = "Escaneando..."
 
-        val installedPackages = packageManager.getInstalledPackages(0)
+        val installedPackages = packageManager.getInstalledPackages(
+            android.content.pm.PackageManager.GET_PERMISSIONS
+        )
         var threatsFound = 0
 
+        // Whitelist de apps do sistema que usam overlay legitimamente
+        val overlayWhitelist = setOf(
+            "android", "com.android.systemui", "com.android.settings",
+            "com.google.android.gms", "com.google.android.gsf",
+            "com.android.vending", packageName
+        )
+
         for (pkg in installedPackages) {
-            val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkg.packageName)
+            val pkgName = pkg.packageName
+
+            // 1. Verificação no banco de malware conhecido
+            val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkgName)
             if (malware != null) {
                 PrefsHelper.saveThreat(this, malware)
                 threatsFound++
-                Log.w(TAG, "Ameaça encontrada: ${malware.packageName}")
+                Log.w(TAG, "Banco de malware: ${malware.packageName}")
+                continue
+            }
+
+            // 2. Detecta apps com permissão de overlay que não são do sistema
+            //    SYSTEM_ALERT_WINDOW é o que permite exibir pop-ups sobre outros apps
+            val isSystemApp = (pkg.applicationInfo.flags and
+                android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+            val requestsOverlay = pkg.requestedPermissions?.contains(
+                android.Manifest.permission.SYSTEM_ALERT_WINDOW
+            ) == true
+            val isWhitelisted = overlayWhitelist.any { pkgName == it || pkgName.startsWith("$it.") }
+
+            if (!isSystemApp && requestsOverlay && !isWhitelisted) {
+                val appName = try {
+                    packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+                } catch (e: Exception) { pkgName }
+
+                val entry = com.maguardian.security.data.MalwareDatabase.MalwareEntry(
+                    packageName = pkgName,
+                    appName = appName,
+                    threatType = "overlay",
+                    severity = "medium",
+                    description = "Solicita permissão de sobreposição de tela — usada para exibir pop-ups e anúncios sobre outros apps.",
+                )
+                PrefsHelper.saveThreat(this, entry)
+                threatsFound++
+                Log.w(TAG, "Overlay suspeito detectado: $pkgName ($appName)")
             }
         }
 
         PrefsHelper.setLastScan(this, System.currentTimeMillis())
         PrefsHelper.incrementScanCount(this)
 
-        Toast.makeText(
-            this,
-            if (threatsFound > 0) "$threatsFound ameaça(s) detectada(s)!" else "Dispositivo limpo!",
-            Toast.LENGTH_LONG,
-        ).show()
+        val msg = when {
+            threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
+            else -> "✓ Dispositivo limpo! Nenhuma ameaça detectada."
+        }
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
 
         btnScan.isEnabled = true
         btnScan.text = "Escanear"
