@@ -13,7 +13,6 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.maguardian.security.R
 import com.maguardian.security.data.MalwareDatabase
-import com.maguardian.security.receiver.UninstallReceiver
 import com.maguardian.security.ui.MainActivity
 import com.maguardian.security.util.PrefsHelper
 
@@ -192,11 +191,12 @@ class PopupDetectorService : Service() {
     private fun onThreatDetected(malware: MalwareDatabase.MalwareEntry) {
         PrefsHelper.saveThreat(this, malware)
 
-        val uninstallIntent = Intent(this, UninstallReceiver::class.java).apply {
-            action = UninstallReceiver.ACTION_UNINSTALL
-            putExtra(UninstallReceiver.EXTRA_PACKAGE, malware.packageName)
+        // Abre o diálogo de desinstalação diretamente — sem intermediário
+        val uninstallIntent = Intent(Intent.ACTION_DELETE).apply {
+            data = android.net.Uri.parse("package:${malware.packageName}")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        val uninstallPendingIntent = PendingIntent.getBroadcast(
+        val uninstallPendingIntent = PendingIntent.getActivity(
             this,
             malware.packageName.hashCode(),
             uninstallIntent,
