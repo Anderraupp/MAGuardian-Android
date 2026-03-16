@@ -349,12 +349,14 @@ class PopupDetectorService : Service() {
                     val isWhitelisted = SYSTEM_WHITELIST.any { wl ->
                         pkg == wl || pkg.startsWith("$wl.")
                     }
-                    // Proteção adicional: ignora qualquer app com prefixo de fabricante/sistema
+                    // Proteção: ignora fabricantes/sistema E apps financeiros/bancários
                     val isSystemPrefix = MalwareDatabase.isSystemPrefix(pkg)
+                    val isTrustedApp  = MalwareDatabase.isTrustedApp(pkg)
 
                     if (malware == null &&
                         !isWhitelisted &&
                         !isSystemPrefix &&
+                        !isTrustedApp &&
                         timeSinceLast in 80L until POPUP_THRESHOLD_MS &&
                         !notifiedPackages.contains("heuristic:$pkg")
                     ) {
@@ -366,7 +368,10 @@ class PopupDetectorService : Service() {
                             notifiedPackages.add("heuristic:$pkg")
                             onSuspiciousPopupDetected(pkg)
                         }
-                    } else if (!isWhitelisted && timeSinceLast >= POPUP_THRESHOLD_MS) {
+                    } else if (isWhitelisted || isSystemPrefix || isTrustedApp) {
+                        // App seguro — zera qualquer contagem acumulada por engano
+                        heuristicCounter.remove(pkg)
+                    } else if (timeSinceLast >= POPUP_THRESHOLD_MS) {
                         // Resetar contador se o app ficou tempo normal em foreground
                         heuristicCounter.remove(pkg)
                     }
