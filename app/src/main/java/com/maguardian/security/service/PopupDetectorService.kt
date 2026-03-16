@@ -34,43 +34,120 @@ class PopupDetectorService : Service() {
 
         // Apps legítimas que podem aparecer rapidamente em foreground — não são ameaças
         val SYSTEM_WHITELIST = setOf(
+            // ── Android puro ──
             "android",
             "com.android.systemui",
             "com.android.launcher",
             "com.android.launcher2",
             "com.android.launcher3",
-            "com.google.android.apps.nexuslauncher",
-            "com.sec.android.app.launcher",
-            "com.huawei.android.launcher",
-            "com.miui.home",
-            "com.oneplus.launcher",
-            "com.oppo.launcher",
-            "com.vivo.launcher",
-            "com.motorola.launcher3",
             "com.android.phone",
             "com.android.incallui",
             "com.android.settings",
             "com.android.dialer",
-            "com.google.android.dialer",
-            "com.samsung.android.dialer",
             "com.android.contacts",
+            "com.android.packageinstaller",
+            "com.android.vending",
+            "com.android.camera",
+            "com.android.camera2",
+            "com.android.gallery3d",
+            "com.android.documentsui",
+            "com.android.fileexplorer",
+            "com.android.mms",
+            "com.android.providers.downloads",
+            "com.android.providers.downloads.ui",
+            "com.android.bluetooth",
+            "com.android.nfc",
+            // ── Google ──
+            "com.google.android.apps.nexuslauncher",
+            "com.google.android.dialer",
+            "com.google.android.apps.photos",
+            "com.google.android.apps.messaging",
             "com.google.android.inputmethod.latin",
-            "com.samsung.android.honeyboard",
-            "com.swiftkey.swiftkeyapp",
-            "com.touchtype.swiftkey",
             "com.google.android.gms",
             "com.google.android.gsf",
             "com.google.android.packageinstaller",
-            "com.android.packageinstaller",
-            "com.android.vending",
-            "com.google.android.apps.photos",
-            "com.google.android.apps.messaging",
+            "com.google.android.youtube",
+            "com.google.android.apps.docs",
+            "com.google.android.apps.maps",
+            "com.google.android.calendar",
+            "com.google.android.contacts",
+            "com.google.android.documentsui",
+            "com.google.android.camera",
+            // ── Samsung ──
+            "com.sec.android.app.launcher",
+            "com.samsung.android.dialer",
+            "com.samsung.android.honeyboard",
+            "com.samsung.android.app.contacts",
+            "com.samsung.android.messaging",
+            "com.samsung.android.gallery3d",
+            "com.sec.android.app.myfiles",          // Meus Arquivos (gerenciador nativo Samsung)
+            "com.samsung.android.myfiles",
+            "com.sec.android.gallery3d",
+            "com.sec.android.app.camera",
+            "com.samsung.android.camera",
+            "com.samsung.android.settings",
+            "com.samsung.android.app.settings.bixby",
+            "com.samsung.android.incallui",
+            "com.samsung.android.app.spage",
+            "com.samsung.android.app.clockpackage",
+            "com.samsung.android.app.galaxyfinder",
+            "com.samsung.android.sm",
+            "com.samsung.android.sm.policy",
+            "com.samsung.android.app.smartcapture",
+            "com.samsung.android.themestore",
+            "com.samsung.android.app.omcagent",
+            "com.samsung.android.biometrics.app.setting",
+            "com.samsung.android.app.taskedge",
+            // ── Xiaomi / MIUI ──
+            "com.miui.home",
+            "com.miui.gallery",
+            "com.miui.camera",
+            "com.miui.filemanager",
+            "com.miui.settings",
+            "com.miui.securitycenter",
+            "com.xiaomi.bluetooth",
+            "com.miui.msa.global",
+            "com.miui.systemAdSolution",
+            // ── OnePlus / OxygenOS ──
+            "com.oneplus.launcher",
+            "com.oneplus.gallery",
+            "com.oneplus.camera",
+            "com.oneplus.filemanager",
+            "net.oneplus.odm",
+            // ── Oppo / ColorOS ──
+            "com.oppo.launcher",
+            "com.coloros.filemanager",
+            "com.oppo.camera",
+            // ── Vivo / FuntouchOS ──
+            "com.vivo.launcher",
+            "com.bbk.filemanager",
+            "com.vivo.camera",
+            // ── Huawei ──
+            "com.huawei.android.launcher",
+            "com.huawei.filemanager",
+            "com.huawei.camera",
+            "com.huawei.photos",
+            // ── Motorola ──
+            "com.motorola.launcher3",
+            "com.motorola.camera2",
+            "com.motorola.filemanager",
+            // ── LG ──
+            "com.lge.launcher3",
+            "com.lge.filemanager",
+            "com.lge.camera",
+            // ── Teclados ──
+            "com.swiftkey.swiftkeyapp",
+            "com.touchtype.swiftkey",
+            "com.gboard",
+            "com.google.android.inputmethod.latin",
+            // ── Apps populares legítimos ──
             "com.whatsapp",
             "com.facebook.orca",
             "com.instagram.android",
             "com.twitter.android",
             "com.spotify.music",
-            "com.google.android.youtube",
+            "com.netflix.mediaclient",
+            "com.amazon.mShop.android.shopping",
         )
     }
 
@@ -272,9 +349,12 @@ class PopupDetectorService : Service() {
                     val isWhitelisted = SYSTEM_WHITELIST.any { wl ->
                         pkg == wl || pkg.startsWith("$wl.")
                     }
+                    // Proteção adicional: ignora qualquer app com prefixo de fabricante/sistema
+                    val isSystemPrefix = MalwareDatabase.isSystemPrefix(pkg)
 
                     if (malware == null &&
                         !isWhitelisted &&
+                        !isSystemPrefix &&
                         timeSinceLast in 80L until POPUP_THRESHOLD_MS &&
                         !notifiedPackages.contains("heuristic:$pkg")
                     ) {
