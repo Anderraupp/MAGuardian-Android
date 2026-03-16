@@ -1,0 +1,2 @@
+rootProject.name = "MAGuardian"
+include ':app'
