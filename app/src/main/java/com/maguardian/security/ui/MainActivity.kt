@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.maguardian.security.R
@@ -106,8 +107,8 @@ class MainActivity : AppCompatActivity() {
         refreshCacheInfo()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun calculateTotalCache(): Long {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return 0L
         return try {
             val statsManager = getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
             val myUser = android.os.Process.myUserHandle()
@@ -141,8 +142,8 @@ class MainActivity : AppCompatActivity() {
         "com.yandex.browser"
     )
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun queryPackageCache(pkg: String): Long {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return 0L
         return try {
             val statsManager = getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
             statsManager.queryStatsForPackage(
@@ -151,6 +152,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { 0L }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun calculateBrowserCache(): Long {
         var total = 0L
         for (pkg in browserPackages) {
@@ -170,14 +172,18 @@ class MainActivity : AppCompatActivity() {
     private fun refreshCacheInfo() {
         val tvCacheSize = findViewById<TextView>(R.id.tvCacheSize)
         Thread {
-            val total = calculateTotalCache()
-            val browser = calculateBrowserCache()
-            runOnUiThread {
-                tvCacheSize.text = when {
-                    total == 0L  -> "Toque para limpar o cache"
-                    browser > 0L -> "${formatBytes(total)} em cache • Navegadores: ${formatBytes(browser)}"
-                    else         -> "${formatBytes(total)} em cache"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val total = calculateTotalCache()
+                val browser = calculateBrowserCache()
+                runOnUiThread {
+                    tvCacheSize.text = when {
+                        total == 0L  -> "Toque para limpar o cache"
+                        browser > 0L -> "${formatBytes(total)} em cache • Navegadores: ${formatBytes(browser)}"
+                        else         -> "${formatBytes(total)} em cache"
+                    }
                 }
+            } else {
+                runOnUiThread { tvCacheSize.text = "Toque para limpar o cache" }
             }
         }.start()
     }
@@ -194,35 +200,37 @@ class MainActivity : AppCompatActivity() {
         tvCacheSize.text = "Aguarde..."
 
         Thread {
-            val before = calculateTotalCache()
-            val browserBefore = calculateBrowserCache()
-            try {
-                val storageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
-                storageManager.clearCacheBytes(StorageManager.UUID_DEFAULT, before)
-                Thread.sleep(1200)
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao limpar cache: ${e.message}")
-            }
-            val after = calculateTotalCache()
-            val browserAfter = calculateBrowserCache()
-            val freed = (before - after).coerceAtLeast(0)
-            val browserFreed = (browserBefore - browserAfter).coerceAtLeast(0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val before = calculateTotalCache()
+                val browserBefore = calculateBrowserCache()
+                try {
+                    val storageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
+                    storageManager.clearCacheBytes(StorageManager.UUID_DEFAULT, before)
+                    Thread.sleep(1200)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao limpar cache: ${e.message}")
+                }
+                val after = calculateTotalCache()
+                val browserAfter = calculateBrowserCache()
+                val freed = (before - after).coerceAtLeast(0)
+                val browserFreed = (browserBefore - browserAfter).coerceAtLeast(0)
 
-            runOnUiThread {
-                btnCleanCache.isEnabled = true
-                btnCleanCache.text = "Limpar Cache"
-                tvCacheSize.text = when {
-                    after == 0L   -> "Cache limpo"
-                    browserAfter > 0L -> "${formatBytes(after)} em cache • Navegadores: ${formatBytes(browserAfter)}"
-                    else          -> "${formatBytes(after)} em cache"
+                runOnUiThread {
+                    btnCleanCache.isEnabled = true
+                    btnCleanCache.text = "Limpar Cache"
+                    tvCacheSize.text = when {
+                        after == 0L       -> "Cache limpo"
+                        browserAfter > 0L -> "${formatBytes(after)} em cache • Navegadores: ${formatBytes(browserAfter)}"
+                        else              -> "${formatBytes(after)} em cache"
+                    }
+                    val navInfo = if (browserFreed > 0) " (navegadores: ${formatBytes(browserFreed)})" else ""
+                    val msg = when {
+                        freed >= 1024 -> "✓ ${formatBytes(freed)} liberados$navInfo"
+                        freed > 0     -> "✓ ${formatBytes(freed)} liberados com sucesso!"
+                        else          -> "Cache já estava limpo."
+                    }
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
                 }
-                val navInfo = if (browserFreed > 0) " (navegadores: ${formatBytes(browserFreed)})" else ""
-                val msg = when {
-                    freed >= 1024 -> "✓ ${formatBytes(freed)} liberados$navInfo"
-                    freed > 0     -> "✓ ${formatBytes(freed)} liberados com sucesso!"
-                    else          -> "Cache já estava limpo."
-                }
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
             }
         }.start()
     }
