@@ -286,16 +286,33 @@ class MainActivity : AppCompatActivity() {
         btnScan.isEnabled = false
         btnScan.text = "Escaneando..."
 
-        val installedPackages = packageManager.getInstalledPackages(0)
+        val installedPackages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS)
         var threatsFound = 0
 
         for (pkg in installedPackages) {
             val pkgName = pkg.packageName
+
+            // 1. Verifica no banco de dados (detecção exata)
             val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkgName)
             if (malware != null) {
                 PrefsHelper.saveThreat(this, malware)
                 threatsFound++
-                Log.w(TAG, "Ameaça detectada: $pkgName")
+                Log.w(TAG, "Ameaça (banco): $pkgName")
+                continue
+            }
+
+            // 2. Heurística: analisa nome + permissões para apps não catalogados
+            val appLabel = try {
+                packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+            } catch (e: Exception) { pkgName }
+
+            val heuristic = com.maguardian.security.data.MalwareDatabase.checkHeuristic(
+                pkgName, appLabel, pkg.requestedPermissions
+            )
+            if (heuristic != null) {
+                PrefsHelper.saveThreat(this, heuristic)
+                threatsFound++
+                Log.w(TAG, "Ameaça (heurística): $pkgName — ${heuristic.description}")
             }
         }
 
