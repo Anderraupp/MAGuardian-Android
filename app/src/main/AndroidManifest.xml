@@ -68,6 +68,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- Receptor de Instalação de Apps — detecta malware ao instalar sem precisar abrir o app -->
+        <!-- PACKAGE_ADDED é exceção garantida pelo Android mesmo em segundo plano (API 26+) -->
+        <receiver
+            android:name=".receiver.PackageInstallReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
