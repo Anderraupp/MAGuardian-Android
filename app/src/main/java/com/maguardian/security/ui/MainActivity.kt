@@ -59,6 +59,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Re-verifica permissões toda vez que o usuário volta ao app
+        // (cobre o caso: usuário foi conceder permissão nas Configurações e voltou)
+        checkPermissionsAndStart()
+
         // Verifica quais apps pendentes de desinstalação foram realmente removidos
         val iter = pendingUninstall.iterator()
         while (iter.hasNext()) {
@@ -285,53 +289,74 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "Serviço de detecção iniciado")
     }
 
+    private var isScanning = false
+
     private fun runManualScan() {
+        if (isScanning) return
+        isScanning = true
+
         val btnScan = findViewById<Button>(R.id.btnScan)
         btnScan.isEnabled = false
         btnScan.text = "Escaneando..."
 
-        val installedPackages = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS)
-        var threatsFound = 0
-
-        for (pkg in installedPackages) {
-            val pkgName = pkg.packageName
-
-            // 1. Verifica no banco de dados (detecção exata)
-            val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkgName)
-            if (malware != null) {
-                PrefsHelper.saveThreat(this, malware)
-                threatsFound++
-                Log.w(TAG, "Ameaça (banco): $pkgName")
-                continue
+        Thread {
+            val installedPackages = try {
+                packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao listar pacotes", e)
+                runOnUiThread {
+                    isScanning = false
+                    btnScan.isEnabled = true
+                    btnScan.text = "Escanear"
+                }
+                return@Thread
             }
 
-            // 2. Heurística: analisa nome + permissões para apps não catalogados
-            val appLabel = try {
-                packageManager.getApplicationLabel(pkg.applicationInfo).toString()
-            } catch (e: Exception) { pkgName }
+            var threatsFound = 0
 
-            val heuristic = com.maguardian.security.data.MalwareDatabase.checkHeuristic(
-                pkgName, appLabel, pkg.requestedPermissions
-            )
-            if (heuristic != null) {
-                PrefsHelper.saveThreat(this, heuristic)
-                threatsFound++
-                Log.w(TAG, "Ameaça (heurística): $pkgName — ${heuristic.description}")
+            for (pkg in installedPackages) {
+                val pkgName = pkg.packageName
+
+                // 1. Verifica no banco de dados (detecção exata)
+                val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkgName)
+                if (malware != null) {
+                    PrefsHelper.saveThreat(this, malware)
+                    threatsFound++
+                    Log.w(TAG, "Ameaça (banco): $pkgName")
+                    continue
+                }
+
+                // 2. Heurística: analisa nome + permissões para apps não catalogados
+                val appLabel = try {
+                    packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+                } catch (e: Exception) { pkgName }
+
+                val heuristic = com.maguardian.security.data.MalwareDatabase.checkHeuristic(
+                    pkgName, appLabel, pkg.requestedPermissions
+                )
+                if (heuristic != null) {
+                    PrefsHelper.saveThreat(this, heuristic)
+                    threatsFound++
+                    Log.w(TAG, "Ameaça (heurística): $pkgName — ${heuristic.description}")
+                }
             }
-        }
 
-        PrefsHelper.setLastScan(this, System.currentTimeMillis())
-        PrefsHelper.incrementScanCount(this)
+            PrefsHelper.setLastScan(this, System.currentTimeMillis())
+            PrefsHelper.incrementScanCount(this)
 
-        val msg = when {
-            threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
-            else -> "✓ Dispositivo limpo! Nenhuma ameaça detectada."
-        }
-        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            val msg = when {
+                threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
+                else -> "✓ Dispositivo limpo! Nenhuma ameaça detectada."
+            }
 
-        btnScan.isEnabled = true
-        btnScan.text = "Escanear"
-        refreshUI()
+            runOnUiThread {
+                isScanning = false
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                btnScan.isEnabled = true
+                btnScan.text = "Escanear"
+                refreshUI()
+            }
+        }.start()
     }
 
     private fun refreshUI() {
