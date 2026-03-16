@@ -5,6 +5,7 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -99,7 +100,65 @@ class PopupDetectorService : Service() {
         startForeground(NOTIF_ID_SERVICE, buildServiceNotification())
         handler.post(detectionRunnable)
         Log.i(TAG, "Serviço iniciado — monitorando eventos de uso")
+        // Varredura dos apps já instalados em background
+        Thread { runStartupScan() }.start()
         return START_STICKY
+    }
+
+    /**
+     * Varre todos os apps instalados contra o banco de malware logo ao iniciar o serviço.
+     * Roda em thread de background para não travar o serviço.
+     */
+    private fun runStartupScan() {
+        Log.i(TAG, "Varredura inicial de apps instalados...")
+        val installedPackages = try {
+            packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao listar pacotes instalados", e)
+            return
+        }
+
+        var found = 0
+        for (pkg in installedPackages) {
+            val pkgName = pkg.packageName
+            if (pkgName == packageName) continue
+            // Já notificou antes nessa sessão — pula
+            if (notifiedPackages.contains(pkgName)) continue
+
+            // 1. Banco de malware conhecido
+            val malware = MalwareDatabase.isMalware(pkgName)
+            if (malware != null) {
+                Log.w(TAG, "Varredura inicial — malware encontrado: $pkgName")
+                notifiedPackages.add(pkgName)
+                PrefsHelper.saveThreat(this, malware)
+                onThreatDetected(malware)
+                found++
+                continue
+            }
+
+            // 2. Heurística (nome + permissões)
+            val appLabel = try {
+                packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+            } catch (e: Exception) { pkgName }
+
+            val heuristic = MalwareDatabase.checkHeuristic(
+                pkgName, appLabel, pkg.requestedPermissions
+            )
+            if (heuristic != null) {
+                Log.w(TAG, "Varredura inicial — suspeito heurístico: $pkgName")
+                notifiedPackages.add("heuristic:$pkgName")
+                PrefsHelper.saveThreat(this, heuristic)
+                onThreatDetected(heuristic)
+                found++
+            }
+        }
+
+        PrefsHelper.setLastScan(this, System.currentTimeMillis())
+        PrefsHelper.incrementScanCount(this)
+
+        // Notifica a UI para atualizar a lista de ameaças
+        sendBroadcast(Intent("com.maguardian.security.THREAT_DETECTED"))
+        Log.i(TAG, "Varredura inicial concluída — $found ameaça(s) encontrada(s)")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
