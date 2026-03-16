@@ -64,6 +64,15 @@ object PrefsHelper {
         val threatsJson = prefs.getString(KEY_THREATS, "[]") ?: "[]"
         val arr = JSONArray(threatsJson)
 
+        // Evita duplicatas: só salva se o package ainda não está na lista
+        for (i in 0 until arr.length()) {
+            val existing = arr.getJSONObject(i)
+            if (existing.getString("packageName") == malware.packageName &&
+                existing.getString("status") != "removed") {
+                return
+            }
+        }
+
         val obj = JSONObject().apply {
             put("packageName", malware.packageName)
             put("appName", malware.appName)
