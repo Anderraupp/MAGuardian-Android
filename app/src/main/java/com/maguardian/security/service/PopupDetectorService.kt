@@ -3,9 +3,12 @@ package com.maguardian.security.service
 import android.app.*
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -85,10 +88,74 @@ class PopupDetectorService : Service() {
         }
     }
 
+    /**
+     * Receptor DINÂMICO para PACKAGE_ADDED/PACKAGE_REPLACED.
+     * Registrado enquanto o serviço está ativo — mais confiável que o receptor
+     * estático em fabricantes como Xiaomi, Samsung e Huawei que bloqueiam
+     * broadcasts de manifesto em segundo plano.
+     */
+    private val packageInstallReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val action = intent.action ?: return
+            if (action != Intent.ACTION_PACKAGE_ADDED && action != Intent.ACTION_PACKAGE_REPLACED) return
+
+            val pkgName = intent.data?.schemeSpecificPart ?: return
+            if (pkgName == packageName) return  // ignora atualização do próprio app
+            val isReplacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+
+            Log.i(TAG, "📦 App instalado detectado pelo receptor dinâmico: $pkgName | substituindo=$isReplacing")
+
+            Thread {
+                // 1. Banco de malware exato
+                val malware = MalwareDatabase.isMalware(pkgName)
+                if (malware != null) {
+                    Log.w(TAG, "🚨 MALWARE instalado: $pkgName")
+                    notifiedPackages.add(pkgName)
+                    PrefsHelper.saveThreat(this@PopupDetectorService, malware)
+                    onThreatDetected(malware)
+                    sendBroadcast(Intent("com.maguardian.security.THREAT_DETECTED"))
+                    return@Thread
+                }
+
+                // 2. Heurística: nome + permissões
+                val appLabel = try {
+                    val info = packageManager.getApplicationInfo(pkgName, 0)
+                    packageManager.getApplicationLabel(info).toString()
+                } catch (e: Exception) { pkgName }
+
+                val pkgInfo = try {
+                    packageManager.getPackageInfo(pkgName, PackageManager.GET_PERMISSIONS)
+                } catch (e: Exception) { null }
+
+                val heuristic = MalwareDatabase.checkHeuristic(pkgName, appLabel, pkgInfo?.requestedPermissions)
+                if (heuristic != null) {
+                    Log.w(TAG, "⚠️ Suspeito heurístico instalado: $pkgName")
+                    notifiedPackages.add("heuristic:$pkgName")
+                    PrefsHelper.saveThreat(this@PopupDetectorService, heuristic)
+                    onThreatDetected(heuristic)
+                    sendBroadcast(Intent("com.maguardian.security.THREAT_DETECTED"))
+                }
+            }.start()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         createNotificationChannels()
+
+        // Registra receptor dinâmico para capturar instalações enquanto serviço está ativo
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(packageInstallReceiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(packageInstallReceiver, filter)
+        }
+        Log.i(TAG, "Receptor dinâmico de instalação registrado")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -166,6 +233,12 @@ class PopupDetectorService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(detectionRunnable)
+        try {
+            unregisterReceiver(packageInstallReceiver)
+            Log.i(TAG, "Receptor dinâmico de instalação desregistrado")
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "Receptor dinâmico já estava desregistrado")
+        }
         Log.i(TAG, "Serviço encerrado")
     }
 
