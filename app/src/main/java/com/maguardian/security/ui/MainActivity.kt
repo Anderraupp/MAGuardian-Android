@@ -28,6 +28,8 @@ class MainActivity : AppCompatActivity() {
         const val TAG = "MainActivity"
     }
 
+    private val pendingUninstall = mutableSetOf<String>()
+
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -54,6 +56,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Verifica quais apps pendentes de desinstalação foram realmente removidos
+        val iter = pendingUninstall.iterator()
+        while (iter.hasNext()) {
+            val pkg = iter.next()
+            val stillInstalled = try {
+                packageManager.getPackageInfo(pkg, 0)
+                true
+            } catch (e: Exception) { false }
+            if (!stillInstalled) {
+                PrefsHelper.markThreatRemoved(this, pkg)
+                iter.remove()
+                Toast.makeText(this, "✓ App removido com sucesso!", Toast.LENGTH_SHORT).show()
+            }
+        }
         refreshUI()
         val filter = IntentFilter("com.maguardian.security.THREAT_DETECTED")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -236,14 +252,24 @@ class MainActivity : AppCompatActivity() {
             "Nunca"
         }
 
-        // Badge + lista de ameaças
-        val threatCount = threats.length()
-        tvThreatCount.text = "$threatCount registros"
-        llThreats.removeAllViews()
-        layoutEmpty.visibility = if (threatCount == 0) View.VISIBLE else View.GONE
+        // Badge + lista de ameaças — filtra apenas ativas e ainda instaladas
+        val activeThreats = (0 until threats.length())
+            .map { threats.getJSONObject(it) }
+            .filter { it.optString("status", "detected") != "removed" }
+            .filter { threat ->
+                // Verifica se o app ainda está instalado; se não, remove automaticamente
+                val pkg = threat.getString("packageName")
+                val installed = try { packageManager.getPackageInfo(pkg, 0); true }
+                                catch (e: Exception) { false }
+                if (!installed) PrefsHelper.markThreatRemoved(this, pkg)
+                installed
+            }
 
-        for (i in 0 until minOf(threatCount, 10)) {
-            val threat = threats.getJSONObject(i)
+        tvThreatCount.text = "${activeThreats.size} registros"
+        llThreats.removeAllViews()
+        layoutEmpty.visibility = if (activeThreats.isEmpty()) View.VISIBLE else View.GONE
+
+        for (threat in activeThreats.take(10)) {
             val view = layoutInflater.inflate(R.layout.item_threat, llThreats, false)
             view.findViewById<TextView>(R.id.tvThreatName).text = threat.getString("appName")
             view.findViewById<TextView>(R.id.tvThreatPackage).text = threat.getString("packageName")
@@ -262,12 +288,12 @@ class MainActivity : AppCompatActivity() {
             val btnUninstall = view.findViewById<Button>(R.id.btnUninstall)
             val pkg = threat.getString("packageName")
             btnUninstall.setOnClickListener {
+                // Adiciona à lista de pendentes — remoção confirmada no onResume()
+                pendingUninstall.add(pkg)
                 val uninstallIntent = Intent(Intent.ACTION_DELETE).apply {
                     data = android.net.Uri.parse("package:$pkg")
                 }
                 startActivity(uninstallIntent)
-                PrefsHelper.markThreatRemoved(this, pkg)
-                refreshUI()
             }
 
             llThreats.addView(view)
