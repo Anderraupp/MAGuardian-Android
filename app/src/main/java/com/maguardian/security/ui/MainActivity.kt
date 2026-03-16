@@ -127,106 +127,50 @@ class MainActivity : AppCompatActivity() {
         )
         var threatsFound = 0
 
-        // Whitelist ampla: apps legítimos conhecidos que usam overlay por razão válida
-        // (chat heads, bolhas, avisos de bateria, acessibilidade, etc.)
-        val overlayWhitelist = setOf(
-            // Sistema Android
-            "android", "com.android.systemui", "com.android.settings",
-            "com.android.shell", "com.android.launcher", "com.android.launcher2",
-            "com.android.launcher3", "com.android.packageinstaller",
-            "com.android.permissioncontroller", "com.android.server.telecom",
-            // Google
-            "com.google.android.gms", "com.google.android.gsf",
-            "com.google.android.vending", "com.android.vending",
-            "com.google.android.apps.nexuslauncher", "com.google.android.inputmethod.latin",
-            "com.google.android.apps.photos", "com.google.android.apps.messaging",
-            "com.google.android.dialer", "com.google.android.contacts",
-            "com.google.android.youtube", "com.google.android.googlequicksearchbox",
-            "com.google.android.apps.maps", "com.google.android.apps.translate",
-            "com.google.android.calendar", "com.google.android.keep",
-            "com.google.android.apps.docs", "com.google.android.apps.drive",
-            "com.google.android.talk", "com.google.android.apps.tachyon",
-            // Samsung
-            "com.sec.android.app.launcher", "com.samsung.android.honeyboard",
-            "com.samsung.android.dialer", "com.samsung.android.app.notes",
-            "com.samsung.android.messaging", "com.samsung.android.app.screenrecorder",
-            "com.samsung.android.sidegesturepad", "com.samsung.android.app.tips",
-            "com.samsung.android.app.assistantmenu",
-            // Comunicação popular
-            "com.whatsapp", "com.whatsapp.w4b",
-            "org.telegram.messenger", "org.telegram.plus",
-            "com.facebook.orca", "com.facebook.lite", "com.facebook.katana",
-            "com.instagram.android", "com.twitter.android", "com.twitter.lite",
-            "com.discord", "com.snapchat.android", "com.viber.voip",
-            "com.skype.raider", "com.microsoft.teams", "com.slack",
-            "com.linkedin.android", "com.pinterest",
-            // Bancos e finanças brasileiros
-            "com.itau", "com.itaucard", "br.com.itau.empresas",
-            "com.bradesco", "br.com.bradesco.next",
-            "com.nu.production", "com.nubank",
-            "br.com.bb.android", "com.bb.mobile",
-            "com.caixa.android", "com.cef.caixamobilebankingpf",
-            "com.santander.app", "br.com.santander",
-            "com.sicredi.app", "com.bancointer",
-            "br.com.serasaexperian.consumidor", "br.com.serasa",
-            "com.mercadopago.wallet", "com.mercadolibre",
-            "com.picpay", "com.c6bank.app", "br.com.original",
-            "br.com.realizecfi", "com.xp.carteira", "br.com.rico.app",
-            "br.com.modalmais", "com.btgpactual",
-            // Compras e e-commerce
-            "com.alibaba.aliexpresshd", "com.alibaba.android.buyer",
-            "com.amazon.mShop.android.shopping", "com.shopee.br",
-            "com.magazineluiza.android", "br.com.americanas.android",
-            "br.com.extra.android", "com.casasbahia.android",
-            "com.magalu", "br.com.b2w.americanas",
-            // Streaming e entretenimento
-            "com.spotify.music", "com.netflix.mediaclient",
-            "com.amazon.avod.thirdpartyclient", "com.disney.disneyplus",
-            "br.com.globoplay.mobile", "com.hbomax.android",
-            "com.crunchyroll.crunchyroid", "com.twitch.android.app",
-            "com.tiktok", "com.zhiliaoapp.musically",
-            // Delivery e transporte
-            "com.ubercab", "com.ninety9.app", "br.com.ifood",
-            "com.rappi.app", "br.com.loggi.android",
-            "br.com.movile.pagseguro", "com.lalamove",
-            // Ferramentas e produtividade
-            "com.replit.app", "com.microsoft.office.outlook",
-            "com.microsoft.office.word", "com.microsoft.office.excel",
-            "com.adobe.reader", "com.dropbox.android",
-            "com.evernote", "com.todoist.android",
-            // Cripto e investimento
-            "com.coinmarketcap.android", "com.binance.dev",
-            "com.coinbase.android", "com.kucoin.exchange",
-            "br.com.mercadobitcoin",
-            // Saúde e outros
-            "com.ubercab.eats", "com.swiftkey.swiftkeyapp",
-            "com.touchtype.swiftkey", "com.grammarly.android",
-            // Este app
-            packageName
+        // Instaladores confiáveis: apps vindos dessas fontes são considerados seguros
+        val trustedInstallers = setOf(
+            "com.android.vending",       // Google Play Store
+            "com.samsung.android.app.spage", // Galaxy Store
+            "com.huawei.appmarket",      // Huawei AppGallery
+            "com.xiaomi.market",         // Xiaomi GetApps
+            "com.amazon.venezia",        // Amazon Appstore
         )
 
         for (pkg in installedPackages) {
             val pkgName = pkg.packageName
 
-            // 1. Verificação no banco de malware conhecido
+            // 1. Verificação no banco de malware conhecido (por package name)
             val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkgName)
             if (malware != null) {
                 PrefsHelper.saveThreat(this, malware)
                 threatsFound++
-                Log.w(TAG, "Banco de malware: ${malware.packageName}")
+                Log.w(TAG, "Banco de malware: $pkgName")
                 continue
             }
 
-            // 2. Detecta apps com permissão de overlay que não são do sistema
-            //    SYSTEM_ALERT_WINDOW é o que permite exibir pop-ups sobre outros apps
+            // 2. Apenas apps instalados fora da Play Store (sideload) com permissão
+            //    de overlay são suspeitos — apps da Play Store são confiáveis
             val isSystemApp = (pkg.applicationInfo.flags and
                 android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+            if (isSystemApp || pkgName == packageName) continue
+
+            val installer = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    packageManager.getInstallSourceInfo(pkgName).installingPackageName
+                } else {
+                    @Suppress("DEPRECATION")
+                    packageManager.getInstallerPackageName(pkgName)
+                }
+            } catch (e: Exception) { null }
+
+            val isFromTrustedStore = trustedInstallers.contains(installer)
+            if (isFromTrustedStore) continue  // Play Store / loja oficial → confiável
+
             val requestsOverlay = pkg.requestedPermissions?.contains(
                 android.Manifest.permission.SYSTEM_ALERT_WINDOW
             ) == true
-            val isWhitelisted = overlayWhitelist.any { pkgName == it || pkgName.startsWith("$it.") }
 
-            if (!isSystemApp && requestsOverlay && !isWhitelisted) {
+            if (requestsOverlay) {
                 val appName = try {
                     packageManager.getApplicationLabel(pkg.applicationInfo).toString()
                 } catch (e: Exception) { pkgName }
@@ -236,11 +180,11 @@ class MainActivity : AppCompatActivity() {
                     appName = appName,
                     threatType = "overlay",
                     severity = "medium",
-                    description = "Solicita permissão de sobreposição de tela — usada para exibir pop-ups e anúncios sobre outros apps.",
+                    description = "App instalado fora da Play Store com permissão de sobreposição de tela — pode exibir pop-ups e anúncios sobre outros apps.",
                 )
                 PrefsHelper.saveThreat(this, entry)
                 threatsFound++
-                Log.w(TAG, "Overlay suspeito detectado: $pkgName ($appName)")
+                Log.w(TAG, "Sideload com overlay: $pkgName ($appName) — installer: $installer")
             }
         }
 
