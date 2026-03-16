@@ -53,15 +53,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setupUI()
-        checkPermissionsAndStart()
+        checkPermissionsAndStart()       // mostra diálogo se precisar
         checkAndRequestNotifPermission()
     }
 
     override fun onResume() {
         super.onResume()
-        // Re-verifica permissões toda vez que o usuário volta ao app
-        // (cobre o caso: usuário foi conceder permissão nas Configurações e voltou)
-        checkPermissionsAndStart()
+        // Ao voltar ao app (ex: depois de conceder permissão nas Configurações),
+        // inicia o serviço silenciosamente se as permissões agora estão concedidas.
+        // Não mostra diálogo aqui — isso só acontece em checkPermissionsAndStart().
+        maybeStartServiceSilently()
 
         // Verifica quais apps pendentes de desinstalação foram realmente removidos
         val iter = pendingUninstall.iterator()
@@ -251,12 +252,26 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
+    /**
+     * Chamado em onResume(): inicia serviço + scan automático se permissões foram
+     * recém-concedidas, sem exibir nenhum diálogo. Cobre o caso em que o usuário
+     * saiu para Configurações, concedeu UsageStats e voltou ao app.
+     */
+    private fun maybeStartServiceSilently() {
+        val status = PermissionHelper.checkAll(this)
+        if (!status.allGranted) return
+        if (PrefsHelper.isProtectionEnabled(this)) startDetectionService()
+        // Primeira varredura automática (device já tinha apps antes de instalar o app)
+        if (PrefsHelper.getLastScan(this) == 0L && !isScanning) {
+            runManualScan()
+        }
+    }
+
     private fun checkPermissionsAndStart() {
         val status = PermissionHelper.checkAll(this)
         if (status.allGranted) {
             if (PrefsHelper.isProtectionEnabled(this)) startDetectionService()
-            // Varredura automática no primeiro uso (nunca escaneou antes)
-            if (PrefsHelper.getLastScan(this) == 0L) {
+            if (PrefsHelper.getLastScan(this) == 0L && !isScanning) {
                 runManualScan()
             }
         } else {
