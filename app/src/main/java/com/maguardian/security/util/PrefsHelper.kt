@@ -16,6 +16,13 @@ object PrefsHelper {
     private const val KEY_TOTAL_REMOVED = "total_threats_removed"
     private const val KEY_LAST_SCAN = "last_scan"
     private const val KEY_SCAN_COUNT = "scan_count"
+    private const val KEY_NOTIF_ASKED = "notif_permission_asked"
+
+    fun hasAskedNotifPermission(ctx: Context): Boolean =
+        prefs(ctx).getBoolean(KEY_NOTIF_ASKED, false)
+
+    fun setNotifPermissionAsked(ctx: Context) =
+        prefs(ctx).edit().putBoolean(KEY_NOTIF_ASKED, true).apply()
 
     fun isProtectionEnabled(ctx: Context): Boolean =
         prefs(ctx).getBoolean(KEY_PROTECTION_ENABLED, true)
