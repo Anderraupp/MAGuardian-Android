@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">M&amp;A Guardian</string>
+    <string name="app_description">Proteção contra pop-ups e adware</string>
+
+    <!-- Status -->
+    <string name="status_active">Proteção Ativa</string>
+    <string name="status_inactive">Proteção Inativa</string>
+    <string name="status_permission_needed">Permissões Necessárias</string>
+
+    <!-- Botões -->
+    <string name="btn_scan">Escanear Agora</string>
+    <string name="btn_scanning">Escaneando&#8230;</string>
+    <string name="btn_enable">Ativar Proteção</string>
+    <string name="btn_disable">Desativar</string>
+    <string name="btn_uninstall">Desinstalar</string>
+    <string name="btn_permissions">Configurar Permissões</string>
+    <string name="btn_clear">Limpar Histórico</string>
+
+    <!-- Notificações -->
+    <string name="notif_service_title">M&amp;A Guardian Ativo</string>
+    <string name="notif_service_text">Monitorando pop-ups em tempo real</string>
+    <string name="notif_threat_title">Ameaça Detectada</string>
+
+    <!-- Mensagens -->
+    <string name="no_threats">Nenhuma ameaça detectada</string>
+    <string name="device_clean">Seu dispositivo está limpo e protegido</string>
+    <string name="threats_found">ameaças detectadas!</string>
+
+    <!-- Labels -->
+    <string name="label_threats_found">Ameaças Encontradas</string>
+    <string name="label_threats_removed">Ameaças Removidas</string>
+    <string name="label_threat_type_popup">Pop-up Invasivo</string>
+    <string name="label_threat_type_overlay">Overlay de Tela</string>
+    <string name="label_threat_type_notification">Notificação Invasiva</string>
+    <string name="label_severity_high">ALTO</string>
+    <string name="label_severity_medium">MÉDIO</string>
+    <string name="label_severity_low">BAIXO</string>
+</resources>
