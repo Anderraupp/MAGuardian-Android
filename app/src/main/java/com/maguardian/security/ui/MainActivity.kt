@@ -1,12 +1,16 @@
 package com.maguardian.security.ui
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.usage.StorageStatsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.storage.StorageManager
@@ -16,8 +20,10 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.maguardian.security.R
+import com.maguardian.security.data.MalwareDatabase
 import com.maguardian.security.service.PopupDetectorService
 import com.maguardian.security.util.PermissionHelper
 import com.maguardian.security.util.PrefsHelper
@@ -327,15 +333,18 @@ class MainActivity : AppCompatActivity() {
                 return@Thread
             }
 
+            ensureThreatChannelExists()
+
             var threatsFound = 0
 
             for (pkg in installedPackages) {
                 val pkgName = pkg.packageName
 
                 // 1. Verifica no banco de dados (detecção exata)
-                val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkgName)
+                val malware = MalwareDatabase.isMalware(pkgName)
                 if (malware != null) {
                     PrefsHelper.saveThreat(this, malware)
+                    sendScanThreatNotification(malware)
                     threatsFound++
                     Log.w(TAG, "Ameaça (banco): $pkgName")
                     continue
@@ -346,11 +355,12 @@ class MainActivity : AppCompatActivity() {
                     packageManager.getApplicationLabel(pkg.applicationInfo).toString()
                 } catch (e: Exception) { pkgName }
 
-                val heuristic = com.maguardian.security.data.MalwareDatabase.checkHeuristic(
+                val heuristic = MalwareDatabase.checkHeuristic(
                     pkgName, appLabel, pkg.requestedPermissions
                 )
                 if (heuristic != null) {
                     PrefsHelper.saveThreat(this, heuristic)
+                    sendScanThreatNotification(heuristic)
                     threatsFound++
                     Log.w(TAG, "Ameaça (heurística): $pkgName — ${heuristic.description}")
                 }
@@ -372,6 +382,78 @@ class MainActivity : AppCompatActivity() {
                 refreshUI()
             }
         }.start()
+    }
+
+    /**
+     * Garante que o canal de notificações de ameaças existe antes de enviar qualquer
+     * notificação da varredura manual — necessário se o serviço ainda não foi iniciado.
+     */
+    private fun ensureThreatChannelExists() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (nm.getNotificationChannel(PopupDetectorService.CHANNEL_ID_THREAT) == null) {
+            NotificationChannel(
+                PopupDetectorService.CHANNEL_ID_THREAT,
+                "Ameaças Detectadas",
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = "Alertas de apps maliciosos instalados no dispositivo"
+                enableVibration(true)
+                nm.createNotificationChannel(this)
+            }
+        }
+    }
+
+    /**
+     * Envia notificação individual para cada ameaça encontrada na varredura.
+     * Chamado em background thread — NotificationManager é thread-safe.
+     */
+    private fun sendScanThreatNotification(malware: MalwareDatabase.MalwareEntry) {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val severity = when (malware.severity) {
+            "high" -> "ALTA"
+            "medium" -> "MÉDIA"
+            else -> "BAIXA"
+        }
+
+        val uninstallIntent = Intent(Intent.ACTION_DELETE).apply {
+            data = Uri.parse("package:${malware.packageName}")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val uninstallPi = PendingIntent.getActivity(
+            this, malware.packageName.hashCode(), uninstallIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val openPi = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val notification = NotificationCompat.Builder(this, PopupDetectorService.CHANNEL_ID_THREAT)
+            .setSmallIcon(R.drawable.ic_shield_alert)
+            .setContentTitle("⚠️ Ameaça Detectada — Severidade $severity")
+            .setContentText("${malware.appName} está instalado no dispositivo")
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(
+                        "${malware.appName} (${malware.packageName})\n" +
+                        "${malware.description}"
+                    )
+            )
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setContentIntent(openPi)
+            .addAction(R.drawable.ic_delete, "Desinstalar", uninstallPi)
+            .setColor(0xFFDC2626.toInt())
+            .build()
+
+        nm.notify(malware.packageName.hashCode(), notification)
     }
 
     private fun refreshUI() {
