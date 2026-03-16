@@ -1,6 +1,7 @@
 package com.maguardian.security.ui
 
 import android.Manifest
+import android.app.usage.StorageStatsManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -8,6 +9,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.storage.StorageManager
 import android.util.Log
 import android.view.View
 import android.widget.*
@@ -97,6 +99,82 @@ class MainActivity : AppCompatActivity() {
         }
         btnPermissions.setOnClickListener { showPermissionsDialog() }
         btnToggle.setOnClickListener { toggleProtection() }
+
+        val btnCleanCache = findViewById<Button>(R.id.btnCleanCache)
+        btnCleanCache.setOnClickListener { runCacheClean() }
+
+        refreshCacheInfo()
+    }
+
+    private fun calculateTotalCache(): Long {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return 0L
+        return try {
+            val statsManager = getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
+            val myUser = android.os.Process.myUserHandle()
+            var total = 0L
+            for (app in packageManager.getInstalledApplications(PackageManager.GET_META_DATA)) {
+                try {
+                    total += statsManager.queryStatsForPackage(
+                        StorageManager.UUID_DEFAULT, app.packageName, myUser
+                    ).cacheBytes
+                } catch (e: Exception) { /* app sem permissão de stats, ignora */ }
+            }
+            total
+        } catch (e: Exception) { 0L }
+    }
+
+    private fun refreshCacheInfo() {
+        val tvCacheSize = findViewById<TextView>(R.id.tvCacheSize)
+        Thread {
+            val bytes = calculateTotalCache()
+            runOnUiThread {
+                tvCacheSize.text = if (bytes > 0) {
+                    val mb = bytes / (1024 * 1024)
+                    if (mb < 1) "${bytes / 1024} KB em cache" else "$mb MB em cache"
+                } else {
+                    "Toque para limpar o cache"
+                }
+            }
+        }.start()
+    }
+
+    private fun runCacheClean() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            Toast.makeText(this, "Limpeza de cache não disponível neste Android.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val btnCleanCache = findViewById<Button>(R.id.btnCleanCache)
+        val tvCacheSize = findViewById<TextView>(R.id.tvCacheSize)
+        btnCleanCache.isEnabled = false
+        btnCleanCache.text = "Limpando..."
+        tvCacheSize.text = "Aguarde..."
+
+        Thread {
+            val before = calculateTotalCache()
+            try {
+                val storageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
+                storageManager.clearCacheBytes(StorageManager.UUID_DEFAULT, before)
+                Thread.sleep(1200)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao limpar cache: ${e.message}")
+            }
+            val after = calculateTotalCache()
+            val freed = (before - after).coerceAtLeast(0)
+
+            runOnUiThread {
+                btnCleanCache.isEnabled = true
+                btnCleanCache.text = "Limpar Cache"
+                val freedKb = freed / 1024
+                val afterMb = after / (1024 * 1024)
+                tvCacheSize.text = if (afterMb < 1) "${after / 1024} KB em cache" else "$afterMb MB em cache"
+                val msg = when {
+                    freedKb >= 1024 -> "✓ ${freedKb / 1024} MB liberados com sucesso!"
+                    freedKb > 0     -> "✓ ${freedKb} KB liberados com sucesso!"
+                    else            -> "Cache já estava limpo."
+                }
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            }
+        }.start()
     }
 
     private fun checkPermissionsAndStart() {
