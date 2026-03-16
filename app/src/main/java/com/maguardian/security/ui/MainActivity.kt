@@ -251,6 +251,10 @@ class MainActivity : AppCompatActivity() {
         val status = PermissionHelper.checkAll(this)
         if (status.allGranted) {
             if (PrefsHelper.isProtectionEnabled(this)) startDetectionService()
+            // Varredura automática no primeiro uso (nunca escaneou antes)
+            if (PrefsHelper.getLastScan(this) == 0L) {
+                runManualScan()
+            }
         } else {
             showPermissionsDialog()
         }
