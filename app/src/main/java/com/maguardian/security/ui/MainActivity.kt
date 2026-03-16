@@ -123,16 +123,60 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { 0L }
     }
 
+    private val browserPackages = listOf(
+        "com.android.chrome",
+        "com.sec.android.app.sbrowser",
+        "org.mozilla.firefox",
+        "org.mozilla.firefox_beta",
+        "com.microsoft.emmx",
+        "com.opera.browser",
+        "com.opera.mini.native",
+        "com.brave.browser",
+        "com.UCMobile.intl",
+        "com.uc.browser.en",
+        "mobi.mgeek.TunnyBrowser",
+        "com.kiwibrowser.browser",
+        "com.duckduckgo.mobile.android",
+        "com.vivaldi.browser",
+        "com.yandex.browser"
+    )
+
+    private fun queryPackageCache(pkg: String): Long {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return 0L
+        return try {
+            val statsManager = getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
+            statsManager.queryStatsForPackage(
+                StorageManager.UUID_DEFAULT, pkg, android.os.Process.myUserHandle()
+            ).cacheBytes
+        } catch (e: Exception) { 0L }
+    }
+
+    private fun calculateBrowserCache(): Long {
+        var total = 0L
+        for (pkg in browserPackages) {
+            try {
+                packageManager.getPackageInfo(pkg, 0)
+                total += queryPackageCache(pkg)
+            } catch (e: Exception) { /* navegador não instalado */ }
+        }
+        return total
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        val mb = bytes / (1024 * 1024)
+        return if (mb < 1) "${bytes / 1024} KB" else "$mb MB"
+    }
+
     private fun refreshCacheInfo() {
         val tvCacheSize = findViewById<TextView>(R.id.tvCacheSize)
         Thread {
-            val bytes = calculateTotalCache()
+            val total = calculateTotalCache()
+            val browser = calculateBrowserCache()
             runOnUiThread {
-                tvCacheSize.text = if (bytes > 0) {
-                    val mb = bytes / (1024 * 1024)
-                    if (mb < 1) "${bytes / 1024} KB em cache" else "$mb MB em cache"
-                } else {
-                    "Toque para limpar o cache"
+                tvCacheSize.text = when {
+                    total == 0L  -> "Toque para limpar o cache"
+                    browser > 0L -> "${formatBytes(total)} em cache • Navegadores: ${formatBytes(browser)}"
+                    else         -> "${formatBytes(total)} em cache"
                 }
             }
         }.start()
@@ -151,6 +195,7 @@ class MainActivity : AppCompatActivity() {
 
         Thread {
             val before = calculateTotalCache()
+            val browserBefore = calculateBrowserCache()
             try {
                 val storageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
                 storageManager.clearCacheBytes(StorageManager.UUID_DEFAULT, before)
@@ -159,18 +204,23 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Erro ao limpar cache: ${e.message}")
             }
             val after = calculateTotalCache()
+            val browserAfter = calculateBrowserCache()
             val freed = (before - after).coerceAtLeast(0)
+            val browserFreed = (browserBefore - browserAfter).coerceAtLeast(0)
 
             runOnUiThread {
                 btnCleanCache.isEnabled = true
                 btnCleanCache.text = "Limpar Cache"
-                val freedKb = freed / 1024
-                val afterMb = after / (1024 * 1024)
-                tvCacheSize.text = if (afterMb < 1) "${after / 1024} KB em cache" else "$afterMb MB em cache"
+                tvCacheSize.text = when {
+                    after == 0L   -> "Cache limpo"
+                    browserAfter > 0L -> "${formatBytes(after)} em cache • Navegadores: ${formatBytes(browserAfter)}"
+                    else          -> "${formatBytes(after)} em cache"
+                }
+                val navInfo = if (browserFreed > 0) " (navegadores: ${formatBytes(browserFreed)})" else ""
                 val msg = when {
-                    freedKb >= 1024 -> "✓ ${freedKb / 1024} MB liberados com sucesso!"
-                    freedKb > 0     -> "✓ ${freedKb} KB liberados com sucesso!"
-                    else            -> "Cache já estava limpo."
+                    freed >= 1024 -> "✓ ${formatBytes(freed)} liberados$navInfo"
+                    freed > 0     -> "✓ ${formatBytes(freed)} liberados com sucesso!"
+                    else          -> "Cache já estava limpo."
                 }
                 Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
             }
