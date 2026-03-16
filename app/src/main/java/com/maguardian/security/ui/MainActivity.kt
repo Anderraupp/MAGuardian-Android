@@ -189,10 +189,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runCacheClean() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            Toast.makeText(this, "Limpeza de cache não disponível neste Android.", Toast.LENGTH_SHORT).show()
-            return
-        }
         val btnCleanCache = findViewById<Button>(R.id.btnCleanCache)
         val tvCacheSize = findViewById<TextView>(R.id.tvCacheSize)
         btnCleanCache.isEnabled = false
@@ -200,37 +196,53 @@ class MainActivity : AppCompatActivity() {
         tvCacheSize.text = "Aguarde..."
 
         Thread {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val before = calculateTotalCache()
-                val browserBefore = calculateBrowserCache()
-                try {
-                    val storageManager = getSystemService(Context.STORAGE_SERVICE) as StorageManager
-                    storageManager.clearCacheBytes(StorageManager.UUID_DEFAULT, before)
-                    Thread.sleep(1200)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erro ao limpar cache: ${e.message}")
-                }
-                val after = calculateTotalCache()
-                val browserAfter = calculateBrowserCache()
-                val freed = (before - after).coerceAtLeast(0)
-                val browserFreed = (browserBefore - browserAfter).coerceAtLeast(0)
+            // 1. Limpa cache do próprio app (sempre funciona)
+            val ownCacheBefore = (cacheDir.walkTopDown().sumOf { it.length() })
+            cacheDir.deleteRecursively()
+            cacheDir.mkdirs()
+            val ownFreed = ownCacheBefore
 
-                runOnUiThread {
-                    btnCleanCache.isEnabled = true
-                    btnCleanCache.text = "Limpar Cache"
-                    tvCacheSize.text = when {
-                        after == 0L       -> "Cache limpo"
-                        browserAfter > 0L -> "${formatBytes(after)} em cache • Navegadores: ${formatBytes(browserAfter)}"
-                        else              -> "${formatBytes(after)} em cache"
-                    }
-                    val navInfo = if (browserFreed > 0) " (navegadores: ${formatBytes(browserFreed)})" else ""
-                    val msg = when {
-                        freed >= 1024 -> "✓ ${formatBytes(freed)} liberados$navInfo"
-                        freed > 0     -> "✓ ${formatBytes(freed)} liberados com sucesso!"
-                        else          -> "Cache já estava limpo."
-                    }
+            // 2. Lê tamanho total atual para mostrar na UI
+            val totalAfter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) calculateTotalCache() else 0L
+            val browserAfter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) calculateBrowserCache() else 0L
+
+            runOnUiThread {
+                btnCleanCache.isEnabled = true
+                btnCleanCache.text = "Limpar Cache"
+                tvCacheSize.text = when {
+                    totalAfter == 0L    -> "Toque para limpar o cache"
+                    browserAfter > 0L   -> "${formatBytes(totalAfter)} em cache • Navegadores: ${formatBytes(browserAfter)}"
+                    else                -> "${formatBytes(totalAfter)} em cache"
+                }
+
+                // Mostra resultado e pergunta se quer abrir configurações para limpar o restante
+                val msg = if (ownFreed > 0)
+                    "✓ ${formatBytes(ownFreed)} do app limpos."
+                else
+                    "Cache do app já estava limpo."
+
+                if (totalAfter > 0L) {
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Cache Limpo")
+                        .setMessage(
+                            "$msg\n\n" +
+                            "Ainda há ${formatBytes(totalAfter)} em cache de outros apps" +
+                            (if (browserAfter > 0L) " (navegadores: ${formatBytes(browserAfter)})" else "") +
+                            ".\n\nDeseja abrir as Configurações de Armazenamento para liberar mais espaço?"
+                        )
+                        .setPositiveButton("Abrir Configurações") { _, _ ->
+                            try {
+                                startActivity(Intent(android.provider.Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
+                            } catch (e: Exception) {
+                                startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
+                            }
+                        }
+                        .setNegativeButton("OK", null)
+                        .show()
+                } else {
                     Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
                 }
+                refreshCacheInfo()
             }
         }.start()
     }
