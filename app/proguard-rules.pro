@@ -1,0 +1,3 @@
+-keep class com.maguardian.security.** { *; }
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
