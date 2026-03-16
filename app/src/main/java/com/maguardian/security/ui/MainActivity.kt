@@ -122,69 +122,16 @@ class MainActivity : AppCompatActivity() {
         btnScan.isEnabled = false
         btnScan.text = "Escaneando..."
 
-        val installedPackages = packageManager.getInstalledPackages(
-            android.content.pm.PackageManager.GET_PERMISSIONS
-        )
+        val installedPackages = packageManager.getInstalledPackages(0)
         var threatsFound = 0
-
-        // Instaladores confiáveis: apps vindos dessas fontes são considerados seguros
-        val trustedInstallers = setOf(
-            "com.android.vending",       // Google Play Store
-            "com.samsung.android.app.spage", // Galaxy Store
-            "com.huawei.appmarket",      // Huawei AppGallery
-            "com.xiaomi.market",         // Xiaomi GetApps
-            "com.amazon.venezia",        // Amazon Appstore
-        )
 
         for (pkg in installedPackages) {
             val pkgName = pkg.packageName
-
-            // 1. Verificação no banco de malware conhecido (por package name)
             val malware = com.maguardian.security.data.MalwareDatabase.isMalware(pkgName)
             if (malware != null) {
                 PrefsHelper.saveThreat(this, malware)
                 threatsFound++
-                Log.w(TAG, "Banco de malware: $pkgName")
-                continue
-            }
-
-            // 2. Apenas apps instalados fora da Play Store (sideload) com permissão
-            //    de overlay são suspeitos — apps da Play Store são confiáveis
-            val isSystemApp = (pkg.applicationInfo.flags and
-                android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
-            if (isSystemApp || pkgName == packageName) continue
-
-            val installer = try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    packageManager.getInstallSourceInfo(pkgName).installingPackageName
-                } else {
-                    @Suppress("DEPRECATION")
-                    packageManager.getInstallerPackageName(pkgName)
-                }
-            } catch (e: Exception) { null }
-
-            val isFromTrustedStore = trustedInstallers.contains(installer)
-            if (isFromTrustedStore) continue  // Play Store / loja oficial → confiável
-
-            val requestsOverlay = pkg.requestedPermissions?.contains(
-                android.Manifest.permission.SYSTEM_ALERT_WINDOW
-            ) == true
-
-            if (requestsOverlay) {
-                val appName = try {
-                    packageManager.getApplicationLabel(pkg.applicationInfo).toString()
-                } catch (e: Exception) { pkgName }
-
-                val entry = com.maguardian.security.data.MalwareDatabase.MalwareEntry(
-                    packageName = pkgName,
-                    appName = appName,
-                    threatType = "overlay",
-                    severity = "medium",
-                    description = "App instalado fora da Play Store com permissão de sobreposição de tela — pode exibir pop-ups e anúncios sobre outros apps.",
-                )
-                PrefsHelper.saveThreat(this, entry)
-                threatsFound++
-                Log.w(TAG, "Sideload com overlay: $pkgName ($appName) — installer: $installer")
+                Log.w(TAG, "Ameaça detectada: $pkgName")
             }
         }
 
