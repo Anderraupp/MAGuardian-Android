@@ -1,14 +1,17 @@
 package com.maguardian.security.ui
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.maguardian.security.R
@@ -25,6 +28,14 @@ class MainActivity : AppCompatActivity() {
         const val TAG = "MainActivity"
     }
 
+    private val notifPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            Toast.makeText(this, "✓ Notificações ativadas! Você será alertado sobre ameaças.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private val threatReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == "com.maguardian.security.THREAT_DETECTED") {
@@ -38,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setupUI()
         checkPermissionsAndStart()
+        checkAndRequestNotifPermission()
     }
 
     override fun onResume() {
@@ -259,6 +271,35 @@ class MainActivity : AppCompatActivity() {
 
             llThreats.addView(view)
         }
+    }
+
+    private fun checkAndRequestNotifPermission() {
+        // Apenas Android 13+ precisa pedir permissão de notificação em runtime
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        val alreadyGranted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (alreadyGranted) return
+        if (PrefsHelper.hasAskedNotifPermission(this)) return
+
+        // Primeira abertura: mostrar dialog explicativo antes do prompt do sistema
+        PrefsHelper.setNotifPermissionAsked(this)
+        android.app.AlertDialog.Builder(this)
+            .setTitle("🔔 Ativar Notificações")
+            .setMessage(
+                "O M&A Guardian pode te alertar imediatamente quando detectar:\n\n" +
+                "• Pop-ups invasivos\n" +
+                "• Adware instalado\n" +
+                "• Apps suspeitos em segundo plano\n\n" +
+                "Deseja receber esses alertas?"
+            )
+            .setPositiveButton("Sim, ativar") { _, _ ->
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            .setNegativeButton("Agora não", null)
+            .show()
     }
 
     private fun showPermissionsDialog() {
