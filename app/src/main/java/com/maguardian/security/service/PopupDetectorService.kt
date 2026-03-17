@@ -237,7 +237,12 @@ class PopupDetectorService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            stopForeground(true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
             stopSelf()
             return START_NOT_STICKY
         }
@@ -323,6 +328,13 @@ class PopupDetectorService : Service() {
         val now = System.currentTimeMillis()
         val beginTime = now - DETECTION_INTERVAL_MS * 2
 
+        val foregroundEventType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            UsageEvents.Event.ACTIVITY_RESUMED
+        } else {
+            @Suppress("DEPRECATION")
+            UsageEvents.Event.MOVE_TO_FOREGROUND
+        }
+
         try {
             val usageEvents = usageStatsManager.queryEvents(beginTime, now)
 
@@ -330,7 +342,7 @@ class PopupDetectorService : Service() {
                 val event = UsageEvents.Event()
                 usageEvents.getNextEvent(event)
 
-                if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                if (event.eventType == foregroundEventType) {
                     val pkg = event.packageName
                     if (pkg == packageName) continue
 
