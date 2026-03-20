@@ -65,6 +65,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        // Reset automático de 12 horas — limpa histórico se o prazo expirou
+        PrefsHelper.maybeAutoReset(this)
+
         // Ao voltar ao app (ex: depois de conceder permissão nas Configurações),
         // inicia o serviço silenciosamente se as permissões agora estão concedidas.
         // Não mostra diálogo aqui — isso só acontece em checkPermissionsAndStart().
