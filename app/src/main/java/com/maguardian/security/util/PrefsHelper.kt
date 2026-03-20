@@ -17,6 +17,9 @@ object PrefsHelper {
     private const val KEY_LAST_SCAN = "last_scan"
     private const val KEY_SCAN_COUNT = "scan_count"
     private const val KEY_NOTIF_ASKED = "notif_permission_asked"
+    private const val KEY_LAST_STATS_RESET = "last_stats_reset"
+
+    private const val STATS_RESET_INTERVAL_MS = 12 * 60 * 60 * 1000L // 12 horas
 
     fun hasAskedNotifPermission(ctx: Context): Boolean =
         prefs(ctx).getBoolean(KEY_NOTIF_ASKED, false)
@@ -120,6 +123,40 @@ object PrefsHelper {
 
     fun clearThreats(ctx: Context) =
         prefs(ctx).edit().putString(KEY_THREATS, "[]").apply()
+
+    // ── Reset automático a cada 12 horas ──
+
+    fun getLastStatsReset(ctx: Context): Long =
+        prefs(ctx).getLong(KEY_LAST_STATS_RESET, 0L)
+
+    /**
+     * Zera contadores de ameaças, remoções, escaneamentos e histórico de ameaças detectadas.
+     * Preserva configurações do usuário (proteção ativa, notificações, etc.).
+     */
+    fun resetStats(ctx: Context) {
+        prefs(ctx).edit()
+            .putInt(KEY_TOTAL_FOUND, 0)
+            .putInt(KEY_TOTAL_REMOVED, 0)
+            .putInt(KEY_SCAN_COUNT, 0)
+            .putLong(KEY_LAST_SCAN, 0L)
+            .putString(KEY_THREATS, "[]")
+            .putLong(KEY_LAST_STATS_RESET, System.currentTimeMillis())
+            .apply()
+    }
+
+    /**
+     * Verifica se já passaram 12 horas desde o último reset e, se sim, reseta as estatísticas.
+     * Retorna true se o reset foi executado (para o serviço limpar seu estado interno também).
+     */
+    fun maybeAutoReset(ctx: Context): Boolean {
+        val lastReset = getLastStatsReset(ctx)
+        val now = System.currentTimeMillis()
+        if (lastReset == 0L || (now - lastReset) >= STATS_RESET_INTERVAL_MS) {
+            resetStats(ctx)
+            return true
+        }
+        return false
+    }
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
