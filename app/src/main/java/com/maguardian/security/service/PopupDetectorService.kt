@@ -221,6 +221,14 @@ class PopupDetectorService : Service() {
         usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         createNotificationChannels()
 
+        // Reset automático de 12 horas — limpa contadores e estado interno do serviço
+        val wasReset = PrefsHelper.maybeAutoReset(this)
+        if (wasReset) {
+            notifiedPackages.clear()
+            heuristicCounter.clear()
+            Log.i(TAG, "Reset automático de 12 horas executado — contadores e histórico limpos")
+        }
+
         // Registra receptor dinâmico para capturar instalações enquanto serviço está ativo
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
