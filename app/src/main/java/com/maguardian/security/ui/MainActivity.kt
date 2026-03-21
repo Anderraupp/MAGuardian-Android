@@ -496,14 +496,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Taxa de segurança
-        val securityPct = if (totalScans == 0) 100
-                          else ((totalScans - totalFound).coerceAtLeast(0) * 100 / totalScans)
+        // Regra: sempre 100% se proteção estiver ativa; 0% se desativada
+        val isProtectionActive = protectionEnabled && permStatus.allGranted
+        val securityPct = if (isProtectionActive) 100 else 0
         tvSecurityRate.text = "$securityPct%"
         tvSecurityRate.setTextColor(
             ContextCompat.getColor(this,
-                if (securityPct >= 80) R.color.success else R.color.danger)
+                if (securityPct == 100) R.color.success else R.color.danger)
         )
-        tvScansClean.text = "${(totalScans - totalFound).coerceAtLeast(0)}/$totalScans scans limpos"
+        tvScansClean.text = if (isProtectionActive) "Proteção em tempo real ativa"
+                            else "Proteção desativada"
 
         // Status card
         val isFullyActive = protectionEnabled && permStatus.allGranted
