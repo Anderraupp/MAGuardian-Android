@@ -534,8 +534,7 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.getColor(this,
                 if (securityPct == 100) R.color.success else R.color.danger)
         )
-        tvScansClean.text = if (isProtectionActive) "Proteção em tempo real ativa"
-                            else "Proteção desativada"
+        tvScansClean.text = if (isProtectionActive) "Em tempo real" else "Desativada"
 
         // Status card
         val isFullyActive = protectionEnabled && permStatus.allGranted
