@@ -339,6 +339,15 @@ class MainActivity : AppCompatActivity() {
 
             ensureThreatChannelExists()
 
+            // Pré-computa conjunto de packages com ícone no launcher (uma só query — rápido)
+            val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+            val packagesWithLauncher = packageManager
+                .queryIntentActivities(launcherIntent, 0)
+                .map { it.activityInfo.packageName }
+                .toSet()
+
             var threatsFound = 0
 
             for (pkg in installedPackages) {
@@ -349,7 +358,16 @@ class MainActivity : AppCompatActivity() {
                 if (MalwareDatabase.isSystemPrefix(pkgName)) continue
                 if (MalwareDatabase.isTrustedApp(pkgName)) continue
 
-                // 1. Verifica no banco de dados (detecção exata)
+                val appLabel = try {
+                    packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+                } catch (e: Exception) { pkgName }
+
+                val isSystemApp = (pkg.applicationInfo.flags and
+                    (android.content.pm.ApplicationInfo.FLAG_SYSTEM or
+                     android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
+                val hasLauncherIcon = pkgName in packagesWithLauncher
+
+                // 1. Banco de dados de malware conhecido (detecção exata)
                 val malware = MalwareDatabase.isMalware(pkgName)
                 if (malware != null) {
                     PrefsHelper.saveThreat(this, malware)
@@ -359,11 +377,19 @@ class MainActivity : AppCompatActivity() {
                     continue
                 }
 
-                // 2. Heurística: analisa nome + permissões para apps não catalogados
-                val appLabel = try {
-                    packageManager.getApplicationLabel(pkg.applicationInfo).toString()
-                } catch (e: Exception) { pkgName }
+                // 2. Detecção de apps ocultos: sem ícone, nome invisível ou fake sistema
+                val hidden = MalwareDatabase.checkHiddenApp(
+                    pkgName, appLabel, pkg.requestedPermissions, hasLauncherIcon, isSystemApp
+                )
+                if (hidden != null) {
+                    PrefsHelper.saveThreat(this, hidden)
+                    sendScanThreatNotification(hidden)
+                    threatsFound++
+                    Log.w(TAG, "Ameaça (oculto): $pkgName — ${hidden.description}")
+                    continue
+                }
 
+                // 3. Heurística: nome suspeito + permissões perigosas
                 val heuristic = MalwareDatabase.checkHeuristic(
                     pkgName, appLabel, pkg.requestedPermissions
                 )
@@ -608,9 +634,11 @@ class MainActivity : AppCompatActivity() {
                 "popup" -> "Pop-up Invasivo"
                 "overlay" -> "Overlay de Tela"
                 "notification" -> "Notificação Invasiva"
+                "hidden" -> "App Oculto"
                 else -> threat.getString("threatType")
             }
             view.findViewById<TextView>(R.id.tvThreatSeverity).text = when (threat.getString("severity")) {
+                "critical" -> "CRÍTICO"
                 "high" -> "ALTO"
                 "medium" -> "MÉDIO"
                 else -> "BAIXO"
