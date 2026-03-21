@@ -180,6 +180,9 @@ class PopupDetectorService : Service() {
             if (pkgName == packageName) return  // ignora atualização do próprio app
             val isReplacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
 
+            // Apps de sistema e vendors confiáveis nunca são ameaças
+            if (MalwareDatabase.isSystemPrefix(pkgName) || MalwareDatabase.isTrustedApp(pkgName)) return
+
             Log.i(TAG, "📦 App instalado detectado pelo receptor dinâmico: $pkgName | substituindo=$isReplacing")
 
             Thread {
@@ -281,6 +284,9 @@ class PopupDetectorService : Service() {
             if (pkgName == packageName) continue
             // Já notificou antes nessa sessão — pula
             if (notifiedPackages.contains(pkgName)) continue
+            // Apps de sistema e vendors confiáveis nunca são ameaças
+            if (MalwareDatabase.isSystemPrefix(pkgName)) continue
+            if (MalwareDatabase.isTrustedApp(pkgName)) continue
 
             // 1. Banco de malware conhecido
             val malware = MalwareDatabase.isMalware(pkgName)
