@@ -344,6 +344,11 @@ class MainActivity : AppCompatActivity() {
             for (pkg in installedPackages) {
                 val pkgName = pkg.packageName
 
+                // Pula o próprio app e qualquer app de sistema ou vendor confiável
+                if (pkgName == packageName) continue
+                if (MalwareDatabase.isSystemPrefix(pkgName)) continue
+                if (MalwareDatabase.isTrustedApp(pkgName)) continue
+
                 // 1. Verifica no banco de dados (detecção exata)
                 val malware = MalwareDatabase.isMalware(pkgName)
                 if (malware != null) {
