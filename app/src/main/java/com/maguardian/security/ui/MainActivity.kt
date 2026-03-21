@@ -483,16 +483,46 @@ class MainActivity : AppCompatActivity() {
         val llThreats = findViewById<LinearLayout>(R.id.llThreats)
         val layoutPermWarning = findViewById<LinearLayout>(R.id.layoutPermWarning)
         val tvPermWarning = findViewById<TextView>(R.id.tvPermWarning)
+        val layoutNotifWarning = findViewById<LinearLayout>(R.id.layoutNotifWarning)
+        val btnNotifPermission = findViewById<Button>(R.id.btnNotifPermission)
         val cardStatus = findViewById<LinearLayout>(R.id.cardStatus)
         val ivShield = findViewById<android.widget.ImageView>(R.id.ivShield)
         val layoutEmpty = findViewById<LinearLayout>(R.id.layoutEmpty)
 
-        // Aviso de permissões
+        // Aviso de permissões de uso
         if (!permStatus.allGranted) {
             layoutPermWarning.visibility = View.VISIBLE
             tvPermWarning.text = "Permissão necessária: Acesso ao Histórico de Uso de Apps"
         } else {
             layoutPermWarning.visibility = View.GONE
+        }
+
+        // Card de notificações — aparece sempre que a permissão não foi concedida (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val notifGranted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (notifGranted) {
+                layoutNotifWarning.visibility = View.GONE
+            } else {
+                layoutNotifWarning.visibility = View.VISIBLE
+                btnNotifPermission.setOnClickListener {
+                    // Tenta pedir a permissão; se já negada antes, o Android redireciona
+                    // automaticamente para as configurações do app
+                    if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                        notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        // Usuário marcou "Não perguntar novamente" — abre Configurações do app
+                        val intent = android.content.Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            android.net.Uri.fromParts("package", packageName, null)
+                        )
+                        startActivity(intent)
+                    }
+                }
+            }
+        } else {
+            layoutNotifWarning.visibility = View.GONE
         }
 
         // Taxa de segurança
