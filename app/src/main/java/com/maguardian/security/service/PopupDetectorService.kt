@@ -278,6 +278,15 @@ class PopupDetectorService : Service() {
             return
         }
 
+        // Pré-computa packages com ícone no launcher em uma só query
+        val launcherIntent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+            addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+        }
+        val packagesWithLauncher = packageManager
+            .queryIntentActivities(launcherIntent, 0)
+            .map { it.activityInfo.packageName }
+            .toSet()
+
         var found = 0
         for (pkg in installedPackages) {
             val pkgName = pkg.packageName
@@ -288,7 +297,16 @@ class PopupDetectorService : Service() {
             if (MalwareDatabase.isSystemPrefix(pkgName)) continue
             if (MalwareDatabase.isTrustedApp(pkgName)) continue
 
-            // 1. Banco de malware conhecido
+            val appLabel = try {
+                packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+            } catch (e: Exception) { pkgName }
+
+            val isSystemApp = (pkg.applicationInfo.flags and
+                (android.content.pm.ApplicationInfo.FLAG_SYSTEM or
+                 android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
+            val hasLauncherIcon = pkgName in packagesWithLauncher
+
+            // 1. Banco de malware conhecido (detecção exata)
             val malware = MalwareDatabase.isMalware(pkgName)
             if (malware != null) {
                 Log.w(TAG, "Varredura inicial — malware encontrado: $pkgName")
@@ -299,11 +317,20 @@ class PopupDetectorService : Service() {
                 continue
             }
 
-            // 2. Heurística (nome + permissões)
-            val appLabel = try {
-                packageManager.getApplicationLabel(pkg.applicationInfo).toString()
-            } catch (e: Exception) { pkgName }
+            // 2. Detecção de apps ocultos
+            val hidden = MalwareDatabase.checkHiddenApp(
+                pkgName, appLabel, pkg.requestedPermissions, hasLauncherIcon, isSystemApp
+            )
+            if (hidden != null) {
+                Log.w(TAG, "Varredura inicial — app oculto: $pkgName")
+                notifiedPackages.add("hidden:$pkgName")
+                PrefsHelper.saveThreat(this, hidden)
+                onThreatDetected(hidden)
+                found++
+                continue
+            }
 
+            // 3. Heurística: nome suspeito + permissões perigosas
             val heuristic = MalwareDatabase.checkHeuristic(
                 pkgName, appLabel, pkg.requestedPermissions
             )
