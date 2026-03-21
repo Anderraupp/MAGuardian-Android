@@ -246,16 +246,16 @@
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <!-- Taxa de segurança (direita) -->
+            <!-- Taxa de segurança (direita) — largura fixa para não comprimir o texto central -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="end"
                 android:layout_marginStart="10dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Taxa de segurança"
                     android:textColor="@color/text_secondary"
@@ -264,7 +264,7 @@
 
                 <TextView
                     android:id="@+id/tvSecurityRate"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="100%"
                     android:textColor="@color/primary"
@@ -274,12 +274,13 @@
 
                 <TextView
                     android:id="@+id/tvScansClean"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="0/0 scans limpos"
+                    android:text="Ativa"
                     android:textColor="@color/text_muted"
                     android:textSize="9sp"
-                    android:gravity="end" />
+                    android:gravity="end"
+                    android:maxLines="2" />
             </LinearLayout>
         </LinearLayout>
 
