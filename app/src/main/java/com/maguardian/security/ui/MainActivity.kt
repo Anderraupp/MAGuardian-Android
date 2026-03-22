@@ -353,10 +353,11 @@ class MainActivity : AppCompatActivity() {
             for (pkg in installedPackages) {
                 val pkgName = pkg.packageName
 
-                // Pula o próprio app e qualquer app de sistema ou vendor confiável
+                // Pula o próprio app, apps de sistema, vendors confiáveis e isentos de varredura
                 if (pkgName == packageName) continue
                 if (MalwareDatabase.isSystemPrefix(pkgName)) continue
                 if (MalwareDatabase.isTrustedApp(pkgName)) continue
+                if (MalwareDatabase.isScanExempt(pkgName)) continue
 
                 val appLabel = try {
                     packageManager.getApplicationLabel(pkg.applicationInfo).toString()
