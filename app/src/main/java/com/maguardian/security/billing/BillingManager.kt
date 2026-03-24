@@ -20,7 +20,7 @@ class BillingManager(
         private const val TAG = "BillingManager"
 
         /** ID do produto criado no Google Play Console */
-        const val SKU_MONTHLY = "maguardian_premium_monthly"
+        const val SKU_MONTHLY = "ma_guardian_mensal"
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
