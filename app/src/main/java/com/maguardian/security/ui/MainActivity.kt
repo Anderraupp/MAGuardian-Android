@@ -23,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.maguardian.security.R
+import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.data.MalwareDatabase
 import com.maguardian.security.service.PopupDetectorService
 import com.maguardian.security.util.PermissionHelper
@@ -38,6 +39,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val pendingUninstall = mutableSetOf<String>()
+
+    // ── Assinatura ───────────────────────────────────────────────────────────
+    private lateinit var billing: BillingManager
+    private var paywallShown = false
+
+    private val subscriptionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        paywallShown = false
+        if (result.resultCode != RESULT_OK) {
+            // Usuário voltou sem assinar — verifica novamente via billing
+            checkSubscriptionGate()
+        }
+    }
+
+    private fun checkSubscriptionGate() {
+        if (paywallShown) return
+        if (!PrefsHelper.isSubscriptionActive(this)) {
+            paywallShown = true
+            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+        }
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     private val notifPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -59,8 +83,27 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setupUI()
-        checkPermissionsAndStart()       // mostra diálogo se precisar
+        initBilling()
+        checkPermissionsAndStart()
         checkAndRequestNotifPermission()
+    }
+
+    private fun initBilling() {
+        billing = BillingManager(this) { isActive ->
+            // Chamado quando o status da assinatura muda via billing real
+            if (isActive) {
+                paywallShown = false
+            }
+        }
+        billing.connect {
+            // Após conectar, verifica se o usuário tem assinatura ativa
+            checkSubscriptionGate()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::billing.isInitialized) billing.destroy()
     }
 
     override fun onResume() {
