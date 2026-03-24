@@ -13,51 +13,31 @@ class SubscriptionActivity : AppCompatActivity() {
 
     private lateinit var billing: BillingManager
 
-    private lateinit var cardMonthly: View
-    private lateinit var cardYearly: View
-    private lateinit var tvMonthlyPrice: TextView
-    private lateinit var tvYearlyPrice: TextView
+    private lateinit var tvPrice: TextView
     private lateinit var btnSubscribe: Button
     private lateinit var btnRestore: TextView
     private lateinit var progressBar: ProgressBar
-    private lateinit var tvLoadingPlans: TextView
-
-    private var selectedSku: String = BillingManager.SKU_MONTHLY
+    private lateinit var tvLoading: TextView
+    private lateinit var layoutContent: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_subscription)
 
-        bindViews()
+        tvPrice      = findViewById(R.id.tvMonthlyPrice)
+        btnSubscribe = findViewById(R.id.btnSubscribe)
+        btnRestore   = findViewById(R.id.btnRestore)
+        progressBar  = findViewById(R.id.progressBilling)
+        tvLoading    = findViewById(R.id.tvLoadingPlans)
+        layoutContent = findViewById(R.id.layoutContent)
+
         setupListeners()
         initBilling()
     }
 
-    private fun bindViews() {
-        cardMonthly    = findViewById(R.id.cardPlanMonthly)
-        cardYearly     = findViewById(R.id.cardPlanYearly)
-        tvMonthlyPrice = findViewById(R.id.tvMonthlyPrice)
-        tvYearlyPrice  = findViewById(R.id.tvYearlyPrice)
-        btnSubscribe   = findViewById(R.id.btnSubscribe)
-        btnRestore     = findViewById(R.id.btnRestore)
-        progressBar    = findViewById(R.id.progressBilling)
-        tvLoadingPlans = findViewById(R.id.tvLoadingPlans)
-    }
-
     private fun setupListeners() {
-        cardMonthly.setOnClickListener { selectPlan(BillingManager.SKU_MONTHLY) }
-        cardYearly.setOnClickListener  { selectPlan(BillingManager.SKU_YEARLY)  }
-
         btnSubscribe.setOnClickListener {
-            val details = when (selectedSku) {
-                BillingManager.SKU_MONTHLY -> billing.monthlyDetails
-                else                       -> billing.yearlyDetails
-            }
-            if (details != null) {
-                billing.purchase(this, details)
-            } else {
-                Toast.makeText(this, "Planos ainda carregando, aguarde…", Toast.LENGTH_SHORT).show()
-            }
+            billing.purchase(this)
         }
 
         btnRestore.setOnClickListener {
@@ -83,52 +63,28 @@ class SubscriptionActivity : AppCompatActivity() {
         }
     }
 
-    private fun selectPlan(sku: String) {
-        selectedSku = sku
-        val isMonthly = sku == BillingManager.SKU_MONTHLY
-
-        cardMonthly.isSelected = isMonthly
-        cardYearly.isSelected  = !isMonthly
-
-        val monthlyBorder = if (isMonthly) R.drawable.plan_card_selected else R.drawable.plan_card_default
-        val yearlyBorder  = if (!isMonthly) R.drawable.plan_card_selected else R.drawable.plan_card_default
-        cardMonthly.setBackgroundResource(monthlyBorder)
-        cardYearly.setBackgroundResource(yearlyBorder)
-    }
-
     private fun initBilling() {
         setLoadingState(true)
 
         billing = BillingManager(this) { isActive ->
-            if (isActive) {
-                finishWithSuccess()
-            }
+            if (isActive) finishWithSuccess()
         }
 
         billing.connect {
             setLoadingState(false)
-            updatePrices()
-            selectPlan(selectedSku)
+            tvPrice.text = "${billing.getMonthlyPrice()}/mês"
         }
-    }
-
-    private fun updatePrices() {
-        val monthlyPrice = billing.getPriceFor(BillingManager.SKU_MONTHLY)
-        val yearlyPrice  = billing.getPriceFor(BillingManager.SKU_YEARLY)
-        tvMonthlyPrice.text = if (monthlyPrice != "—") "$monthlyPrice/mês" else "Carregando…"
-        tvYearlyPrice.text  = if (yearlyPrice  != "—") "$yearlyPrice/ano"  else "Carregando…"
     }
 
     private fun setLoadingState(loading: Boolean) {
         progressBar.visibility    = if (loading) View.VISIBLE else View.GONE
-        tvLoadingPlans.visibility = if (loading) View.VISIBLE else View.GONE
-        cardMonthly.visibility    = if (loading) View.GONE else View.VISIBLE
-        cardYearly.visibility     = if (loading) View.GONE else View.VISIBLE
+        tvLoading.visibility      = if (loading) View.VISIBLE else View.GONE
+        layoutContent.visibility  = if (loading) View.GONE    else View.VISIBLE
         btnSubscribe.isEnabled    = !loading
     }
 
     private fun finishWithSuccess() {
-        Toast.makeText(this, "✅ Assinatura ativa! Bem-vindo ao M&A Guardian Premium.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "✅ Bem-vindo ao M&A Guardian Premium!", Toast.LENGTH_LONG).show()
         setResult(RESULT_OK)
         finish()
     }
