@@ -9,11 +9,7 @@ import kotlinx.coroutines.*
 
 /**
  * Gerencia toda a comunicação com o Google Play Billing.
- * - Conecta ao serviço de faturamento
- * - Carrega os detalhes dos planos de assinatura
- * - Inicia o fluxo de compra
- * - Verifica e confirma (acknowledges) compras
- * - Notifica o app quando o status da assinatura muda
+ * Plano único: mensal (R$ 9,90/mês), sem período de teste.
  */
 class BillingManager(
     private val context: Context,
@@ -23,9 +19,8 @@ class BillingManager(
     companion object {
         private const val TAG = "BillingManager"
 
-        /** IDs dos produtos criados no Google Play Console */
+        /** ID do produto criado no Google Play Console */
         const val SKU_MONTHLY = "maguardian_premium_monthly"
-        const val SKU_YEARLY  = "maguardian_premium_yearly"
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -36,9 +31,6 @@ class BillingManager(
         .build()
 
     var monthlyDetails: ProductDetails? = null
-        private set
-
-    var yearlyDetails: ProductDetails? = null
         private set
 
     // ── Conexão ──────────────────────────────────────────────────────────────
@@ -74,16 +66,12 @@ class BillingManager(
         })
     }
 
-    // ── Produtos ─────────────────────────────────────────────────────────────
+    // ── Produto ───────────────────────────────────────────────────────────────
 
     private suspend fun loadProducts() {
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId(SKU_MONTHLY)
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build(),
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(SKU_YEARLY)
                 .setProductType(BillingClient.ProductType.SUBS)
                 .build()
         )
@@ -92,13 +80,8 @@ class BillingManager(
             .build()
 
         val result = billingClient.queryProductDetails(params)
-        result.productDetailsList?.forEach { details ->
-            when (details.productId) {
-                SKU_MONTHLY -> monthlyDetails = details
-                SKU_YEARLY  -> yearlyDetails  = details
-            }
-        }
-        Log.i(TAG, "Produtos carregados — mensal=${monthlyDetails != null} anual=${yearlyDetails != null}")
+        monthlyDetails = result.productDetailsList?.firstOrNull { it.productId == SKU_MONTHLY }
+        Log.i(TAG, "Produto mensal carregado: ${monthlyDetails != null}")
     }
 
     // ── Status da assinatura ──────────────────────────────────────────────────
@@ -118,10 +101,14 @@ class BillingManager(
 
     // ── Compra ───────────────────────────────────────────────────────────────
 
-    fun purchase(activity: Activity, details: ProductDetails) {
+    fun purchase(activity: Activity) {
+        val details = monthlyDetails ?: run {
+            Log.w(TAG, "Produto ainda não carregado")
+            return
+        }
         val offerToken = details.subscriptionOfferDetails
             ?.firstOrNull()?.offerToken ?: run {
-            Log.w(TAG, "Nenhum offerToken disponível para ${details.productId}")
+            Log.w(TAG, "Nenhum offerToken disponível")
             return
         }
 
@@ -183,12 +170,10 @@ class BillingManager(
 
     // ── Preço formatado ───────────────────────────────────────────────────────
 
-    fun getPriceFor(sku: String): String {
-        val details = if (sku == SKU_MONTHLY) monthlyDetails else yearlyDetails
-        return details?.subscriptionOfferDetails
+    fun getMonthlyPrice(): String =
+        monthlyDetails?.subscriptionOfferDetails
             ?.firstOrNull()?.pricingPhases?.pricingPhaseList
-            ?.lastOrNull()?.formattedPrice ?: "—"
-    }
+            ?.lastOrNull()?.formattedPrice ?: "R$ 9,90"
 
     fun destroy() {
         scope.cancel()
