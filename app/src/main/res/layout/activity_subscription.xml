@@ -11,24 +11,25 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Ícone + Título -->
+        <!-- Ícone -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="🛡️"
-            android:textSize="56sp"
+            android:textSize="64sp"
             android:gravity="center"
-            android:layout_marginTop="16dp" />
+            android:layout_marginTop="24dp" />
 
+        <!-- Título -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="M&amp;A Guardian"
             android:textColor="#FFFFFF"
-            android:textSize="26sp"
+            android:textSize="28sp"
             android:textStyle="bold"
             android:gravity="center"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="12dp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -37,255 +38,190 @@
             android:textColor="#F59E0B"
             android:textSize="14sp"
             android:gravity="center"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="6dp" />
 
-        <!-- Carregando plans -->
+        <!-- Carregando -->
         <ProgressBar
             android:id="@+id/progressBilling"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="32dp"
             android:visibility="visible" />
 
         <TextView
             android:id="@+id/tvLoadingPlans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Carregando planos…"
+            android:text="Carregando plano…"
             android:textColor="#888888"
             android:textSize="14sp"
             android:gravity="center"
             android:layout_marginTop="8dp"
             android:visibility="visible" />
 
-        <!-- Benefícios -->
+        <!-- Conteúdo principal (oculto durante carregamento) -->
         <LinearLayout
+            android:id="@+id/layoutContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="#1A1A1A"
-            android:padding="16dp"
-            android:layout_marginTop="24dp">
+            android:visibility="gone">
 
-            <TextView
+            <!-- Card do plano -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="O que está incluído:"
-                android:textColor="#F59E0B"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="✅  Detecção de pop-ups em tempo real"
-                android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="8dp"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="✅  Varredura completa de malware e adware"
-                android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="8dp"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="✅  Detecção de apps ocultos e espiões"
-                android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="8dp"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="✅  Proteção automática ao ligar o celular"
-                android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="8dp"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="✅  Notificações imediatas de ameaças"
-                android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="8dp"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="✅  Limpeza de cache do dispositivo"
-                android:textColor="#DDDDDD" android:textSize="14sp"/>
-
-        </LinearLayout>
-
-        <!-- Cards de plano -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="20dp">
-
-            <!-- Plano Mensal -->
-            <LinearLayout
-                android:id="@+id/cardPlanMonthly"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="16dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/plan_card_selected"
-                android:clickable="true"
-                android:focusable="true">
+                android:padding="24dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/plan_card_selected">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="MENSAL"
+                    android:text="PLANO PREMIUM"
                     android:textColor="#F59E0B"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
-                    android:letterSpacing="0.1" />
+                    android:letterSpacing="0.15" />
 
                 <TextView
                     android:id="@+id/tvMonthlyPrice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Carregando…"
+                    android:text="R$ 9,90/mês"
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp"
+                    android:textSize="32sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center" />
+                    android:layout_marginTop="12dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Cancele quando quiser"
+                    android:text="Assinatura mensal · Cancele quando quiser"
                     android:textColor="#888888"
-                    android:textSize="10sp"
-                    android:layout_marginTop="4dp"
-                    android:gravity="center" />
+                    android:textSize="12sp"
+                    android:layout_marginTop="6dp" />
 
             </LinearLayout>
 
-            <!-- Plano Anual -->
+            <!-- Benefícios -->
             <LinearLayout
-                android:id="@+id/cardPlanYearly"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:orientation="vertical"
-                android:gravity="center"
-                android:padding="16dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/plan_card_default"
-                android:clickable="true"
-                android:focusable="true">
-
-                <!-- Badge "Melhor valor" -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" MELHOR VALOR "
-                    android:textColor="#111111"
-                    android:textSize="9sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/bg_badge_popular"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:layout_marginBottom="4dp" />
+                android:background="#1A1A1A"
+                android:padding="20dp"
+                android:layout_marginTop="16dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="ANUAL"
+                    android:text="O que está incluído:"
                     android:textColor="#F59E0B"
-                    android:textSize="11sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
-                    android:letterSpacing="0.1" />
+                    android:layout_marginBottom="14dp" />
 
-                <TextView
-                    android:id="@+id/tvYearlyPrice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Carregando…"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Detecção de pop-ups em tempo real"
+                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Economize até 40%"
-                    android:textColor="#F59E0B"
-                    android:textSize="10sp"
-                    android:layout_marginTop="4dp"
-                    android:gravity="center" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Varredura completa de malware e adware"
+                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Detecção de apps ocultos e espiões"
+                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Proteção automática ao ligar o celular"
+                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Notificações imediatas de ameaças"
+                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Limpeza de cache do dispositivo"
+                    android:textColor="#DDDDDD" android:textSize="14sp"/>
 
             </LinearLayout>
 
-        </LinearLayout>
-
-        <!-- Botão de assinatura -->
-        <Button
-            android:id="@+id/btnSubscribe"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="ASSINAR AGORA"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:backgroundTint="#dc2626"
-            android:layout_marginTop="20dp"
-            android:enabled="false" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Renova automaticamente. Cancele a qualquer momento na Play Store."
-            android:textColor="#666666"
-            android:textSize="11sp"
-            android:gravity="center"
-            android:layout_marginTop="8dp" />
-
-        <!-- Restaurar compra -->
-        <TextView
-            android:id="@+id/btnRestore"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Restaurar compra anterior"
-            android:textColor="#F59E0B"
-            android:textSize="13sp"
-            android:gravity="center"
-            android:padding="12dp"
-            android:layout_marginTop="8dp"
-            android:clickable="true"
-            android:focusable="true" />
-
-        <!-- Termos e Privacidade -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="16dp">
+            <!-- Botão assinar -->
+            <Button
+                android:id="@+id/btnSubscribe"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="ASSINAR POR R$ 9,90/MÊS"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:backgroundTint="#dc2626"
+                android:layout_marginTop="20dp" />
 
             <TextView
-                android:id="@+id/tvTerms"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Termos de Uso"
+                android:text="Renovação automática mensal. Cancele quando quiser na Play Store."
                 android:textColor="#555555"
                 android:textSize="11sp"
+                android:gravity="center"
+                android:layout_marginTop="8dp" />
+
+            <!-- Restaurar -->
+            <TextView
+                android:id="@+id/btnRestore"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Restaurar compra anterior"
+                android:textColor="#F59E0B"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:padding="14dp"
+                android:layout_marginTop="4dp"
                 android:clickable="true"
                 android:focusable="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Termos e Privacidade -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="  ·  "
-                android:textColor="#555555"
-                android:textSize="11sp" />
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="24dp">
 
-            <TextView
-                android:id="@+id/tvPrivacy"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Política de Privacidade"
-                android:textColor="#555555"
-                android:textSize="11sp"
-                android:clickable="true"
-                android:focusable="true" />
+                <TextView
+                    android:id="@+id/tvTerms"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Termos de Uso"
+                    android:textColor="#444444"
+                    android:textSize="11sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  ·  "
+                    android:textColor="#444444"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvPrivacy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Política de Privacidade"
+                    android:textColor="#444444"
+                    android:textSize="11sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
