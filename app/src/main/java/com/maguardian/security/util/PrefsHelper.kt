@@ -17,7 +17,8 @@ object PrefsHelper {
     private const val KEY_LAST_SCAN = "last_scan"
     private const val KEY_SCAN_COUNT = "scan_count"
     private const val KEY_NOTIF_ASKED = "notif_permission_asked"
-    private const val KEY_LAST_STATS_RESET = "last_stats_reset"
+    private const val KEY_LAST_STATS_RESET   = "last_stats_reset"
+    private const val KEY_SUBSCRIPTION_ACTIVE = "subscription_active"
 
     private const val STATS_RESET_INTERVAL_MS = 12 * 60 * 60 * 1000L // 12 horas
 
@@ -157,6 +158,14 @@ object PrefsHelper {
         }
         return false
     }
+
+    // ── Assinatura Google Play ──
+
+    fun isSubscriptionActive(ctx: Context): Boolean =
+        prefs(ctx).getBoolean(KEY_SUBSCRIPTION_ACTIVE, false)
+
+    fun setSubscriptionActive(ctx: Context, active: Boolean) =
+        prefs(ctx).edit().putBoolean(KEY_SUBSCRIPTION_ACTIVE, active).apply()
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
