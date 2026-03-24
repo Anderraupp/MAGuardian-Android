@@ -56,6 +56,8 @@ class BillingManager(
                     }
                 } else {
                     Log.w(TAG, "Erro ao conectar billing: ${result.debugMessage}")
+                    // Avisa a UI mesmo em falha para não bloquear o botão indefinidamente
+                    withContext(Dispatchers.Main) { onReady?.invoke() }
                 }
             }
 
