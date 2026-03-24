@@ -24,27 +24,57 @@ class SubscriptionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_subscription)
 
-        tvPrice      = findViewById(R.id.tvMonthlyPrice)
-        btnSubscribe = findViewById(R.id.btnSubscribe)
-        btnRestore   = findViewById(R.id.btnRestore)
-        progressBar  = findViewById(R.id.progressBilling)
-        tvLoading    = findViewById(R.id.tvLoadingPlans)
+        tvPrice       = findViewById(R.id.tvMonthlyPrice)
+        btnSubscribe  = findViewById(R.id.btnSubscribe)
+        btnRestore    = findViewById(R.id.btnRestore)
+        progressBar   = findViewById(R.id.progressBilling)
+        tvLoading     = findViewById(R.id.tvLoadingPlans)
         layoutContent = findViewById(R.id.layoutContent)
+
+        // Mostra conteúdo e habilita botão imediatamente com preço padrão
+        showContent()
 
         setupListeners()
         initBilling()
     }
 
+    // ── Exibe o conteúdo sem esperar o billing ────────────────────────────────
+
+    private fun showContent() {
+        progressBar.visibility   = View.GONE
+        tvLoading.visibility     = View.GONE
+        layoutContent.visibility = View.VISIBLE
+        btnSubscribe.isEnabled   = true
+        tvPrice.text             = "R$ 9,90/mês"
+    }
+
+    // ── Listeners ─────────────────────────────────────────────────────────────
+
     private fun setupListeners() {
         btnSubscribe.setOnClickListener {
-            if (billing.monthlyDetails != null) {
-                billing.purchase(this)
-            } else {
-                Toast.makeText(
-                    this,
-                    "Plano ainda carregando. Verifique sua conexão e tente novamente.",
-                    Toast.LENGTH_LONG
-                ).show()
+            when {
+                // Produto carregado → inicia fluxo de compra do Play
+                billing.monthlyDetails != null -> {
+                    billing.purchase(this)
+                }
+                // Billing conectado mas produto não retornou → produto não publicado ainda
+                billing.billingClient.isReady -> {
+                    Toast.makeText(
+                        this,
+                        "Assinatura indisponível no momento. Certifique-se de que o app foi instalado pela Play Store.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                // Billing não conectou → sem Google Play / sem internet
+                else -> {
+                    Toast.makeText(
+                        this,
+                        "Não foi possível conectar ao Google Play. Verifique sua conexão e tente novamente.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    // Tenta reconectar
+                    initBilling()
+                }
             }
         }
 
@@ -71,25 +101,23 @@ class SubscriptionActivity : AppCompatActivity() {
         }
     }
 
-    private fun initBilling() {
-        setLoadingState(true)
+    // ── Billing ───────────────────────────────────────────────────────────────
 
+    private fun initBilling() {
         billing = BillingManager(this) { isActive ->
             if (isActive) finishWithSuccess()
         }
 
         billing.connect {
-            setLoadingState(false)
-            tvPrice.text = "${billing.getMonthlyPrice()}/mês"
+            // Atualiza o preço com o valor real do Play Console (se carregou)
+            val realPrice = billing.getMonthlyPrice()
+            if (realPrice != "R$ 9,90") {
+                tvPrice.text = "$realPrice/mês"
+            }
         }
     }
 
-    private fun setLoadingState(loading: Boolean) {
-        progressBar.visibility    = if (loading) View.VISIBLE else View.GONE
-        tvLoading.visibility      = if (loading) View.VISIBLE else View.GONE
-        layoutContent.visibility  = if (loading) View.GONE    else View.VISIBLE
-        btnSubscribe.isEnabled    = !loading
-    }
+    // ── Utilitários ───────────────────────────────────────────────────────────
 
     private fun finishWithSuccess() {
         Toast.makeText(this, "✅ Bem-vindo ao M&A Guardian Premium!", Toast.LENGTH_LONG).show()
@@ -103,6 +131,6 @@ class SubscriptionActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        billing.destroy()
+        if (::billing.isInitialized) billing.destroy()
     }
 }
