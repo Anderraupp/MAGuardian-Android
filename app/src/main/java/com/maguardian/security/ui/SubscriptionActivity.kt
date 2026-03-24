@@ -37,7 +37,15 @@ class SubscriptionActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         btnSubscribe.setOnClickListener {
-            billing.purchase(this)
+            if (billing.monthlyDetails != null) {
+                billing.purchase(this)
+            } else {
+                Toast.makeText(
+                    this,
+                    "Plano ainda carregando. Verifique sua conexão e tente novamente.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         btnRestore.setOnClickListener {
