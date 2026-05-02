@@ -27,7 +27,9 @@ class BillingManager(
 
     val billingClient: BillingClient = BillingClient.newBuilder(context)
         .setListener(this)
-        .enablePendingPurchases()
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()
+        )
         .build()
 
     var monthlyDetails: ProductDetails? = null
