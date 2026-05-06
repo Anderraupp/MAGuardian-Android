@@ -165,6 +165,9 @@ class MainActivity : AppCompatActivity() {
         val btnCleanCache = findViewById<Button>(R.id.btnCleanCache)
         btnCleanCache.setOnClickListener { runCacheClean() }
 
+        val btnAppCache = findViewById<Button>(R.id.btnAppCache)
+        btnAppCache.setOnClickListener { showAppCacheDialog() }
+
         refreshCacheInfo()
     }
 
@@ -350,6 +353,155 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, freedMsg, Toast.LENGTH_LONG).show()
                 }
                 refreshCacheInfo()
+            }
+        }.start()
+    }
+
+    /**
+     * Mostra diálogo com lista de apps ordenados por tamanho de cache (maior primeiro).
+     * Cada item tem botão "Abrir" que abre as configurações do app para limpeza manual.
+     */
+    private fun showAppCacheDialog() {
+        val loadingDialog = android.app.AlertDialog.Builder(this)
+            .setTitle("Cache por App")
+            .setMessage("Calculando cache dos apps...")
+            .setCancelable(false)
+            .show()
+
+        Thread {
+            data class AppCacheInfo(val pkgName: String, val label: String, val cacheBytes: Long)
+
+            val apps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+            val results = mutableListOf<AppCacheInfo>()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val statsManager = getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
+                val myUser = android.os.Process.myUserHandle()
+                for (app in apps) {
+                    if (app.packageName == packageName) continue
+                    try {
+                        val cacheBytes = statsManager.queryStatsForPackage(
+                            StorageManager.UUID_DEFAULT, app.packageName, myUser
+                        ).cacheBytes
+                        if (cacheBytes > 0L) {
+                            val label = try {
+                                packageManager.getApplicationLabel(app).toString()
+                            } catch (e: Exception) { app.packageName }
+                            results.add(AppCacheInfo(app.packageName, label, cacheBytes))
+                        }
+                    } catch (e: Exception) { /* sem permissão para este app */ }
+                }
+            }
+
+            results.sortByDescending { it.cacheBytes }
+
+            runOnUiThread {
+                loadingDialog.dismiss()
+
+                if (results.isEmpty()) {
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Cache por App")
+                        .setMessage("Nenhum app com cache encontrado.\n\nNo Android 8 ou inferior esta função não está disponível.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                    return@runOnUiThread
+                }
+
+                // Monta a view da lista de apps
+                val scrollView = android.widget.ScrollView(this)
+                val container = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    setPadding(0, 8, 0, 8)
+                }
+                scrollView.addView(container)
+
+                val limitedList = if (results.size > 50) results.take(50) else results
+
+                for (info in limitedList) {
+                    val row = android.widget.LinearLayout(this).apply {
+                        orientation = android.widget.LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER_VERTICAL
+                        setPadding(24, 14, 24, 14)
+                    }
+
+                    val nameView = android.widget.TextView(this).apply {
+                        text = info.label
+                        textSize = 13f
+                        setTextColor(resources.getColor(R.color.text_primary, theme))
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+                        )
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                    }
+
+                    val sizeView = android.widget.TextView(this).apply {
+                        text = formatBytes(info.cacheBytes)
+                        textSize = 11f
+                        setTextColor(resources.getColor(R.color.text_secondary, theme))
+                        setPadding(0, 0, 12, 0)
+                    }
+
+                    val openBtn = android.widget.Button(this).apply {
+                        text = "Abrir"
+                        textSize = 10f
+                        setTextColor(resources.getColor(android.R.color.white, theme))
+                        background = resources.getDrawable(R.drawable.btn_primary, theme)
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                            72
+                        )
+                        setPadding(20, 0, 20, 0)
+                        setOnClickListener {
+                            try {
+                                startActivity(
+                                    Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                        data = Uri.parse("package:${info.pkgName}")
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                )
+                            } catch (e: Exception) {
+                                Toast.makeText(this@MainActivity, "Não foi possível abrir as configurações.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+
+                    row.addView(nameView)
+                    row.addView(sizeView)
+                    row.addView(openBtn)
+
+                    // Divisor
+                    val divider = android.view.View(this).apply {
+                        setBackgroundColor(resources.getColor(R.color.surface, theme))
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1
+                        )
+                    }
+
+                    container.addView(row)
+                    container.addView(divider)
+                }
+
+                val totalCacheShown = results.sumOf { it.cacheBytes }
+                val subtitle = "${results.size} apps • ${formatBytes(totalCacheShown)} total em cache"
+
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Cache por App")
+                    .setMessage(subtitle)
+                    .setView(scrollView)
+                    .setNegativeButton("Fechar", null)
+                    .setPositiveButton("Limpar Tudo") { _, _ ->
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            try {
+                                startActivity(Intent(StorageManager.ACTION_CLEAR_APP_CACHE))
+                            } catch (e: Exception) {
+                                startActivity(Intent(android.provider.Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
+                            }
+                        } else {
+                            runCacheClean()
+                        }
+                    }
+                    .show()
             }
         }.start()
     }
