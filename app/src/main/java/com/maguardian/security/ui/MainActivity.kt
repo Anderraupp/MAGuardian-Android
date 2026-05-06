@@ -28,6 +28,9 @@ import com.maguardian.security.data.MalwareDatabase
 import com.maguardian.security.service.PopupDetectorService
 import com.maguardian.security.util.PermissionHelper
 import com.maguardian.security.util.PrefsHelper
+import android.webkit.CookieManager
+import android.webkit.WebStorage
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -254,51 +257,97 @@ class MainActivity : AppCompatActivity() {
         tvCacheSize.text = "Aguarde..."
 
         Thread {
-            // 1. Limpa cache do próprio app (sempre funciona)
-            val ownCacheBefore = (cacheDir.walkTopDown().sumOf { it.length() })
+            // 1. Total antes da limpeza
+            val totalBefore = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) calculateTotalCache() else 0L
+
+            // 2. Limpa cache interno do app
+            var ownFreed = cacheDir.walkTopDown().sumOf { it.length() }
             cacheDir.deleteRecursively()
             cacheDir.mkdirs()
-            val ownFreed = ownCacheBefore
 
-            // 2. Lê tamanho total atual para mostrar na UI
+            // 3. Limpa cache externo do app (cartão SD / armazenamento externo)
+            externalCacheDir?.let { ext ->
+                ownFreed += ext.walkTopDown().sumOf { it.length() }
+                ext.deleteRecursively()
+                ext.mkdirs()
+            }
+
+            // 4. Limpa cache de código compilado (API 21+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                codeCacheDir?.let { code ->
+                    ownFreed += code.walkTopDown().sumOf { it.length() }
+                    code.deleteRecursively()
+                    code.mkdirs()
+                }
+            }
+
+            // 5. Limpa arquivos temporários em filesDir
+            File(filesDir, "tmp").takeIf { it.exists() }?.let { tmp ->
+                ownFreed += tmp.walkTopDown().sumOf { it.length() }
+                tmp.deleteRecursively()
+            }
+
+            // 6. Limpa cache WebView (cookies + armazenamento web) — na UI thread
+            runOnUiThread {
+                try {
+                    WebStorage.getInstance().deleteAllData()
+                    CookieManager.getInstance().removeAllCookies(null)
+                    CookieManager.getInstance().flush()
+                } catch (e: Exception) { /* WebView não disponível */ }
+            }
+
+            Thread.sleep(300)
+
+            // 7. Mede total após limpeza
             val totalAfter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) calculateTotalCache() else 0L
             val browserAfter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) calculateBrowserCache() else 0L
+            val totalFreed = if (totalBefore > totalAfter) totalBefore - totalAfter else ownFreed
 
             runOnUiThread {
                 btnCleanCache.isEnabled = true
                 btnCleanCache.text = "Limpar Cache"
                 tvCacheSize.text = when {
-                    totalAfter == 0L    -> "Toque para limpar o cache"
-                    browserAfter > 0L   -> "${formatBytes(totalAfter)} em cache • Navegadores: ${formatBytes(browserAfter)}"
-                    else                -> "${formatBytes(totalAfter)} em cache"
+                    totalAfter == 0L  -> "Toque para limpar o cache"
+                    browserAfter > 0L -> "${formatBytes(totalAfter)} em cache • Navegadores: ${formatBytes(browserAfter)}"
+                    else              -> "${formatBytes(totalAfter)} em cache"
                 }
 
-                // Mostra resultado e pergunta se quer abrir configurações para limpar o restante
-                val msg = if (ownFreed > 0)
-                    "✓ ${formatBytes(ownFreed)} do app limpos."
-                else
-                    "Cache do app já estava limpo."
+                val freedMsg = if (totalFreed > 0) "✓ ${formatBytes(totalFreed)} liberados!" else "Cache já estava limpo."
 
-                if (totalAfter > 0L) {
-                    android.app.AlertDialog.Builder(this)
-                        .setTitle("Cache Limpo")
-                        .setMessage(
-                            "$msg\n\n" +
-                            "Ainda há ${formatBytes(totalAfter)} em cache de outros apps" +
-                            (if (browserAfter > 0L) " (navegadores: ${formatBytes(browserAfter)})" else "") +
-                            ".\n\nDeseja abrir as Configurações de Armazenamento para liberar mais espaço?"
-                        )
-                        .setPositiveButton("Abrir Configurações") { _, _ ->
+                if (totalAfter > 1024 * 1024) {
+                    val extraInfo = if (browserAfter > 0L) " (navegadores: ${formatBytes(browserAfter)})" else ""
+                    val dialogMsg = "$freedMsg\n\nAinda há ${formatBytes(totalAfter)} em cache de outros apps$extraInfo."
+
+                    val builder = android.app.AlertDialog.Builder(this)
+                        .setTitle("✓ Limpeza Concluída")
+                        .setMessage(dialogMsg)
+                        .setNegativeButton("Fechar", null)
+
+                    // Android 9+: limpa cache de TODOS os apps via diálogo do sistema (1 clique)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        builder.setPositiveButton("Limpar Tudo Agora") { _, _ ->
+                            try {
+                                startActivity(Intent(StorageManager.ACTION_CLEAR_APP_CACHE))
+                            } catch (e: Exception) {
+                                try {
+                                    startActivity(Intent(android.provider.Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
+                                } catch (ex: Exception) {
+                                    startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
+                                }
+                            }
+                        }
+                    } else {
+                        builder.setPositiveButton("Abrir Configurações") { _, _ ->
                             try {
                                 startActivity(Intent(android.provider.Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
                             } catch (e: Exception) {
                                 startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
                             }
                         }
-                        .setNegativeButton("OK", null)
-                        .show()
+                    }
+                    builder.show()
                 } else {
-                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, freedMsg, Toast.LENGTH_LONG).show()
                 }
                 refreshCacheInfo()
             }
