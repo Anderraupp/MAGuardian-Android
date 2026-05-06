@@ -472,7 +472,7 @@ class MainActivity : AppCompatActivity() {
 
                     // Divisor
                     val divider = android.view.View(this).apply {
-                        setBackgroundColor(resources.getColor(R.color.surface, theme))
+                        setBackgroundColor(resources.getColor(R.color.surface_dark, theme))
                         layoutParams = android.widget.LinearLayout.LayoutParams(
                             android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1
                         )
