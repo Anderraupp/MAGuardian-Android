@@ -469,6 +469,20 @@
             </LinearLayout>
 
             <Button
+                android:id="@+id/btnAppCache"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Ver por App"
+                android:textColor="@color/text_secondary"
+                android:textStyle="bold"
+                android:textSize="10sp"
+                android:background="@drawable/btn_secondary"
+                app:backgroundTint="@null"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp" />
+
+            <Button
                 android:id="@+id/btnCleanCache"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
