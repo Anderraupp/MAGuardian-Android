@@ -151,17 +151,37 @@
 
             </LinearLayout>
 
-            <!-- Botão assinar -->
-            <Button
-                android:id="@+id/btnSubscribe"
+            <!-- Botões: Assinar + Testar -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="ASSINAR POR R$ 9,90/MÊS"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:backgroundTint="#dc2626"
-                android:layout_marginTop="20dp" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="20dp">
+
+                <Button
+                    android:id="@+id/btnSubscribe"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:text="ASSINAR R$ 9,90/MÊS"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#dc2626" />
+
+                <Button
+                    android:id="@+id/btnReviewAccess"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="TESTAR O APP"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#1D4ED8" />
+
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
