@@ -151,7 +151,20 @@
 
             </LinearLayout>
 
-            <!-- Botões: Assinar + Testar -->
+            <!-- TODO_REMOVE_REVIEW_START: Quando remover o modo de revisão, substitua todo este bloco pelo botão original abaixo:
+            <Button
+                android:id="@+id/btnSubscribe"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="ASSINAR POR R$ 9,90/MÊS"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:backgroundTint="#dc2626"
+                android:layout_marginTop="20dp" />
+            TODO_REMOVE_REVIEW_END -->
+
+            <!-- Botões: Assinar + Testar (modo revisão) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -169,6 +182,7 @@
                     android:textStyle="bold"
                     android:backgroundTint="#dc2626" />
 
+                <!-- TODO_REMOVE_REVIEW: Remover este Button quando tirar o modo de revisão -->
                 <Button
                     android:id="@+id/btnReviewAccess"
                     android:layout_width="0dp"
