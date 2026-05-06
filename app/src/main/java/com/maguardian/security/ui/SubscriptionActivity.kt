@@ -73,12 +73,13 @@ class SubscriptionActivity : AppCompatActivity() {
             }
         }
 
-        // ── Botão de acesso para revisão / teste ──────────────────────────────
+        // TODO_REMOVE_REVIEW_START: Remover este bloco quando tirar o modo de revisão
         findViewById<Button>(R.id.btnReviewAccess).setOnClickListener {
             PrefsHelper.setReviewModeEnabled(this, true)
             Toast.makeText(this, "✅ Acesso de teste ativado!", Toast.LENGTH_LONG).show()
             finishWithSuccess()
         }
+        // TODO_REMOVE_REVIEW_END
 
         btnRestore.setOnClickListener {
             btnRestore.isEnabled = false
