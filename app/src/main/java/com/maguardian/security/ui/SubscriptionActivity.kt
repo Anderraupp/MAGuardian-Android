@@ -21,9 +21,6 @@ class SubscriptionActivity : AppCompatActivity() {
     private lateinit var tvLoading: TextView
     private lateinit var layoutContent: View
 
-    private var logoTapCount = 0
-    private val REVIEW_MODE_TAPS = 7
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_subscription)
@@ -35,32 +32,9 @@ class SubscriptionActivity : AppCompatActivity() {
         tvLoading     = findViewById(R.id.tvLoadingPlans)
         layoutContent = findViewById(R.id.layoutContent)
 
-        // Mostra conteúdo e habilita botão imediatamente com preço padrão
         showContent()
-
-        setupLogoTap()
         setupListeners()
         initBilling()
-    }
-
-    // ── Toque oculto no logo (7x) para modo revisor ───────────────────────────
-
-    private fun setupLogoTap() {
-        val ivLogo = findViewById<View>(R.id.ivAppLogo) ?: return
-        ivLogo.setOnClickListener {
-            logoTapCount++
-            when {
-                logoTapCount == REVIEW_MODE_TAPS -> {
-                    PrefsHelper.setReviewModeEnabled(this, true)
-                    Toast.makeText(this, "✅ Modo de revisão ativado.", Toast.LENGTH_LONG).show()
-                    finishWithSuccess()
-                }
-                logoTapCount >= 4 -> {
-                    val remaining = REVIEW_MODE_TAPS - logoTapCount
-                    Toast.makeText(this, "Mais $remaining toque(s) para ativar.", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
     }
 
     // ── Exibe o conteúdo sem esperar o billing ────────────────────────────────
@@ -78,11 +52,9 @@ class SubscriptionActivity : AppCompatActivity() {
     private fun setupListeners() {
         btnSubscribe.setOnClickListener {
             when {
-                // Produto carregado → inicia fluxo de compra do Play
                 billing.monthlyDetails != null -> {
                     billing.purchase(this)
                 }
-                // Billing conectado mas produto não retornou → produto não publicado ainda
                 billing.billingClient.isReady -> {
                     Toast.makeText(
                         this,
@@ -90,17 +62,22 @@ class SubscriptionActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG
                     ).show()
                 }
-                // Billing não conectou → sem Google Play / sem internet
                 else -> {
                     Toast.makeText(
                         this,
                         "Não foi possível conectar ao Google Play. Verifique sua conexão e tente novamente.",
                         Toast.LENGTH_LONG
                     ).show()
-                    // Tenta reconectar
                     initBilling()
                 }
             }
+        }
+
+        // ── Botão de acesso para revisão / teste ──────────────────────────────
+        findViewById<Button>(R.id.btnReviewAccess).setOnClickListener {
+            PrefsHelper.setReviewModeEnabled(this, true)
+            Toast.makeText(this, "✅ Acesso de teste ativado!", Toast.LENGTH_LONG).show()
+            finishWithSuccess()
         }
 
         btnRestore.setOnClickListener {
@@ -134,7 +111,6 @@ class SubscriptionActivity : AppCompatActivity() {
         }
 
         billing.connect {
-            // Atualiza o preço com o valor real do Play Console (se carregou)
             val realPrice = billing.getMonthlyPrice()
             if (realPrice != "R$ 9,90") {
                 tvPrice.text = "$realPrice/mês"
