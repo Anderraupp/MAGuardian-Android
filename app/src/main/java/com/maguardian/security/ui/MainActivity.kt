@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkSubscriptionGate() {
         if (paywallShown) return
-        if (!PrefsHelper.isSubscriptionActive(this)) {
+        if (!PrefsHelper.hasFullAccess(this)) {
             paywallShown = true
             subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
