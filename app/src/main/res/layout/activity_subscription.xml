@@ -126,32 +126,31 @@
                     android:layout_marginBottom="14dp" />
 
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="✅  Detecção de pop-ups em tempo real"
+                    android:text="🆓  Detecção de pop-ups em tempo real"
                     android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
 
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="✅  Varredura completa de malware e adware"
+                    android:text="🆓  Varredura completa de malware e adware"
                     android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
 
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="✅  Detecção de apps ocultos e espiões"
+                    android:text="🆓  Limpeza de cache do dispositivo"
                     android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Remoção e desinstalação de ameaças"
+                    android:textColor="#F59E0B" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
 
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="✅  Proteção automática ao ligar o celular"
-                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
+                    android:textColor="#F59E0B" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
 
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="✅  Notificações imediatas de ameaças"
-                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
-
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="✅  Limpeza de cache do dispositivo"
-                    android:textColor="#DDDDDD" android:textSize="14sp"/>
+                    android:textColor="#F59E0B" android:textSize="14sp" android:textStyle="bold"/>
 
             </LinearLayout>
 
-            <!-- TODO_REMOVE_REVIEW_START: Quando remover o modo de revisão, substitua todo este bloco pelo botão original abaixo:
             <Button
                 android:id="@+id/btnSubscribe"
                 android:layout_width="match_parent"
@@ -162,40 +161,6 @@
                 android:textStyle="bold"
                 android:backgroundTint="#dc2626"
                 android:layout_marginTop="20dp" />
-            TODO_REMOVE_REVIEW_END -->
-
-            <!-- Botões: Assinar + Testar (modo revisão) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="20dp">
-
-                <Button
-                    android:id="@+id/btnSubscribe"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:text="ASSINAR R$ 9,90/MÊS"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:backgroundTint="#dc2626" />
-
-                <!-- TODO_REMOVE_REVIEW: Remover este Button quando tirar o modo de revisão -->
-                <Button
-                    android:id="@+id/btnReviewAccess"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="TESTAR O APP"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:backgroundTint="#1D4ED8" />
-
-            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
