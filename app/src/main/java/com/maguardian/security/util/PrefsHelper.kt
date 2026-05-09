@@ -19,7 +19,6 @@ object PrefsHelper {
     private const val KEY_NOTIF_ASKED = "notif_permission_asked"
     private const val KEY_LAST_STATS_RESET   = "last_stats_reset"
     private const val KEY_SUBSCRIPTION_ACTIVE = "subscription_active"
-    private const val KEY_REVIEW_MODE = "review_mode_enabled"
 
     private const val STATS_RESET_INTERVAL_MS = 12 * 60 * 60 * 1000L // 12 horas
 
@@ -168,16 +167,8 @@ object PrefsHelper {
     fun setSubscriptionActive(ctx: Context, active: Boolean) =
         prefs(ctx).edit().putBoolean(KEY_SUBSCRIPTION_ACTIVE, active).apply()
 
-    // ── Modo Revisor (acesso sem assinatura para avaliação do Google Play) ──
-
-    fun isReviewModeEnabled(ctx: Context): Boolean =
-        prefs(ctx).getBoolean(KEY_REVIEW_MODE, false)
-
-    fun setReviewModeEnabled(ctx: Context, enabled: Boolean) =
-        prefs(ctx).edit().putBoolean(KEY_REVIEW_MODE, enabled).apply()
-
     fun hasFullAccess(ctx: Context): Boolean =
-        isSubscriptionActive(ctx) || isReviewModeEnabled(ctx)
+        isSubscriptionActive(ctx)
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
