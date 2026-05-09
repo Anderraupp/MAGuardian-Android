@@ -126,16 +126,20 @@
                     android:layout_marginBottom="14dp" />
 
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="🆓  Detecção de pop-ups em tempo real"
-                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
-
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="🆓  Varredura completa de malware e adware"
-                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
-
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="🆓  Limpeza de cache do dispositivo"
-                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="10dp"/>
+                    android:textColor="#DDDDDD" android:textSize="14sp" android:layout_marginBottom="14dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Monitoramento em tempo real"
+                    android:textColor="#F59E0B" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Varredura completa de malware e adware"
+                    android:textColor="#F59E0B" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✅  Detecção de apps ocultos e espiões"
+                    android:textColor="#F59E0B" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
 
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="✅  Remoção e desinstalação de ameaças"
