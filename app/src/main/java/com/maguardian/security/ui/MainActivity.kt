@@ -55,14 +55,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun requireSubscriptionToUninstall(pkg: String) {
+    private fun requireSubscription(action: () -> Unit) {
         if (PrefsHelper.hasFullAccess(this)) {
+            action()
+        } else {
+            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+        }
+    }
+
+    private fun requireSubscriptionToUninstall(pkg: String) {
+        requireSubscription {
             pendingUninstall.add(pkg)
             startActivity(Intent(Intent.ACTION_DELETE).apply {
                 data = android.net.Uri.parse("package:$pkg")
             })
-        } else {
-            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
     }
     // ────────────────────────────────────────────────────────────────────────
@@ -149,13 +155,15 @@ class MainActivity : AppCompatActivity() {
         val btnClearThreats = findViewById<Button>(R.id.btnClearThreats)
         val btnPermissions = findViewById<Button>(R.id.btnPermissions)
 
-        btnScan.setOnClickListener { runManualScan() }
+        btnScan.setOnClickListener { requireSubscription { runManualScan() } }
         btnClearThreats.setOnClickListener {
-            PrefsHelper.clearThreats(this)
-            refreshUI()
+            requireSubscription {
+                PrefsHelper.clearThreats(this)
+                refreshUI()
+            }
         }
         btnPermissions.setOnClickListener { showPermissionsDialog() }
-        btnToggle.setOnClickListener { toggleProtection() }
+        btnToggle.setOnClickListener { requireSubscription { toggleProtection() } }
 
         val btnCleanCache = findViewById<Button>(R.id.btnCleanCache)
         btnCleanCache.setOnClickListener { runCacheClean() }
@@ -507,16 +515,17 @@ class MainActivity : AppCompatActivity() {
      * saiu para Configurações, concedeu UsageStats e voltou ao app.
      */
     private fun maybeStartServiceSilently() {
+        if (!PrefsHelper.hasFullAccess(this)) return
         val status = PermissionHelper.checkAll(this)
         if (!status.allGranted) return
         if (PrefsHelper.isProtectionEnabled(this)) startDetectionService()
-        // Primeira varredura automática (device já tinha apps antes de instalar o app)
         if (PrefsHelper.getLastScan(this) == 0L && !isScanning) {
             runManualScan()
         }
     }
 
     private fun checkPermissionsAndStart() {
+        if (!PrefsHelper.hasFullAccess(this)) return
         val status = PermissionHelper.checkAll(this)
         if (status.allGranted) {
             if (PrefsHelper.isProtectionEnabled(this)) startDetectionService()
