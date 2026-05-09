@@ -768,6 +768,9 @@ class MainActivity : AppCompatActivity() {
         val cardStatus = findViewById<LinearLayout>(R.id.cardStatus)
         val ivShield = findViewById<android.widget.ImageView>(R.id.ivShield)
         val layoutEmpty = findViewById<LinearLayout>(R.id.layoutEmpty)
+        val layoutThreatsLocked = findViewById<LinearLayout>(R.id.layoutThreatsLocked)
+        val tvThreatsLockedCount = findViewById<TextView>(R.id.tvThreatsLockedCount)
+        val btnUnlockThreats = findViewById<Button>(R.id.btnUnlockThreats)
 
         // Aviso de permissões de uso
         if (!permStatus.allGranted) {
@@ -873,7 +876,31 @@ class MainActivity : AppCompatActivity() {
 
         tvThreatCount.text = "${activeThreats.size} registros"
         llThreats.removeAllViews()
-        layoutEmpty.visibility = if (activeThreats.isEmpty()) View.VISIBLE else View.GONE
+
+        val isSubscribed = PrefsHelper.hasFullAccess(this)
+
+        if (!isSubscribed && activeThreats.isNotEmpty()) {
+            // Usuário sem assinatura com ameaças: mostra card bloqueado com contagem
+            layoutEmpty.visibility = View.GONE
+            layoutThreatsLocked.visibility = View.VISIBLE
+            llThreats.visibility = View.GONE
+            val n = activeThreats.size
+            tvThreatsLockedCount.text = if (n == 1)
+                "⚠️ 1 ameaça detectada no seu dispositivo"
+            else
+                "⚠️ $n ameaças detectadas no seu dispositivo"
+            btnUnlockThreats.setOnClickListener {
+                subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+            }
+        } else {
+            // Sem assinatura e sem ameaças: estado vazio normal
+            // Com assinatura: mostra lista completa
+            layoutThreatsLocked.visibility = View.GONE
+            llThreats.visibility = View.VISIBLE
+            layoutEmpty.visibility = if (activeThreats.isEmpty()) View.VISIBLE else View.GONE
+        }
+
+        if (!isSubscribed) return  // Não renderiza a lista de ameaças para usuários grátis
 
         for (threat in activeThreats.take(10)) {
             val view = layoutInflater.inflate(R.layout.item_threat, llThreats, false)
