@@ -588,7 +588,57 @@
                     android:layout_marginTop="4dp" />
             </LinearLayout>
 
-            <!-- Lista de ameaças -->
+            <!-- Card bloqueado: mostrado para usuários sem assinatura quando há ameaças -->
+            <LinearLayout
+                android:id="@+id/layoutThreatsLocked"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#1A1A1A"
+                android:padding="20dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔒"
+                    android:textSize="36sp"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:id="@+id/tvThreatsLockedCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1 ameaça detectada no seu dispositivo"
+                    android:textColor="#dc2626"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Assine para ver quais apps estão infectados e removê-los"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp" />
+
+                <Button
+                    android:id="@+id/btnUnlockThreats"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:text="VER AMEAÇAS — ASSINAR R$ 9,90/MÊS"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#dc2626" />
+
+            </LinearLayout>
+
+            <!-- Lista de ameaças (apenas assinantes) -->
             <LinearLayout
                 android:id="@+id/llThreats"
                 android:layout_width="match_parent"
