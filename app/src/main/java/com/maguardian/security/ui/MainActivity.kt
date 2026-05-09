@@ -45,22 +45,23 @@ class MainActivity : AppCompatActivity() {
 
     // ── Assinatura ───────────────────────────────────────────────────────────
     private lateinit var billing: BillingManager
-    private var paywallShown = false
 
     private val subscriptionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        paywallShown = false
-        if (result.resultCode != RESULT_OK) {
-            // Usuário voltou sem assinar — verifica novamente via billing
-            checkSubscriptionGate()
+        if (result.resultCode == RESULT_OK) {
+            // Usuário assinou — recarrega UI
+            refreshUI()
         }
     }
 
-    private fun checkSubscriptionGate() {
-        if (paywallShown) return
-        if (!PrefsHelper.hasFullAccess(this)) {
-            paywallShown = true
+    private fun requireSubscriptionToUninstall(pkg: String) {
+        if (PrefsHelper.hasFullAccess(this)) {
+            pendingUninstall.add(pkg)
+            startActivity(Intent(Intent.ACTION_DELETE).apply {
+                data = android.net.Uri.parse("package:$pkg")
+            })
+        } else {
             subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
     }
@@ -93,15 +94,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initBilling() {
         billing = BillingManager(this) { isActive ->
-            // Chamado quando o status da assinatura muda via billing real
-            if (isActive) {
-                paywallShown = false
-            }
+            if (isActive) refreshUI()
         }
-        billing.connect {
-            // Após conectar, verifica se o usuário tem assinatura ativa
-            checkSubscriptionGate()
-        }
+        billing.connect { }
     }
 
     override fun onDestroy() {
@@ -892,12 +887,7 @@ class MainActivity : AppCompatActivity() {
             val btnUninstall = view.findViewById<Button>(R.id.btnUninstall)
             val pkg = threat.getString("packageName")
             btnUninstall.setOnClickListener {
-                // Adiciona à lista de pendentes — remoção confirmada no onResume()
-                pendingUninstall.add(pkg)
-                val uninstallIntent = Intent(Intent.ACTION_DELETE).apply {
-                    data = android.net.Uri.parse("package:$pkg")
-                }
-                startActivity(uninstallIntent)
+                requireSubscriptionToUninstall(pkg)
             }
 
             llThreats.addView(view)
