@@ -50,6 +50,9 @@ dependencies {
     // Google Play Billing — assinaturas
     implementation 'com.android.billingclient:billing-ktx:7.0.0'
 
+    // Meta (Facebook) SDK — rastreamento de campanhas
+    implementation 'com.facebook.android:facebook-android-sdk:17.0.1'
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
