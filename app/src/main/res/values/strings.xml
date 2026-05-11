@@ -3,6 +3,11 @@
     <string name="app_name">M&amp;A Guardian</string>
     <string name="app_description">Proteção contra pop-ups e adware</string>
 
+    <!-- Meta (Facebook) SDK -->
+    <string name="facebook_app_id">1200461263761892</string>
+    <string name="fb_login_protocol_scheme">fb1200461263761892</string>
+    <string name="facebook_client_token">18e8e3f98853a6b7ba03c624104a130f</string>
+
     <!-- Status -->
     <string name="status_active">Proteção Ativa</string>
     <string name="status_inactive">Proteção Inativa</string>
