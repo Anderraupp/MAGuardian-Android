@@ -98,7 +98,7 @@ class PopupDetectorService : Service() {
             "com.samsung.android.app.omcagent",
             "com.samsung.android.biometrics.app.setting",
             "com.samsung.android.app.taskedge",
-            // ── Xiaomi / MIUI ──
+            // ── Xiaomi / MIUI / POCO ──
             "com.miui.home",
             "com.miui.gallery",
             "com.miui.camera",
@@ -108,6 +108,11 @@ class PopupDetectorService : Service() {
             "com.xiaomi.bluetooth",
             "com.miui.msa.global",
             "com.miui.systemAdSolution",
+            "com.mi.global.store",           // GetApps — loja oficial Xiaomi global
+            "com.xiaomi.market",             // GetApps — loja oficial Xiaomi China
+            "com.mi.android.globalminusscreen", // Poco Launcher
+            "com.poco.launcher",             // Poco Launcher (variante)
+            "com.poco.launcher2",            // Poco Launcher 2
             // ── OnePlus / OxygenOS ──
             "com.oneplus.launcher",
             "com.oneplus.gallery",
