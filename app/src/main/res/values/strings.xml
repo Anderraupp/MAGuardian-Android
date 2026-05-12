@@ -4,8 +4,8 @@
     <string name="app_description">Proteção contra pop-ups e adware</string>
 
     <!-- Meta (Facebook) SDK -->
-    <string name="facebook_app_id">1200461263761892</string>
-    <string name="fb_login_protocol_scheme">fb1200461263761892</string>
+    <string name="facebook_app_id">1774365636858801</string>
+    <string name="fb_login_protocol_scheme">fb1774365636858801</string>
     <string name="facebook_client_token">18e8e3f98853a6b7ba03c624104a130f</string>
 
     <!-- Status -->
