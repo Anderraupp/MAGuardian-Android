@@ -8,7 +8,6 @@ class MAGuardianApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
         AppEventsLogger.activateApp(this)
 
         val tiktokConfig = TikTokBusinessSdk.TTConfig(applicationContext)
