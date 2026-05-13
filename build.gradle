@@ -11,9 +11,11 @@ buildscript {
 }
 
 allprojects {
+    apply plugin: 'idea'
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 
