@@ -12,7 +12,6 @@ class MAGuardianApp : Application() {
 
         val tiktokConfig = TikTokBusinessSdk.TTConfig(applicationContext)
             .setAppId("7639159884537266194")
-            .setAccessToken("TTnIwdaW9PIUIhjzcdfFYRwH7yKEDQYL")
         TikTokBusinessSdk.initializeSdk(tiktokConfig)
     }
 }
