@@ -2,7 +2,7 @@ package com.maguardian.security
 
 import android.app.Application
 import com.facebook.appevents.AppEventsLogger
-import com.tiktok.appevents.TikTokBusinessSdk
+import com.tiktok.TikTokBusinessSdk
 
 class MAGuardianApp : Application() {
 
