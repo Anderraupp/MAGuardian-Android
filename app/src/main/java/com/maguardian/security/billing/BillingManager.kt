@@ -177,7 +177,7 @@ class BillingManager(
     fun getMonthlyPrice(): String =
         monthlyDetails?.subscriptionOfferDetails
             ?.firstOrNull()?.pricingPhases?.pricingPhaseList
-            ?.lastOrNull()?.formattedPrice ?: "R$ 9,90"
+            ?.lastOrNull()?.formattedPrice ?: "R$ 9,99"
 
     fun destroy() {
         scope.cancel()
