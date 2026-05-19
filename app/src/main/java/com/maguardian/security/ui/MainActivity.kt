@@ -941,24 +941,41 @@ class MainActivity : AppCompatActivity() {
         if (PrefsHelper.isTrialAlarmSet(this)) return
 
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, TrialAlertReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            this, 8888, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
-        val intervalMs = 6 * 60 * 60 * 1000L // 6 horas
-        val triggerAt = System.currentTimeMillis() + intervalMs
+        // 3 horários fixos por dia: 09:00, 13:00 e 20:00
+        val scheduleHours = listOf(9, 13, 20)
+        val requestCodes  = listOf(8881, 8882, 8883)
 
-        alarmManager.setInexactRepeating(
-            AlarmManager.RTC_WAKEUP,
-            triggerAt,
-            intervalMs,
-            pendingIntent
-        )
+        scheduleHours.forEachIndexed { i, hour ->
+            val intent = Intent(this, TrialAlertReceiver::class.java).apply {
+                putExtra("slot", i)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                this, requestCodes[i], intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val cal = java.util.Calendar.getInstance().apply {
+                set(java.util.Calendar.HOUR_OF_DAY, hour)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+                // Se o horário já passou hoje, agenda para amanhã
+                if (timeInMillis <= System.currentTimeMillis()) {
+                    add(java.util.Calendar.DAY_OF_YEAR, 1)
+                }
+            }
+
+            alarmManager.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP,
+                cal.timeInMillis,
+                AlarmManager.INTERVAL_DAY,
+                pendingIntent
+            )
+            Log.i(TAG, "Alerta trial agendado: ${hour}h → ${cal.time}")
+        }
 
         PrefsHelper.setTrialAlarmSet(this, true)
-        Log.i(TAG, "Alertas de trial agendados a cada 6h")
     }
 
     private fun maybeShowTrialPopup() {
