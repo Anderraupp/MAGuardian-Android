@@ -1,6 +1,8 @@
 package com.maguardian.security.ui
 
 import android.Manifest
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,6 +13,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -41,9 +44,12 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "MainActivity"
+        const val COLOR_RED    = 0xFFDC2626.toInt()
+        const val COLOR_YELLOW = 0xFFF59E0B.toInt()
     }
 
     private val pendingUninstall = mutableSetOf<String>()
+    private val pulseAnimators = mutableMapOf<Int, ValueAnimator>()
 
     // ── Assinatura ───────────────────────────────────────────────────────────
     private lateinit var billing: BillingManager
@@ -151,6 +157,7 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         runCatching { unregisterReceiver(threatReceiver) }
+        stopAllPulses()
     }
 
     private fun setupUI() {
@@ -780,8 +787,10 @@ class MainActivity : AppCompatActivity() {
         if (!permStatus.allGranted) {
             layoutPermWarning.visibility = View.VISIBLE
             tvPermWarning.text = "Permissão necessária: Acesso ao Histórico de Uso de Apps"
+            startPulse(R.id.layoutPermWarning)
         } else {
             layoutPermWarning.visibility = View.GONE
+            stopPulse(R.id.layoutPermWarning)
         }
 
         // Card de notificações — aparece sempre que a permissão não foi concedida (Android 13+)
@@ -791,8 +800,10 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
             if (notifGranted) {
                 layoutNotifWarning.visibility = View.GONE
+                stopPulse(R.id.layoutNotifWarning)
             } else {
                 layoutNotifWarning.visibility = View.VISIBLE
+                startPulse(R.id.layoutNotifWarning)
                 btnNotifPermission.setOnClickListener {
                     // Tenta pedir a permissão; se já negada antes, o Android redireciona
                     // automaticamente para as configurações do app
@@ -932,6 +943,32 @@ class MainActivity : AppCompatActivity() {
 
             llThreats.addView(view)
         }
+    }
+
+    // ── Animação de pulso vermelho↔amarelo para avisos ───────────────────────
+
+    private fun startPulse(viewId: Int) {
+        if (pulseAnimators.containsKey(viewId)) return
+        val view = findViewById<View>(viewId) ?: return
+        val animator = ValueAnimator.ofObject(ArgbEvaluator(), COLOR_RED, COLOR_YELLOW).apply {
+            duration = 700
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { va ->
+                view.background = ColorDrawable(va.animatedValue as Int)
+            }
+            start()
+        }
+        pulseAnimators[viewId] = animator
+    }
+
+    private fun stopPulse(viewId: Int) {
+        pulseAnimators.remove(viewId)?.cancel()
+    }
+
+    private fun stopAllPulses() {
+        pulseAnimators.values.forEach { it.cancel() }
+        pulseAnimators.clear()
     }
 
     // ── Alertas periódicos para não-assinantes ────────────────────────────────
