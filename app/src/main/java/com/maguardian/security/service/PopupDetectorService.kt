@@ -467,17 +467,7 @@ class PopupDetectorService : Service() {
     private fun onThreatDetected(malware: MalwareDatabase.MalwareEntry) {
         PrefsHelper.saveThreat(this, malware)
 
-        // Abre o diálogo de desinstalação diretamente — sem intermediário
-        val uninstallIntent = Intent(Intent.ACTION_DELETE).apply {
-            data = android.net.Uri.parse("package:${malware.packageName}")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        val uninstallPendingIntent = PendingIntent.getActivity(
-            this,
-            malware.packageName.hashCode(),
-            uninstallIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val isSubscribed = PrefsHelper.hasFullAccess(this)
 
         val openIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -493,21 +483,57 @@ class PopupDetectorService : Service() {
             else -> "BAIXA"
         }
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID_THREAT)
-            .setSmallIcon(R.drawable.ic_shield_alert)
-            .setContentTitle("⚠️ Ameaça Detectada — Severidade $severity")
-            .setContentText("${malware.appName} está exibindo pop-ups invasivos")
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText("${malware.appName} (${malware.packageName})\n${malware.description}"),
+        val notification = if (isSubscribed) {
+            val uninstallIntent = Intent(Intent.ACTION_DELETE).apply {
+                data = android.net.Uri.parse("package:${malware.packageName}")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            val uninstallPendingIntent = PendingIntent.getActivity(
+                this,
+                malware.packageName.hashCode(),
+                uninstallIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setAutoCancel(true)
-            .setContentIntent(openPendingIntent)
-            .addAction(R.drawable.ic_delete, "Desinstalar", uninstallPendingIntent)
-            .setColor(0xFFDC2626.toInt())
-            .build()
+            NotificationCompat.Builder(this, CHANNEL_ID_THREAT)
+                .setSmallIcon(R.drawable.ic_shield_alert)
+                .setContentTitle("⚠️ Ameaça Detectada — Severidade $severity")
+                .setContentText("${malware.appName} está exibindo pop-ups invasivos")
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText("${malware.appName} (${malware.packageName})\n${malware.description}"),
+                )
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setAutoCancel(true)
+                .setContentIntent(openPendingIntent)
+                .addAction(R.drawable.ic_delete, "Desinstalar", uninstallPendingIntent)
+                .setColor(0xFFDC2626.toInt())
+                .build()
+        } else {
+            // Não-assinante: notificação genérica, sem nome do app e sem botão de desinstalar
+            val subIntent = Intent(this, com.maguardian.security.ui.SubscriptionActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            val subPendingIntent = PendingIntent.getActivity(
+                this, 2, subIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            NotificationCompat.Builder(this, CHANNEL_ID_THREAT)
+                .setSmallIcon(R.drawable.ic_shield_alert)
+                .setContentTitle("⚠️ Risco Detectado no Dispositivo")
+                .setContentText("Um app suspeito foi encontrado. Ative o Premium para ver detalhes e remover.")
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText("Seu dispositivo pode estar em risco.\n\nAtive a proteção Premium para identificar e remover a ameaça imediatamente."),
+                )
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setAutoCancel(true)
+                .setContentIntent(subPendingIntent)
+                .addAction(R.drawable.ic_shield_alert, "🔒 Seja Premium", subPendingIntent)
+                .setColor(0xFFDC2626.toInt())
+                .build()
+        }
 
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(malware.packageName.hashCode(), notification)
