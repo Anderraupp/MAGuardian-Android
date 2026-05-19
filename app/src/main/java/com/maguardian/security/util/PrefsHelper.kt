@@ -19,6 +19,9 @@ object PrefsHelper {
     private const val KEY_NOTIF_ASKED = "notif_permission_asked"
     private const val KEY_LAST_STATS_RESET   = "last_stats_reset"
     private const val KEY_SUBSCRIPTION_ACTIVE = "subscription_active"
+    private const val KEY_TRIAL_NOTIF_COUNT  = "trial_notif_count"
+    private const val KEY_LAST_TRIAL_POPUP   = "last_trial_popup"
+    private const val KEY_TRIAL_ALARM_SET    = "trial_alarm_set"
 
     private const val STATS_RESET_INTERVAL_MS = 12 * 60 * 60 * 1000L // 12 horas
 
@@ -169,6 +172,28 @@ object PrefsHelper {
 
     fun hasFullAccess(ctx: Context): Boolean =
         isSubscriptionActive(ctx)
+
+    // ── Alertas para não-assinantes ──
+
+    fun getTrialNotifCount(ctx: Context): Int =
+        prefs(ctx).getInt(KEY_TRIAL_NOTIF_COUNT, 0)
+
+    fun incrementTrialNotifCount(ctx: Context) {
+        val count = prefs(ctx).getInt(KEY_TRIAL_NOTIF_COUNT, 0) + 1
+        prefs(ctx).edit().putInt(KEY_TRIAL_NOTIF_COUNT, count).apply()
+    }
+
+    fun getLastTrialPopup(ctx: Context): Long =
+        prefs(ctx).getLong(KEY_LAST_TRIAL_POPUP, 0L)
+
+    fun setLastTrialPopup(ctx: Context, time: Long) =
+        prefs(ctx).edit().putLong(KEY_LAST_TRIAL_POPUP, time).apply()
+
+    fun isTrialAlarmSet(ctx: Context): Boolean =
+        prefs(ctx).getBoolean(KEY_TRIAL_ALARM_SET, false)
+
+    fun setTrialAlarmSet(ctx: Context, value: Boolean) =
+        prefs(ctx).edit().putBoolean(KEY_TRIAL_ALARM_SET, value).apply()
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
