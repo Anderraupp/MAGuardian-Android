@@ -634,6 +634,45 @@ class MainActivity : AppCompatActivity() {
         val steps = (totalMs / intervalMs).toInt()
         var tick = 0
 
+        // Varredura real em background — popula o banco de ameaças corretamente
+        Thread {
+            try {
+                ensureThreatChannelExists()
+                val pkgs = packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS)
+                val launcherPkgs = packageManager
+                    .queryIntentActivities(
+                        Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_LAUNCHER) }, 0
+                    ).map { it.activityInfo.packageName }.toSet()
+
+                for (pkg in pkgs) {
+                    val pkgName = pkg.packageName
+                    if (pkgName == packageName) continue
+                    if (MalwareDatabase.isSystemPrefix(pkgName)) continue
+                    if (MalwareDatabase.isTrustedApp(pkgName)) continue
+                    if (MalwareDatabase.isScanExempt(pkgName)) continue
+
+                    val appLabel = try {
+                        packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+                    } catch (e: Exception) { pkgName }
+
+                    val isSystemApp = (pkg.applicationInfo.flags and
+                        (android.content.pm.ApplicationInfo.FLAG_SYSTEM or
+                         android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
+                    val hasLauncher = pkgName in launcherPkgs
+
+                    MalwareDatabase.isMalware(pkgName)?.let { PrefsHelper.saveThreat(this, it) }
+                    MalwareDatabase.checkHiddenApp(pkgName, appLabel, pkg.requestedPermissions, hasLauncher, isSystemApp)
+                        ?.let { PrefsHelper.saveThreat(this, it) }
+                    MalwareDatabase.checkHeuristic(pkgName, appLabel, pkg.requestedPermissions)
+                        ?.let { PrefsHelper.saveThreat(this, it) }
+                }
+                PrefsHelper.setLastScan(this, System.currentTimeMillis())
+                PrefsHelper.incrementScanCount(this)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro na varredura silenciosa (não-assinante)", e)
+            }
+        }.start()
+
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
         val runnable = object : Runnable {
             override fun run() {
@@ -652,6 +691,7 @@ class MainActivity : AppCompatActivity() {
                     isScanning = false
                     btnScan.isEnabled = true
                     btnScan.text = "Escanear"
+                    refreshUI()
 
                     android.app.AlertDialog.Builder(this@MainActivity)
                         .setTitle("⚠️ Varredura Concluída")
