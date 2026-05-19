@@ -166,7 +166,7 @@ class MainActivity : AppCompatActivity() {
         val btnClearThreats = findViewById<Button>(R.id.btnClearThreats)
         val btnPermissions = findViewById<Button>(R.id.btnPermissions)
 
-        btnScan.setOnClickListener { requireSubscription { runManualScan() } }
+        btnScan.setOnClickListener { runManualScan() }
         btnClearThreats.setOnClickListener {
             requireSubscription {
                 PrefsHelper.clearThreats(this)
@@ -664,17 +664,35 @@ class MainActivity : AppCompatActivity() {
             PrefsHelper.setLastScan(this, System.currentTimeMillis())
             PrefsHelper.incrementScanCount(this)
 
-            val msg = when {
-                threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
-                else -> "✓ Dispositivo limpo! Nenhuma ameaça detectada."
-            }
-
             runOnUiThread {
                 isScanning = false
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
                 btnScan.isEnabled = true
                 btnScan.text = "Escanear"
                 refreshUI()
+
+                if (!PrefsHelper.hasFullAccess(this)) {
+                    // Não-assinante: sempre mostra alerta de vulnerabilidade + CTA Premium
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("⚠️ Varredura Concluída")
+                        .setMessage(
+                            "Foram detectados dados que podem estar vulneráveis no seu dispositivo.\n\n" +
+                            "Apps em segundo plano podem estar acessando informações " +
+                            "sem monitoramento ativo.\n\n" +
+                            "Ative a proteção Premium para remover ameaças e manter " +
+                            "seu celular seguro em tempo real."
+                        )
+                        .setPositiveButton("🔒 Proteja-se — Seja Premium") { _, _ ->
+                            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+                        }
+                        .setNegativeButton("Agora não", null)
+                        .show()
+                } else {
+                    val msg = when {
+                        threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
+                        else -> "✓ Dispositivo limpo! Nenhuma ameaça detectada."
+                    }
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                }
             }
         }.start()
     }
