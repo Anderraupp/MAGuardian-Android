@@ -575,7 +575,112 @@ class MainActivity : AppCompatActivity() {
 
     private var isScanning = false
 
+    // ── Varredura animada para não-assinantes (10 segundos) ──────────────────
+
+    private fun runFreeUserScan() {
+        if (isScanning) return
+        isScanning = true
+
+        val btnScan = findViewById<Button>(R.id.btnScan)
+        btnScan.isEnabled = false
+        btnScan.text = "Escaneando..."
+
+        val scanSteps = listOf(
+            "Inicializando varredura...",
+            "Analisando apps instalados...",
+            "Verificando permissões suspeitas...",
+            "Checando processos em segundo plano...",
+            "Inspecionando dados de rede...",
+            "Analisando comportamento de apps...",
+            "Verificando vulnerabilidades do sistema...",
+            "Consolidando resultados..."
+        )
+
+        val dialogView = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 48, 60, 32)
+        }
+        val tvStep = android.widget.TextView(this).apply {
+            text = scanSteps[0]
+            textSize = 13f
+            setTextColor(0xFFCCCCCC.toInt())
+            gravity = android.view.Gravity.CENTER
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 24 }
+        }
+        val progressBar = android.widget.ProgressBar(
+            this, null, android.R.attr.progressBarStyleHorizontal
+        ).apply {
+            max = 100
+            progress = 0
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        dialogView.addView(tvStep)
+        dialogView.addView(progressBar)
+
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("🔍 Fazendo Varredura")
+            .setView(dialogView)
+            .setCancelable(false)
+            .show()
+
+        val totalMs = 10_000L
+        val intervalMs = 200L
+        val steps = (totalMs / intervalMs).toInt()
+        var tick = 0
+
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val runnable = object : Runnable {
+            override fun run() {
+                tick++
+                val pct = (tick * 100 / steps).coerceAtMost(100)
+                progressBar.progress = pct
+
+                val stepIdx = ((pct / 100f) * (scanSteps.size - 1)).toInt()
+                    .coerceIn(0, scanSteps.size - 1)
+                tvStep.text = scanSteps[stepIdx]
+
+                if (tick < steps) {
+                    handler.postDelayed(this, intervalMs)
+                } else {
+                    dialog.dismiss()
+                    isScanning = false
+                    btnScan.isEnabled = true
+                    btnScan.text = "Escanear"
+
+                    android.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle("⚠️ Varredura Concluída")
+                        .setMessage(
+                            "Foram detectados dados que podem estar vulneráveis no seu dispositivo.\n\n" +
+                            "Apps em segundo plano podem estar acessando informações " +
+                            "sem monitoramento ativo.\n\n" +
+                            "Ative a proteção Premium para remover ameaças e manter " +
+                            "seu celular seguro em tempo real."
+                        )
+                        .setPositiveButton("🔒 Proteja-se — Seja Premium") { _, _ ->
+                            subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
+                        }
+                        .setNegativeButton("Agora não", null)
+                        .show()
+                }
+            }
+        }
+        handler.postDelayed(runnable, intervalMs)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     private fun runManualScan() {
+        if (!PrefsHelper.hasFullAccess(this)) {
+            runFreeUserScan()
+            return
+        }
+
         if (isScanning) return
         isScanning = true
 
@@ -669,30 +774,11 @@ class MainActivity : AppCompatActivity() {
                 btnScan.isEnabled = true
                 btnScan.text = "Escanear"
                 refreshUI()
-
-                if (!PrefsHelper.hasFullAccess(this)) {
-                    // Não-assinante: sempre mostra alerta de vulnerabilidade + CTA Premium
-                    android.app.AlertDialog.Builder(this)
-                        .setTitle("⚠️ Varredura Concluída")
-                        .setMessage(
-                            "Foram detectados dados que podem estar vulneráveis no seu dispositivo.\n\n" +
-                            "Apps em segundo plano podem estar acessando informações " +
-                            "sem monitoramento ativo.\n\n" +
-                            "Ative a proteção Premium para remover ameaças e manter " +
-                            "seu celular seguro em tempo real."
-                        )
-                        .setPositiveButton("🔒 Proteja-se — Seja Premium") { _, _ ->
-                            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
-                        }
-                        .setNegativeButton("Agora não", null)
-                        .show()
-                } else {
-                    val msg = when {
-                        threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
-                        else -> "✓ Dispositivo limpo! Nenhuma ameaça detectada."
-                    }
-                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                val msg = when {
+                    threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
+                    else -> "✓ Dispositivo limpo! Nenhuma ameaça detectada."
                 }
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
             }
         }.start()
     }
