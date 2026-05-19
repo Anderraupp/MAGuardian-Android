@@ -151,7 +151,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Ative as notificações para receber alertas de ameaças em tempo real"
-                android:textColor="@color/gold"
+                android:textColor="@color/white"
                 android:textSize="11sp"
                 android:lineSpacingMultiplier="1.3" />
 
