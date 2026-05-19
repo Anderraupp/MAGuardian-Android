@@ -1037,13 +1037,13 @@ class MainActivity : AppCompatActivity() {
             .setTitle("⚠️ Alerta de Segurança")
             .setMessage(
                 "$alertMsg\n\n" +
-                "Ative a proteção completa do M&A Guardian para monitorar " +
-                "seu dispositivo em tempo real e remover ameaças."
+                "Seja Premium e proteja seu celular com monitoramento em tempo real, " +
+                "remoção de ameaças e detecção de adware."
             )
-            .setPositiveButton("Ativar Proteção") { _, _ ->
+            .setPositiveButton("🔒 Seja Premium — Proteja seu Celular") { _, _ ->
                 subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
             }
-            .setNegativeButton("Fechar", null)
+            .setNegativeButton("Agora não", null)
             .show()
     }
 
