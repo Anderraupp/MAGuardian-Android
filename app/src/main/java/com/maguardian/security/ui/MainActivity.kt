@@ -823,9 +823,9 @@ class MainActivity : AppCompatActivity() {
             layoutNotifWarning.visibility = View.GONE
         }
 
-        // Taxa de segurança
-        // Regra: sempre 100% se proteção estiver ativa; 0% se desativada
-        val isProtectionActive = protectionEnabled && permStatus.allGranted
+        // Taxa de segurança — não-assinantes sempre 0%
+        val isSubscribed = PrefsHelper.hasFullAccess(this)
+        val isProtectionActive = isSubscribed && protectionEnabled && permStatus.allGranted
         val securityPct = if (isProtectionActive) 100 else 0
         tvSecurityRate.text = "$securityPct%"
         tvSecurityRate.setTextColor(
@@ -834,8 +834,8 @@ class MainActivity : AppCompatActivity() {
         )
         tvScansClean.text = if (isProtectionActive) "Em tempo real" else "Desativada"
 
-        // Status card
-        val isFullyActive = protectionEnabled && permStatus.allGranted
+        // Status card — não-assinantes sempre veem "Risco"
+        val isFullyActive = isSubscribed && protectionEnabled && permStatus.allGranted
         if (isFullyActive) {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.card_status_active)
             tvStatus.text = "Proteção Ativa"
@@ -852,15 +852,20 @@ class MainActivity : AppCompatActivity() {
             btnToggle.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
         } else {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.card_status_inactive)
-            tvStatus.text = if (!permStatus.allGranted) "Permissões Necessárias" else "Proteção Inativa"
+            tvStatus.text = when {
+                !isSubscribed -> "Proteção Inativa"
+                !permStatus.allGranted -> "Permissões Necessárias"
+                else -> "Proteção Inativa"
+            }
             tvStatus.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
             tvStatusBadge.text = "Risco"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.danger))
             tvStatusBadge.background = ContextCompat.getDrawable(this, R.drawable.badge_danger)
-            tvStatusDesc.text = if (!permStatus.allGranted)
-                "Conceda as permissões para ativar a proteção."
-            else
-                "Ative a proteção para monitorar ameaças automaticamente."
+            tvStatusDesc.text = when {
+                !isSubscribed -> "Assine o M&A Guardian para ativar a proteção em tempo real."
+                !permStatus.allGranted -> "Conceda as permissões para ativar a proteção."
+                else -> "Ative a proteção para monitorar ameaças automaticamente."
+            }
             ivShield.setImageResource(R.drawable.ic_shield_alert)
             btnToggle.text = "Ativar"
             btnToggle.setTextColor(ContextCompat.getColor(this, R.color.primary))
@@ -891,8 +896,6 @@ class MainActivity : AppCompatActivity() {
 
         tvThreatCount.text = "${activeThreats.size} registros"
         llThreats.removeAllViews()
-
-        val isSubscribed = PrefsHelper.hasFullAccess(this)
 
         if (!isSubscribed && activeThreats.isNotEmpty()) {
             // Usuário sem assinatura com ameaças: mostra card bloqueado com contagem
