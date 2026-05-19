@@ -1,6 +1,7 @@
 package com.maguardian.security.ui
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -25,6 +26,7 @@ import androidx.core.content.ContextCompat
 import com.maguardian.security.R
 import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.data.MalwareDatabase
+import com.maguardian.security.receiver.TrialAlertReceiver
 import com.maguardian.security.service.PopupDetectorService
 import com.maguardian.security.util.PermissionHelper
 import com.maguardian.security.util.PrefsHelper
@@ -96,6 +98,7 @@ class MainActivity : AppCompatActivity() {
         initBilling()
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()
+        scheduleTrialAlertsIfNeeded()
     }
 
     private fun initBilling() {
@@ -136,6 +139,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         refreshUI()
+        maybeShowTrialPopup()
         val filter = IntentFilter("com.maguardian.security.THREAT_DETECTED")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(threatReceiver, filter, RECEIVER_NOT_EXPORTED)
@@ -929,6 +933,64 @@ class MainActivity : AppCompatActivity() {
             llThreats.addView(view)
         }
     }
+
+    // ── Alertas periódicos para não-assinantes ────────────────────────────────
+
+    private fun scheduleTrialAlertsIfNeeded() {
+        if (PrefsHelper.hasFullAccess(this)) return
+        if (PrefsHelper.isTrialAlarmSet(this)) return
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, TrialAlertReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 8888, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val intervalMs = 6 * 60 * 60 * 1000L // 6 horas
+        val triggerAt = System.currentTimeMillis() + intervalMs
+
+        alarmManager.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            triggerAt,
+            intervalMs,
+            pendingIntent
+        )
+
+        PrefsHelper.setTrialAlarmSet(this, true)
+        Log.i(TAG, "Alertas de trial agendados a cada 6h")
+    }
+
+    private fun maybeShowTrialPopup() {
+        if (PrefsHelper.hasFullAccess(this)) return
+
+        val now = System.currentTimeMillis()
+        val lastPopup = PrefsHelper.getLastTrialPopup(this)
+        val minIntervalMs = 4 * 60 * 60 * 1000L // 4 horas
+
+        if (lastPopup != 0L && (now - lastPopup) < minIntervalMs) return
+
+        PrefsHelper.setLastTrialPopup(this, now)
+
+        val messages = TrialAlertReceiver.MESSAGES
+        val idx = PrefsHelper.getTrialNotifCount(this) % messages.size
+        val alertMsg = messages[idx]
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Alerta de Segurança")
+            .setMessage(
+                "$alertMsg\n\n" +
+                "Ative a proteção completa do M&A Guardian para monitorar " +
+                "seu dispositivo em tempo real e remover ameaças."
+            )
+            .setPositiveButton("Ativar Proteção") { _, _ ->
+                subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+            }
+            .setNegativeButton("Fechar", null)
+            .show()
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     private fun checkAndRequestNotifPermission() {
         // Apenas Android 13+ precisa pedir permissão de notificação em runtime
