@@ -44,7 +44,7 @@ class SubscriptionActivity : AppCompatActivity() {
         tvLoading.visibility     = View.GONE
         layoutContent.visibility = View.VISIBLE
         btnSubscribe.isEnabled   = true
-        tvPrice.text             = "R$ 9,90/mês"
+        tvPrice.text             = "R$ 9,99/mês"
     }
 
     // ── Listeners ─────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ class SubscriptionActivity : AppCompatActivity() {
 
         billing.connect {
             val realPrice = billing.getMonthlyPrice()
-            if (realPrice != "R$ 9,90") {
+            if (realPrice != "R$ 9,99") {
                 tvPrice.text = "$realPrice/mês"
             }
         }
