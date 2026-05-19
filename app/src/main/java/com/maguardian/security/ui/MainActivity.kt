@@ -611,7 +611,7 @@ class MainActivity : AppCompatActivity() {
             ).apply { bottomMargin = 24 }
         }
         val progressBar = android.widget.ProgressBar(
-            this, null, android.R.attr.progressBarStyleHorizontal
+            this, null, android.R.style.Widget_ProgressBar_Horizontal
         ).apply {
             max = 100
             progress = 0
