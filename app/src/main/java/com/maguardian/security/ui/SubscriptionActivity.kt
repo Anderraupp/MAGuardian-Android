@@ -37,30 +37,19 @@ class SubscriptionActivity : AppCompatActivity() {
         initBilling()
     }
 
-    // ── Exibe o conteúdo aguardando o billing carregar ───────────────────────
+    // ── Exibe o conteúdo imediatamente ──────────────────────────────────────
 
-    private fun showLoading() {
-        progressBar.visibility   = View.VISIBLE
-        tvLoading.visibility     = View.VISIBLE
-        tvLoading.text           = "Conectando ao Google Play..."
+    private fun showContent() {
+        progressBar.visibility   = View.GONE
+        tvLoading.visibility     = View.GONE
         layoutContent.visibility = View.VISIBLE
-        btnSubscribe.isEnabled   = false
+        btnSubscribe.isEnabled   = true
         tvPrice.text             = "R$ 9,99/mês"
     }
 
-    private fun showReady() {
-        progressBar.visibility = View.GONE
-        tvLoading.visibility   = View.GONE
-        btnSubscribe.isEnabled = true
+    private fun updatePrice() {
         val realPrice = billing.getMonthlyPrice()
-        tvPrice.text = if (realPrice != "R$ 9,99") "$realPrice/mês" else "R$ 9,99/mês"
-    }
-
-    private fun showBillingError() {
-        progressBar.visibility = View.GONE
-        tvLoading.visibility   = View.VISIBLE
-        tvLoading.text         = "Toque em Assinar para tentar novamente"
-        btnSubscribe.isEnabled = true
+        if (realPrice != "R$ 9,99") tvPrice.text = "$realPrice/mês"
     }
 
     // ── Listeners ─────────────────────────────────────────────────────────────
@@ -69,17 +58,20 @@ class SubscriptionActivity : AppCompatActivity() {
         btnSubscribe.setOnClickListener {
             when {
                 billing.monthlyDetails != null -> {
+                    // Produto já carregado — inicia compra imediatamente
                     billing.purchase(this)
                 }
                 billing.billingClient.isReady -> {
-                    // Produto não carregou — tenta recarregar e comprar
-                    showLoading()
+                    // Produto ainda carregando — recarrega e abre compra automaticamente
+                    progressBar.visibility = View.VISIBLE
                     billing.reloadAndPurchase(this) { loaded ->
-                        if (loaded) showReady() else showBillingError()
+                        progressBar.visibility = View.GONE
+                        if (loaded) updatePrice()
                     }
                 }
                 else -> {
-                    showLoading()
+                    // Billing não conectado — reconecta e tenta de novo
+                    progressBar.visibility = View.VISIBLE
                     initBilling()
                 }
             }
@@ -116,9 +108,11 @@ class SubscriptionActivity : AppCompatActivity() {
                 if (isActive) finishWithSuccess()
             }
         }
-        showLoading()
+        showContent()
         billing.connect {
-            if (billing.monthlyDetails != null) showReady() else showBillingError()
+            progressBar.visibility = View.GONE
+            updatePrice()
+            // Se produto carregou após reconexão e estava em espera, tudo pronto
         }
     }
 
