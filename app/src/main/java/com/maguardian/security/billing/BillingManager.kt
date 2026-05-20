@@ -163,6 +163,23 @@ class BillingManager(
         }
     }
 
+    // ── Recarregar produto e comprar (retry) ──────────────────────────────────
+
+    fun reloadAndPurchase(activity: Activity, onReady: (Boolean) -> Unit) {
+        scope.launch {
+            loadProducts()
+            withContext(Dispatchers.Main) {
+                val details = monthlyDetails
+                if (details == null) {
+                    onReady(false)
+                    return@withContext
+                }
+                onReady(true)
+                purchase(activity)
+            }
+        }
+    }
+
     // ── Restaurar compras ─────────────────────────────────────────────────────
 
     fun restorePurchases(onResult: (Boolean) -> Unit) {
