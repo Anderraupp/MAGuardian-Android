@@ -37,14 +37,30 @@ class SubscriptionActivity : AppCompatActivity() {
         initBilling()
     }
 
-    // ── Exibe o conteúdo sem esperar o billing ────────────────────────────────
+    // ── Exibe o conteúdo aguardando o billing carregar ───────────────────────
 
-    private fun showContent() {
-        progressBar.visibility   = View.GONE
-        tvLoading.visibility     = View.GONE
+    private fun showLoading() {
+        progressBar.visibility   = View.VISIBLE
+        tvLoading.visibility     = View.VISIBLE
+        tvLoading.text           = "Conectando ao Google Play..."
         layoutContent.visibility = View.VISIBLE
-        btnSubscribe.isEnabled   = true
+        btnSubscribe.isEnabled   = false
         tvPrice.text             = "R$ 9,99/mês"
+    }
+
+    private fun showReady() {
+        progressBar.visibility = View.GONE
+        tvLoading.visibility   = View.GONE
+        btnSubscribe.isEnabled = true
+        val realPrice = billing.getMonthlyPrice()
+        tvPrice.text = if (realPrice != "R$ 9,99") "$realPrice/mês" else "R$ 9,99/mês"
+    }
+
+    private fun showBillingError() {
+        progressBar.visibility = View.GONE
+        tvLoading.visibility   = View.VISIBLE
+        tvLoading.text         = "Toque em Assinar para tentar novamente"
+        btnSubscribe.isEnabled = true
     }
 
     // ── Listeners ─────────────────────────────────────────────────────────────
@@ -56,18 +72,14 @@ class SubscriptionActivity : AppCompatActivity() {
                     billing.purchase(this)
                 }
                 billing.billingClient.isReady -> {
-                    Toast.makeText(
-                        this,
-                        "Assinatura indisponível no momento. Certifique-se de que o app foi instalado pela Play Store.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    // Produto não carregou — tenta recarregar e comprar
+                    showLoading()
+                    billing.reloadAndPurchase(this) { loaded ->
+                        if (loaded) showReady() else showBillingError()
+                    }
                 }
                 else -> {
-                    Toast.makeText(
-                        this,
-                        "Não foi possível conectar ao Google Play. Verifique sua conexão e tente novamente.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showLoading()
                     initBilling()
                 }
             }
@@ -99,15 +111,14 @@ class SubscriptionActivity : AppCompatActivity() {
     // ── Billing ───────────────────────────────────────────────────────────────
 
     private fun initBilling() {
-        billing = BillingManager(this) { isActive ->
-            if (isActive) finishWithSuccess()
-        }
-
-        billing.connect {
-            val realPrice = billing.getMonthlyPrice()
-            if (realPrice != "R$ 9,99") {
-                tvPrice.text = "$realPrice/mês"
+        if (!::billing.isInitialized) {
+            billing = BillingManager(this) { isActive ->
+                if (isActive) finishWithSuccess()
             }
+        }
+        showLoading()
+        billing.connect {
+            if (billing.monthlyDetails != null) showReady() else showBillingError()
         }
     }
 
