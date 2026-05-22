@@ -62,6 +62,12 @@
             android:exported="false"
             android:theme="@style/Theme.MAGuardian" />
 
+        <!-- Verificador de Links (Anti-Phishing) -->
+        <activity
+            android:name=".ui.LinkCheckerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MAGuardian" />
+
         <!-- Serviço de Detecção de Pop-ups -->
         <service
             android:name=".service.PopupDetectorService"
