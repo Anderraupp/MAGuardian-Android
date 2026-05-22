@@ -184,16 +184,6 @@ class MainActivity : AppCompatActivity() {
         val btnAppCache = findViewById<Button>(R.id.btnAppCache)
         btnAppCache.setOnClickListener { showAppCacheDialog() }
 
-        val btnLinkChecker = findViewById<Button>(R.id.btnLinkChecker)
-        btnLinkChecker.setOnClickListener {
-            startActivity(Intent(this, LinkCheckerActivity::class.java))
-        }
-
-        val btnSetupLinkInterceptor = findViewById<Button>(R.id.btnSetupLinkInterceptor)
-        btnSetupLinkInterceptor.setOnClickListener {
-            showLinkInterceptorSetupDialog()
-        }
-
         refreshCacheInfo()
     }
 
@@ -381,36 +371,6 @@ class MainActivity : AppCompatActivity() {
                 refreshCacheInfo()
             }
         }.start()
-    }
-
-    /**
-     * Guia o usuário para configurar o M&A Guardian como interceptor de links.
-     * Padrão Android: registrado como handler de http/https, aparece no seletor de apps.
-     */
-    private fun showLinkInterceptorSetupDialog() {
-        android.app.AlertDialog.Builder(this)
-            .setTitle("🔗 Ativar Bloqueio Automático de Links")
-            .setMessage(
-                "Para bloquear links suspeitos automaticamente, siga os passos:\n\n" +
-                "1. Toque em \"Abrir Configurações\" abaixo\n" +
-                "2. Vá em Aplicativos padrão → Abrir links\n" +
-                "3. Encontre o M&A Guardian e ative\n\n" +
-                "A partir daí, qualquer link clicado no WhatsApp, SMS ou e-mail será verificado antes de abrir."
-            )
-            .setPositiveButton("Abrir Configurações") { _, _ ->
-                try {
-                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    // Fallback: open general app settings
-                    val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:$packageName")
-                    }
-                    startActivity(intent)
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
     }
 
     /**
