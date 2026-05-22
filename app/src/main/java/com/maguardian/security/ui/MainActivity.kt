@@ -184,6 +184,11 @@ class MainActivity : AppCompatActivity() {
         val btnAppCache = findViewById<Button>(R.id.btnAppCache)
         btnAppCache.setOnClickListener { showAppCacheDialog() }
 
+        val btnLinkChecker = findViewById<Button>(R.id.btnLinkChecker)
+        btnLinkChecker.setOnClickListener {
+            startActivity(Intent(this, LinkCheckerActivity::class.java))
+        }
+
         refreshCacheInfo()
     }
 
