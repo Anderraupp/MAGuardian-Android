@@ -68,6 +68,22 @@
             android:exported="false"
             android:theme="@style/Theme.MAGuardian" />
 
+        <!-- Interceptor de Links Suspeitos (Safe Browsing) -->
+        <!-- exported=true obrigatório pois recebe intents de outros apps -->
+        <activity
+            android:name=".ui.SafeLinkActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MAGuardian"
+            android:label="M&amp;A Guardian — Verificar Link">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+        </activity>
+
         <!-- Serviço de Detecção de Pop-ups -->
         <service
             android:name=".service.PopupDetectorService"
