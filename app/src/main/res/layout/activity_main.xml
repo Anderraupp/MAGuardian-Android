@@ -498,52 +498,111 @@
         </LinearLayout>
 
         <!-- ═══════════════════════════════════════════════
-             VERIFICADOR DE LINKS (ANTI-PHISHING)
+             PROTEÇÃO DE LINKS (ANTI-PHISHING)
              ═══════════════════════════════════════════════ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:background="@drawable/card_background"
             android:padding="14dp"
-            android:gravity="center_vertical"
             android:layout_marginBottom="12dp">
 
+            <!-- Row 1: title + manual check button -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="🔗 Verificar Link Suspeito"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <TextView
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔗 Proteção de Links"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bloqueia phishing, golpes PIX e fraudes"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnLinkChecker"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Detecta phishing, golpes PIX e fraudes"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
+                    android:layout_height="34dp"
+                    android:text="Verificar link"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="10sp"
+                    android:background="@drawable/btn_primary"
+                    app:backgroundTint="@null"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
             </LinearLayout>
 
-            <Button
-                android:id="@+id/btnLinkChecker"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Verificar"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="11sp"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp" />
+            <!-- Row 2: auto-intercept setup -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/card_border"
+                android:layout_marginBottom="10dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bloqueio automático"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Intercepta links de WhatsApp, SMS e e-mail automaticamente"
+                        android:textColor="@color/text_muted"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingMultiplier="1.2" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnSetupLinkInterceptor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:text="Ativar"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="10sp"
+                    android:background="@drawable/btn_secondary"
+                    app:backgroundTint="@null"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- ═══════════════════════════════════════════════
