@@ -91,9 +91,10 @@ object PhoneAnalyzer {
 
         val finalScore = score.coerceAtMost(100)
         val (label, emoji) = when {
-            finalScore >= 55 -> "Possível Golpe" to "🚨"
-            finalScore >= 25 -> "Número Suspeito" to "⚠️"
-            else             -> "Ligação Segura"  to "✅"
+            finalScore >= 70 -> "Possível Golpe"         to "🚨"
+            finalScore >= 45 -> "Número Muito Suspeito"  to "🔴"
+            finalScore >= 25 -> "Telemarketing / Cobrança" to "⚠️"
+            else             -> "Ligação Segura"          to "✅"
         }
 
         return Result(finalScore, label, emoji, reasons)
