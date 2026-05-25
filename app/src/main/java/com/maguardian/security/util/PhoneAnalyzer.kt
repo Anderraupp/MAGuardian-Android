@@ -5,6 +5,7 @@ object PhoneAnalyzer {
     data class Result(
         val score: Int,
         val label: String,
+        val emoji: String,
         val reasons: List<String>
     )
 
@@ -33,7 +34,7 @@ object PhoneAnalyzer {
 
         // Very short number (spoofed display)
         if (number.length in 3..5 && number.isNotBlank()) {
-            reasons.add("Número muito curto (${ number.length } dígitos) — possível identificador falso")
+            reasons.add("Número muito curto (${number.length} dígitos) — possível identificador falso")
             score += 25
         }
 
@@ -57,17 +58,17 @@ object PhoneAnalyzer {
 
         // Very long number (spoofed international)
         if (digits.length > 13) {
-            reasons.add("Número com tamanho incomum (${ digits.length } dígitos)")
+            reasons.add("Número com tamanho incomum (${digits.length} dígitos)")
             score += 15
         }
 
         val finalScore = score.coerceAtMost(100)
-        val label = when {
-            finalScore >= 55 -> "🚨 Possível Golpe"
-            finalScore >= 25 -> "⚠️ Número Suspeito"
-            else -> ""
+        val (label, emoji) = when {
+            finalScore >= 55 -> "Possível Golpe" to "🚨"
+            finalScore >= 25 -> "Número Suspeito" to "⚠️"
+            else             -> "Ligação Segura"  to "✅"
         }
 
-        return Result(finalScore, label, reasons)
+        return Result(finalScore, label, emoji, reasons)
     }
 }
