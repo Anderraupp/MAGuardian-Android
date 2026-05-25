@@ -62,6 +62,16 @@
             android:exported="false"
             android:theme="@style/Theme.MAGuardian" />
 
+        <!-- Triagem de Ligações Suspeitas (API oficial Android — sem permissões especiais) -->
+        <service
+            android:name=".service.CallScannerService"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
+
         <!-- Serviço de Detecção de Pop-ups -->
         <service
             android:name=".service.PopupDetectorService"
