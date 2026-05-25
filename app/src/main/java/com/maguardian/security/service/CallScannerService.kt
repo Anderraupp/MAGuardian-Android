@@ -66,6 +66,28 @@ class CallScannerService : CallScreeningService() {
             result = applyStirShaken(callDetails, result)
         }
 
+        // ── Base local de telemarketing (número + nome da empresa) ──────────────
+        // Verifica com callerDisplayName para pegar casos como "SPEECH", "COBRANCA"
+        // que o Samsung preenche mesmo sem score no PhoneAnalyzer.
+        val dbMatch = TelemarketingDatabase.check(number, displayName)
+        if (dbMatch.matched) {
+            val boosted = (result.score + dbMatch.confidence).coerceAtMost(100)
+            result = result.copy(
+                score   = boosted,
+                label   = when {
+                    boosted >= 70 -> "Possível Golpe"
+                    boosted >= 45 -> "Número Muito Suspeito"
+                    else          -> "Telemarketing / Cobrança"
+                },
+                emoji   = when {
+                    boosted >= 70 -> "🚨"
+                    boosted >= 45 -> "🔴"
+                    else          -> "⚠️"
+                },
+                reasons = result.reasons + dbMatch.reason
+            )
+        }
+
         // ── callerDisplayName: label do sistema (Samsung SmartCall / CNAM / ANATEL) ──
         val isSystemLabeledSpam = displayName.isNotBlank() &&
             spamKeywords.any { displayName.contains(it, ignoreCase = true) }
