@@ -33,7 +33,10 @@ class CallScannerService : CallScreeningService() {
         val result = PhoneAnalyzer.analyze(number)
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
 
+        val isManuallyBlocked = PrefsHelper.isNumberBlocked(this, number)
+
         val shouldBlock = when {
+            isManuallyBlocked                        -> true   // Bloqueado manualmente pelo usuário
             result.score >= 70                       -> true   // Golpe — bloqueia sempre
             result.score >= 25 && blockTelemarketing -> true   // Telemarketing/Cobrança — só se ativo
             else                                     -> false
