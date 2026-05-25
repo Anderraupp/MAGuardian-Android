@@ -236,11 +236,30 @@ class MainActivity : AppCompatActivity() {
         switchBlock.setOnCheckedChangeListener { _, checked ->
             PrefsHelper.setBlockTelemarketingEnabled(this, checked)
             updateBlockTelemarketingStatus(tvBlockStatus, checked)
-            val msg = if (checked)
-                "🚫 Telemarketing e cobrança serão bloqueados automaticamente"
-            else
-                "Bloqueio de telemarketing desativado"
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            if (checked) {
+                // Verifica se a role de triagem está ativa; sem ela o bloqueio não funciona
+                val roleActive = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    getSystemService(android.app.role.RoleManager::class.java)
+                        .isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)
+                } else false
+
+                if (!roleActive) {
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("⚠️ Proteção de Ligações não está ativa")
+                        .setMessage(
+                            "Para que o bloqueio de telemarketing funcione, você precisa primeiro ativar a " +
+                            "\"Proteção de Ligações\" tocando no botão ATIVAR acima.\n\n" +
+                            "O bloqueio só funciona quando o M&A Guardian é o app de triagem de chamadas padrão."
+                        )
+                        .setPositiveButton("Ativar agora") { _, _ -> setupCallScanner() }
+                        .setNegativeButton("Entendi", null)
+                        .show()
+                } else {
+                    Toast.makeText(this, "🚫 Telemarketing e cobrança serão bloqueados automaticamente", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Bloqueio de telemarketing desativado", Toast.LENGTH_SHORT).show()
+            }
         }
 
         refreshCacheInfo()
