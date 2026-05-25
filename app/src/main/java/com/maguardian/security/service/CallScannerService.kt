@@ -48,7 +48,7 @@ class CallScannerService : CallScreeningService() {
                 .setDisallowCall(shouldBlock)
                 .setSilenceCall(shouldBlock)
                 .setSkipCallLog(false)
-                .setSkipNotification(!shouldBlock)
+                .setSkipNotification(shouldBlock) // true = suprime toque/UI quando bloqueia
                 .build()
         )
 
