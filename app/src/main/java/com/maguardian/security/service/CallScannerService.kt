@@ -15,6 +15,7 @@ import com.maguardian.security.ui.MainActivity
 import com.maguardian.security.util.CallOverlayManager
 import com.maguardian.security.util.PhoneAnalyzer
 import com.maguardian.security.util.PrefsHelper
+import com.maguardian.security.util.TelemarketingDatabase
 
 /**
  * Mantém a ROLE_CALL_SCREENING oficial no Android 10+.
