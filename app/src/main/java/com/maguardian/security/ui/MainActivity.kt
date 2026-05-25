@@ -147,6 +147,15 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "✓ App removido com sucesso!", Toast.LENGTH_SHORT).show()
             }
         }
+        // Garante que o CallMonitorService está rodando se a role de triagem está ativa,
+        // independentemente de assinatura. Pode ter sido morto pelo sistema.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+            if (roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)) {
+                com.maguardian.security.service.CallMonitorService.start(this)
+            }
+        }
+
         refreshUI()
         updateCallScannerButton()
         maybeShowTrialPopup()
