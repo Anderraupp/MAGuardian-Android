@@ -36,6 +36,11 @@ class CallScannerService : CallScreeningService() {
         val number = callDetails.handle?.schemeSpecificPart ?: ""
         var result = PhoneAnalyzer.analyze(number)
 
+        // ── STIR/SHAKEN via reflection (evita referência direta à constante API 30+) ──
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            result = applyStirShaken(callDetails, result)
+        }
+
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = PrefsHelper.isNumberBlocked(this, number)
 
@@ -150,6 +155,42 @@ class CallScannerService : CallScreeningService() {
         }
 
         nm.notify(NOTIF_ANALYSIS, builder.build())
+    }
+
+    // ── STIR/SHAKEN via reflection ────────────────────────────────────────────
+    // Usa reflection + literal inteiro para evitar "Unresolved reference: VERIFICATION_STATUS_FAILED"
+    // que ocorre quando o SDK local não tem o stub da constante API 30+ indexado.
+    // Valor 2 = Call.Details.VERIFICATION_STATUS_FAILED (documentado em developer.android.com)
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    private fun applyStirShaken(
+        callDetails: Call.Details,
+        result: PhoneAnalyzer.Result
+    ): PhoneAnalyzer.Result {
+        return try {
+            val verStatus = callDetails.javaClass
+                .getMethod("getCallerNumberVerificationStatus")
+                .invoke(callDetails) as? Int ?: return result
+            val FAILED = 2 // Call.Details.VERIFICATION_STATUS_FAILED
+            if (verStatus != FAILED) return result
+            val boosted = (result.score + 35).coerceAtMost(100)
+            result.copy(
+                score   = boosted,
+                label   = when {
+                    boosted >= 70 -> "Possível Golpe"
+                    boosted >= 45 -> "Número Muito Suspeito"
+                    else          -> "Telemarketing / Cobrança"
+                },
+                emoji   = when {
+                    boosted >= 70 -> "🚨"
+                    boosted >= 45 -> "🔴"
+                    else          -> "⚠️"
+                },
+                reasons = result.reasons +
+                    "Verificação de identidade (STIR/SHAKEN) falhou — número possivelmente falsificado pela operadora"
+            )
+        } catch (_: Exception) {
+            result // fallback gracioso — dispositivo/operadora sem STIR/SHAKEN
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
