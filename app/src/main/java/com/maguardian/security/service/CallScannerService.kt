@@ -34,7 +34,25 @@ class CallScannerService : CallScreeningService() {
 
     override fun onScreenCall(callDetails: Call.Details) {
         val number = callDetails.handle?.schemeSpecificPart ?: ""
-        val result = PhoneAnalyzer.analyze(number)
+        var result = PhoneAnalyzer.analyze(number)
+
+        // ── STIR/SHAKEN: verificação de identidade do número (API 30+) ────────────
+        // Se a operadora reportar falha na verificação, o número provavelmente é falsificado.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            @Suppress("NewApi")
+            val verStatus = callDetails.callerNumberVerificationStatus
+            if (verStatus == Call.Details.VERIFICATION_STATUS_FAILED) {
+                val boosted = (result.score + 35).coerceAtMost(100)
+                val extraReason = "Verificação de identidade (STIR/SHAKEN) falhou — número possivelmente falsificado pela operadora"
+                result = result.copy(
+                    score   = boosted,
+                    label   = when { boosted >= 70 -> "Possível Golpe"; boosted >= 45 -> "Número Muito Suspeito"; else -> "Telemarketing / Cobrança" },
+                    emoji   = when { boosted >= 70 -> "🚨"; boosted >= 45 -> "🔴"; else -> "⚠️" },
+                    reasons = result.reasons + extraReason
+                )
+            }
+        }
+
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = PrefsHelper.isNumberBlocked(this, number)
 
@@ -55,10 +73,10 @@ class CallScannerService : CallScreeningService() {
                 .build()
         )
 
-        // ── Overlay flutuante sobre a tela de chamada (número real do Call.Details) ──
+        // ── Overlay SYSTEM_ALERT_WINDOW (se permissão concedida) ──────────────────
         CallOverlayManager.show(applicationContext, number, result)
 
-        // ── Notificação na barra ──────────────────────────────────────────────────
+        // ── Notificação na barra + fullScreenIntent → CallAlertActivity ───────────
         if (shouldBlock) showBlockedNotification(number, result)
         else             showAnalysisNotification(number, result)
     }
@@ -88,9 +106,7 @@ class CallScannerService : CallScreeningService() {
     private fun showAnalysisNotification(number: String, result: PhoneAnalyzer.Result) {
         val nm = ensureChannels()
         val displayNumber = if (number.isBlank()) "Número oculto" else number
-        val openIntent = openAppIntent(1)
 
-        // Cor e texto conforme score
         val (color, title) = when {
             result.score >= 45 -> 0xFFF59E0B.toInt() to "${result.emoji} ${result.label} — Risco ${result.score}%"
             result.score >= 25 -> 0xFF6B7280.toInt() to "${result.emoji} ${result.label}"
@@ -103,21 +119,42 @@ class CallScannerService : CallScreeningService() {
                 append("\n" + result.reasons.take(2).joinToString(" • "))
         }
 
-        // Botão "Bloquear" para chamadas suspeitas ainda não bloqueadas manualmente
+        // ── fullScreenIntent → CallAlertActivity (aparece sobre tela de chamada) ──
+        val alertIntent = Intent(this, com.maguardian.security.ui.CallAlertActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_NO_HISTORY
+            putExtra(com.maguardian.security.ui.CallAlertActivity.EXTRA_NUMBER, number)
+            putExtra(com.maguardian.security.ui.CallAlertActivity.EXTRA_SCORE,  result.score)
+            putExtra(com.maguardian.security.ui.CallAlertActivity.EXTRA_LABEL,  result.label)
+            putExtra(com.maguardian.security.ui.CallAlertActivity.EXTRA_EMOJI,  result.emoji)
+            putStringArrayListExtra(
+                com.maguardian.security.ui.CallAlertActivity.EXTRA_REASONS,
+                ArrayList(result.reasons)
+            )
+        }
+        val fullScreenPi = PendingIntent.getActivity(
+            this, number.hashCode() + 1,
+            alertIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ANALYSIS)
             .setSmallIcon(R.drawable.ic_shield_alert)
             .setContentTitle(title)
             .setContentText(bodyLines)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bodyLines))
-            .setPriority(if (result.score >= 25) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setAutoCancel(true)
-            .setContentIntent(openIntent)
+            .setContentIntent(fullScreenPi)
+            .setFullScreenIntent(fullScreenPi, true)   // lança CallAlertActivity sobre chamada
             .setColor(color)
             .setTimeoutAfter(if (result.score < 25) 15_000L else 90_000L)
 
-        if (result.score >= 25 && number.isNotBlank() && !PrefsHelper.isNumberBlocked(this, number)) {
-            val blockIntent = PendingIntent.getBroadcast(
+        // Botão "Bloquear" na notificação (para números suspeitos)
+        if (number.isNotBlank() && !PrefsHelper.isNumberBlocked(this, number)) {
+            val blockPi = PendingIntent.getBroadcast(
                 this,
                 number.hashCode(),
                 Intent(BlockCallReceiver.ACTION_BLOCK_NUMBER).apply {
@@ -126,7 +163,7 @@ class CallScannerService : CallScreeningService() {
                 },
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            builder.addAction(R.drawable.ic_shield_alert, "🚫 Bloquear este número", blockIntent)
+            builder.addAction(R.drawable.ic_shield_alert, "🚫 Bloquear", blockPi)
         }
 
         nm.notify(NOTIF_ANALYSIS, builder.build())
