@@ -19,6 +19,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Monitoramento de ligações em todas as versões Android -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <!-- Necessário para Meta SDK e rastreamento de publicidade no Android 13+ -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
@@ -67,6 +70,14 @@
             android:name=".ui.LinkCheckerActivity"
             android:exported="false"
             android:theme="@style/Theme.MAGuardian" />
+
+        <!-- Monitoramento de Ligações — funciona em TODAS as versões Android -->
+        <service
+            android:name=".service.CallMonitorService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="phoneCall">
+        </service>
 
         <!-- Triagem de Ligações Suspeitas (API oficial Android — sem permissões especiais) -->
         <service
