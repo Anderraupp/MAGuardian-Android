@@ -21,8 +21,21 @@ class BootReceiver : BroadcastReceiver() {
 
         Log.i(TAG, "Boot detectado — iniciando M&A Guardian automaticamente")
 
+        // CallMonitorService é iniciado SEMPRE que a role de triagem estiver ativa,
+        // independentemente da assinatura. A proteção de ligações é uma feature separada.
+        val callScannerRoleActive = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = context.getSystemService(android.app.role.RoleManager::class.java)
+            roleManager?.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING) == true
+        } else false
+
+        if (callScannerRoleActive) {
+            Log.i(TAG, "Role de triagem ativa — iniciando CallMonitorService")
+            CallMonitorService.start(context)
+        }
+
+        // Os demais serviços (pop-up, scan) dependem da assinatura/proteção geral
         if (!PrefsHelper.isProtectionEnabled(context)) {
-            Log.i(TAG, "Proteção desativada pelo usuário — ignorando boot")
+            Log.i(TAG, "Proteção geral desativada — ignorando demais serviços no boot")
             return
         }
 
@@ -34,7 +47,9 @@ class BootReceiver : BroadcastReceiver() {
             context.startService(popupIntent)
         }
 
-        // Inicia o monitor de ligações (funciona em todas as versões Android)
-        CallMonitorService.start(context)
+        // Garante que o CallMonitorService também sobe com a proteção geral
+        if (!callScannerRoleActive) {
+            CallMonitorService.start(context)
+        }
     }
 }
