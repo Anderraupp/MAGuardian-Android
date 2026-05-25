@@ -116,12 +116,19 @@ object PhoneAnalyzer {
             score += 30
         }
 
+        // ── Base local de telemarketing ───────────────────────────────────────
+        val dbMatch = TelemarketingDatabase.check(number)
+        if (dbMatch.matched) {
+            score += dbMatch.confidence
+            reasons.add(dbMatch.reason)
+        }
+
         val finalScore = score.coerceAtMost(100)
         val (label, emoji) = when {
-            finalScore >= 70 -> "Possível Golpe"         to "🚨"
-            finalScore >= 45 -> "Número Muito Suspeito"  to "🔴"
+            finalScore >= 70 -> "Possível Golpe"           to "🚨"
+            finalScore >= 45 -> "Número Muito Suspeito"    to "🔴"
             finalScore >= 25 -> "Telemarketing / Cobrança" to "⚠️"
-            else             -> "Ligação Segura"          to "✅"
+            else             -> "Ligação Segura"            to "✅"
         }
 
         return Result(finalScore, label, emoji, reasons)
