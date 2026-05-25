@@ -147,6 +147,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         refreshUI()
+        updateCallScannerButton()
         maybeShowTrialPopup()
         val filter = IntentFilter("com.maguardian.security.THREAT_DETECTED")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -160,6 +161,17 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         runCatching { unregisterReceiver(threatReceiver) }
         stopAllPulses()
+    }
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 9001) {
+            updateCallScannerButton()
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "✅ Proteção de ligações ativada!", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun setupUI() {
@@ -191,6 +203,7 @@ class MainActivity : AppCompatActivity() {
 
         val btnCallScanner = findViewById<Button>(R.id.btnCallScanner)
         btnCallScanner.setOnClickListener { setupCallScanner() }
+        updateCallScannerButton()
 
         refreshCacheInfo()
     }
@@ -389,10 +402,14 @@ class MainActivity : AppCompatActivity() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             val roleManager = getSystemService(android.app.role.RoleManager::class.java)
             if (roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)) {
+                // Já ativo — perguntar se quer desativar
                 android.app.AlertDialog.Builder(this)
                     .setTitle("📞 Proteção de Ligações")
-                    .setMessage("✅ Já está ativa!\n\nO M&A Guardian vai alertar automaticamente quando detectar ligações suspeitas (golpes de banco, FGTS, números ocultos, etc.).")
-                    .setPositiveButton("OK", null)
+                    .setMessage("A proteção de ligações está ativa.\n\nPara desativar, acesse as configurações do sistema e remova o M&A Guardian como app de triagem de chamadas.")
+                    .setPositiveButton("Abrir Configurações") { _, _ ->
+                        startActivity(Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+                    }
+                    .setNegativeButton("Cancelar", null)
                     .show()
             } else if (roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_CALL_SCREENING)) {
                 val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_CALL_SCREENING)
@@ -402,6 +419,23 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             showCallScannerFallbackDialog()
+        }
+    }
+
+    private fun updateCallScannerButton() {
+        val btn = findViewById<Button>(R.id.btnCallScanner) ?: return
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+            val isActive = roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)
+            if (isActive) {
+                btn.text = "Desativar"
+                btn.setTextColor(android.graphics.Color.parseColor("#111111"))
+                btn.setBackgroundColor(android.graphics.Color.parseColor("#9CA3AF"))
+            } else {
+                btn.text = "Ativar"
+                btn.setTextColor(android.graphics.Color.WHITE)
+                btn.setBackgroundColor(android.graphics.Color.parseColor("#DC2626"))
+            }
         }
     }
 
