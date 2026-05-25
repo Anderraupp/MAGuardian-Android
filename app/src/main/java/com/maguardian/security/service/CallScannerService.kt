@@ -41,36 +41,38 @@ class CallScannerService : CallScreeningService() {
             result = applyStirShaken(callDetails, result)
         }
 
-        // ── callerDisplayName: detecta labels de cobrança/telemarketing do sistema ──
-        // A Samsung (e outras) preenche callerDisplayName com o nome/categoria da empresa
-        // detectada — ex: "SPEECH", "COBRANCA", "TELEMARKETING". Usamos isso para boostar
-        // o score mesmo quando o formato do número é BR válido (ex: DDD 45, 12 dígitos).
+        // ── callerDisplayName: detecta labels do sistema (Samsung/ANATEL/operadora) ──
+        // Palavras-chave que identificam centrais de cobrança/telemarketing independente
+        // do score — permite bloquear mesmo números com formato BR 100% válido (score 0).
         val displayName = callDetails.callerDisplayName ?: ""
-        if (displayName.isNotBlank()) {
-            val keywords = listOf(
-                "cobran", "cobrança", "telemar", "speech", "crédito", "credito",
-                "financ", "recupera", "cartão", "cartao", "vendas", "central de",
-                "atendimento", "promotor", "collector", "collect"
+        val spamKeywords = listOf(
+            "cobran", "cobrança", "telemar", "speech", "crédito", "credito",
+            "financ", "recupera", "cartão", "cartao", "vendas", "central de",
+            "atendimento", "promotor", "collector", "collect", "spam", "golpe",
+            "fraude", "banco", "empréstimo", "emprestimo", "seguro", "oferta"
+        )
+        val isSystemLabeledSpam = displayName.isNotBlank() &&
+            spamKeywords.any { displayName.contains(it, ignoreCase = true) }
+
+        if (isSystemLabeledSpam) {
+            // Garante que o resultado reflete "Telemarketing / Cobrança" na notificação/overlay
+            result = result.copy(
+                score   = result.score.coerceAtLeast(25),
+                label   = if (result.score < 25) "Telemarketing / Cobrança" else result.label,
+                emoji   = if (result.score < 25) "⚠️" else result.emoji,
+                reasons = result.reasons +
+                    "Identificado como \"$displayName\" pelo sistema — central de cobrança/telemarketing"
             )
-            if (keywords.any { displayName.contains(it, ignoreCase = true) }) {
-                val boosted = (result.score + 30).coerceAtMost(100)
-                result = result.copy(
-                    score   = boosted,
-                    label   = when { boosted >= 70 -> "Possível Golpe"; boosted >= 45 -> "Número Muito Suspeito"; else -> "Telemarketing / Cobrança" },
-                    emoji   = when { boosted >= 70 -> "🚨"; boosted >= 45 -> "🔴"; else -> "⚠️" },
-                    reasons = result.reasons +
-                        "Identificado como \"$displayName\" pelo sistema — central de atendimento/cobrança"
-                )
-            }
         }
 
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = PrefsHelper.isNumberBlocked(this, number)
 
         val shouldBlock = when {
-            isManuallyBlocked                        -> true
-            result.score >= 70                       -> true
-            result.score >= 25 && blockTelemarketing -> true
+            isManuallyBlocked                        -> true   // sempre bloqueia número na lista
+            result.score >= 70                       -> true   // golpe confirmado — bloqueia sempre
+            isSystemLabeledSpam && blockTelemarketing -> true  // label do sistema + toggle ativo
+            result.score >= 25 && blockTelemarketing  -> true  // score ≥ 25 + toggle ativo
             else                                     -> false
         }
 
