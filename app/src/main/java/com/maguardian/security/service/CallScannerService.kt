@@ -37,20 +37,8 @@ class CallScannerService : CallScreeningService() {
         var result = PhoneAnalyzer.analyze(number)
 
         // ── STIR/SHAKEN: verificação de identidade do número (API 30+) ────────────
-        // Se a operadora reportar falha na verificação, o número provavelmente é falsificado.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            @Suppress("NewApi")
-            val verStatus = callDetails.callerNumberVerificationStatus
-            if (verStatus == Call.Details.VERIFICATION_STATUS_FAILED) {
-                val boosted = (result.score + 35).coerceAtMost(100)
-                val extraReason = "Verificação de identidade (STIR/SHAKEN) falhou — número possivelmente falsificado pela operadora"
-                result = result.copy(
-                    score   = boosted,
-                    label   = when { boosted >= 70 -> "Possível Golpe"; boosted >= 45 -> "Número Muito Suspeito"; else -> "Telemarketing / Cobrança" },
-                    emoji   = when { boosted >= 70 -> "🚨"; boosted >= 45 -> "🔴"; else -> "⚠️" },
-                    reasons = result.reasons + extraReason
-                )
-            }
+            result = applyStirShaken(callDetails, result)
         }
 
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
@@ -167,6 +155,33 @@ class CallScannerService : CallScreeningService() {
         }
 
         nm.notify(NOTIF_ANALYSIS, builder.build())
+    }
+
+    // ── STIR/SHAKEN (API 30+) — método isolado para satisfazer o compilador ──
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    private fun applyStirShaken(
+        callDetails: Call.Details,
+        result: PhoneAnalyzer.Result
+    ): PhoneAnalyzer.Result {
+        if (callDetails.callerNumberVerificationStatus != Call.Details.VERIFICATION_STATUS_FAILED) {
+            return result
+        }
+        val boosted = (result.score + 35).coerceAtMost(100)
+        return result.copy(
+            score   = boosted,
+            label   = when {
+                boosted >= 70 -> "Possível Golpe"
+                boosted >= 45 -> "Número Muito Suspeito"
+                else          -> "Telemarketing / Cobrança"
+            },
+            emoji   = when {
+                boosted >= 70 -> "🚨"
+                boosted >= 45 -> "🔴"
+                else          -> "⚠️"
+            },
+            reasons = result.reasons +
+                "Verificação de identidade (STIR/SHAKEN) falhou — número possivelmente falsificado pela operadora"
+        )
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
