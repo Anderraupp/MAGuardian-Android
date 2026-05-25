@@ -502,6 +502,32 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButton("Agora não", null)
                 .show()
         }
+        // Android 14+: USE_FULL_SCREEN_INTENT requer concessão manual pelo usuário
+        // (não é mais auto-concedida para apps que não são de chamada/alarme)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val nm = getSystemService(android.app.NotificationManager::class.java)
+            @Suppress("NewApi")
+            if (!nm.canUseFullScreenIntent()) {
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("⚡ Alerta sobre tela de chamada")
+                    .setMessage(
+                        "No Android 14+, o M&A Guardian precisa de uma permissão extra para " +
+                        "mostrar o alerta DE ANÁLISE DIRETAMENTE sobre a tela de chamada.\n\n" +
+                        "Toque em \"Ativar\" e ligue a opção \"Exibir como tela cheia\" para o M&A Guardian."
+                    )
+                    .setPositiveButton("Ativar") { _, _ ->
+                        startActivity(
+                            android.content.Intent(
+                                @Suppress("NewApi")
+                                android.provider.Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                                android.net.Uri.parse("package:$packageName")
+                            )
+                        )
+                    }
+                    .setNegativeButton("Agora não", null)
+                    .show()
+            }
+        }
         // Inicia o serviço universal de monitoramento de ligações
         com.maguardian.security.service.CallMonitorService.start(this)
         // No Android 10+ também ativa a role oficial de triagem
