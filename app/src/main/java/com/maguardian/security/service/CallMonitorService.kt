@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.maguardian.security.R
 import com.maguardian.security.receiver.BlockCallReceiver
 import com.maguardian.security.ui.MainActivity
+import com.maguardian.security.util.CallOverlayManager
 import com.maguardian.security.util.PhoneAnalyzer
 import com.maguardian.security.util.PrefsHelper
 import java.util.concurrent.Executors
@@ -131,12 +132,19 @@ class CallMonitorService : Service() {
         when (state) {
             TelephonyManager.CALL_STATE_RINGING -> {
                 val result = PhoneAnalyzer.analyze(number ?: "")
+                // Overlay sobre a tela de chamada (aparece sem puxar barra)
+                CallOverlayManager.show(applicationContext, number ?: "", result)
+                // Notificação como backup (barra de status)
                 showCallNotif(number ?: "", result, nm)
             }
             TelephonyManager.CALL_STATE_IDLE -> {
-                // Remove notificação segura após a ligação encerrar;
-                // alertas de golpe ficam para o usuário ver.
+                CallOverlayManager.dismiss(applicationContext)
                 nm.cancel(NOTIF_CALL)
+            }
+            TelephonyManager.CALL_STATE_OFFHOOK -> {
+                // Ligação atendida — remove overlay e notificação segura
+                CallOverlayManager.dismiss(applicationContext)
+                if (true) nm.cancel(NOTIF_CALL)
             }
         }
     }
