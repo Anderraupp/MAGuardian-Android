@@ -56,10 +56,37 @@ object PhoneAnalyzer {
             score += 25
         }
 
-        // Very long number (spoofed international)
-        if (digits.length > 13) {
+        // Número com comprimento fora do padrão brasileiro
+        // BR: 0 + 2 DDD + 9 (móvel) = 12 dígitos máx; sem 0: 11 dígitos
+        val startsWithZero = digits.startsWith("0") && !digits.startsWith("0800")
+        if (startsWithZero && digits.length >= 13) {
+            reasons.add("Número longo fora do padrão BR (${digits.length} dígitos com 0) — possível VOIP ou falsificado")
+            score += 25
+        } else if (digits.length > 13) {
             reasons.add("Número com tamanho incomum (${digits.length} dígitos)")
-            score += 15
+            score += 20
+        }
+
+        // DDD inexistente no Brasil (ex: 04x, 09x — não são DDDs reais)
+        val ddd = when {
+            startsWithZero && digits.length >= 4 -> digits.substring(1, 3) // remove o 0 inicial
+            !digits.startsWith("+") && digits.length >= 3 -> digits.substring(0, 2)
+            else -> ""
+        }
+        val validDDDs = setOf(
+            "11","12","13","14","15","16","17","18","19",
+            "21","22","24","27","28",
+            "31","32","33","34","35","37","38",
+            "41","42","43","44","45","46","47","48","49",
+            "51","53","54","55",
+            "61","62","63","64","65","66","67","68","69",
+            "71","73","74","75","77","79",
+            "81","82","83","84","85","86","87","88","89",
+            "91","92","93","94","95","96","97","98","99"
+        )
+        if (ddd.isNotEmpty() && ddd.all { it.isDigit() } && ddd !in validDDDs) {
+            reasons.add("DDD inválido no Brasil ($ddd) — número falsificado ou VOIP")
+            score += 30
         }
 
         val finalScore = score.coerceAtMost(100)
