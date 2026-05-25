@@ -66,7 +66,7 @@ object LinkChecker {
         val apkMatch = apkPiracyKeywords.firstOrNull { lower.contains(it) }
         if (apkMatch != null) {
             score += 60
-            reasons.add("Distribuidor de APK modificado/pirata detectado ("$apkMatch")")
+            reasons.add("Distribuidor de APK modificado/pirata detectado (\"$apkMatch\")")
         }
 
         // ── "apk" + "mod" presentes no host (mesmo separados) ──────────────
@@ -77,7 +77,7 @@ object LinkChecker {
                 reasons.add("Combinação suspeita no domínio: ${signals.joinToString(" + ")} → site de malware/pirataria")
             } else if (signals.size == 1) {
                 score += 20
-                reasons.add("Domínio contém "\"${signals[0]}\"" — verifique se é uma fonte oficial")
+                reasons.add("Domínio contém \"${signals[0]}\" — verifique se é uma fonte oficial")
             }
         }
 
@@ -85,7 +85,7 @@ object LinkChecker {
         val bait = baitNames.firstOrNull { lower.contains(it) }
         if (bait != null) {
             score += 35
-            reasons.add("Nome de jogo/app popular como isca ("$bait") — baixe só pela loja oficial")
+            reasons.add("Nome de jogo/app popular como isca (\"$bait\") — baixe só pela loja oficial")
         }
 
         // ── TLD suspeito ────────────────────────────────────────────────────
