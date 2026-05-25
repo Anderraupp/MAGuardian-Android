@@ -184,6 +184,9 @@ class MainActivity : AppCompatActivity() {
         val btnAppCache = findViewById<Button>(R.id.btnAppCache)
         btnAppCache.setOnClickListener { showAppCacheDialog() }
 
+        val btnCallScanner = findViewById<Button>(R.id.btnCallScanner)
+        btnCallScanner.setOnClickListener { setupCallScanner() }
+
         refreshCacheInfo()
     }
 
@@ -371,6 +374,45 @@ class MainActivity : AppCompatActivity() {
                 refreshCacheInfo()
             }
         }.start()
+    }
+
+    /**
+     * Solicita a role ROLE_CALL_SCREENING (Android 10+) para ativar triagem de ligações.
+     * API oficial do Android — sem permissões perigosas, aprovada pela Play Store.
+     */
+    private fun setupCallScanner() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+            if (roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)) {
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("📞 Proteção de Ligações")
+                    .setMessage("✅ Já está ativa!\n\nO M&A Guardian vai alertar automaticamente quando detectar ligações suspeitas (golpes de banco, FGTS, números ocultos, etc.).")
+                    .setPositiveButton("OK", null)
+                    .show()
+            } else if (roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_CALL_SCREENING)) {
+                val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_CALL_SCREENING)
+                startActivityForResult(intent, 9001)
+            } else {
+                showCallScannerFallbackDialog()
+            }
+        } else {
+            showCallScannerFallbackDialog()
+        }
+    }
+
+    private fun showCallScannerFallbackDialog() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("📞 Proteção de Ligações")
+            .setMessage(
+                "Este recurso requer Android 10 ou superior.\n\n" +
+                "Para ativar manualmente:\n" +
+                "Configurações → Apps → App de telefone padrão → Identificador de chamadas e spam → M&A Guardian"
+            )
+            .setPositiveButton("Abrir Configurações") { _, _ ->
+                startActivity(Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     /**
