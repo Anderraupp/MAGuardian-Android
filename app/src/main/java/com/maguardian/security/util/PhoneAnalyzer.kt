@@ -58,11 +58,28 @@ object PhoneAnalyzer {
             }
         }
 
-        // Brazilian toll-free patterns used in scams
-        val scamPrefixes = listOf("0303", "0508", "0190", "0191", "0192")
-        val matchedPrefix = scamPrefixes.firstOrNull { number.startsWith(it) }
+        // ── Prefixo 0303 — ANATEL obriga TODAS as empresas de telemarketing a usar ──
+        // Qualquer ligação começando com 0303 É telemarketing por lei (Resolução ANATEL 632).
+        // Não é suspeito — é CERTEZA. Score direto 65 para sempre superar o limiar de bloqueio.
+        if (number.startsWith("0303")) {
+            reasons.add("Prefixo 0303 — ANATEL exige este número para TODA empresa de telemarketing no Brasil")
+            score += 65
+        }
+
+        // ── Outros prefixos de serviços suspeitos ──────────────────────────────
+        // 0508: prefixo de recuperação de crédito / cobrança (regulamentado ANATEL)
+        // 4004/4003/4001: SAC/call-center de bancos — legítimos mas frequentemente falsificados
+        val serviceScamPrefixes = listOf("0508", "0190", "0191", "0192", "0500")
+        val matchedPrefix = serviceScamPrefixes.firstOrNull { number.startsWith(it) }
         if (matchedPrefix != null) {
-            reasons.add("Prefixo $matchedPrefix associado a telemarketing agressivo/golpe")
+            reasons.add("Prefixo $matchedPrefix usado em cobrança/serviços de call-center")
+            score += 30
+        }
+
+        // ── 4003/4004/4001 — curtos, usados por bancos mas muito falsificados ──
+        val shortServicePrefixes = listOf("40041", "40031", "40011", "30031", "30041")
+        if (shortServicePrefixes.any { number.startsWith(it) }) {
+            reasons.add("Número de SAC bancário (4003/4004) — frequentemente falsificados em golpes de voz")
             score += 25
         }
 
