@@ -10,7 +10,17 @@ object PhoneAnalyzer {
     )
 
     fun analyze(rawNumber: String): Result {
-        val number = rawNumber.replace("[^+0-9]".toRegex(), "")
+        val raw = rawNumber.replace("[^+0-9]".toRegex(), "")
+
+        // Normaliza E.164 brasileiro (+55XX... ou 55XX...) para formato local (0XX...)
+        // O Android passa o número ao CallScreeningService em formato +55XXXXXXXXXXX;
+        // sem normalização, os checks de comprimento falhavam.
+        val number = when {
+            raw.startsWith("+55") && raw.length > 3 -> "0${raw.substring(3)}"
+            raw.startsWith("55") && !raw.startsWith("+") && raw.length >= 12 -> "0${raw.substring(2)}"
+            else -> raw
+        }
+
         val reasons = mutableListOf<String>()
         var score = 0
 
