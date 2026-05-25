@@ -479,6 +479,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onPhonePermissionGranted() {
+        // Solicita permissão de overlay (necessária para o alerta aparecer sobre a tela de chamada)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
+            !android.provider.Settings.canDrawOverlays(this)
+        ) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("🛡️ Exibir alerta sobre ligações")
+                .setMessage(
+                    "Para mostrar automaticamente se a ligação é segura ou suspeita " +
+                    "ENQUANTO o telefone está tocando, o M&A Guardian precisa da permissão " +
+                    "\"Exibir sobre outros apps\".\n\n" +
+                    "Sem ela, a análise fica apenas na barra de notificações."
+                )
+                .setPositiveButton("Conceder permissão") { _, _ ->
+                    startActivity(
+                        android.content.Intent(
+                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            android.net.Uri.parse("package:$packageName")
+                        )
+                    )
+                }
+                .setNegativeButton("Agora não", null)
+                .show()
+        }
         // Inicia o serviço universal de monitoramento de ligações
         com.maguardian.security.service.CallMonitorService.start(this)
         // No Android 10+ também ativa a role oficial de triagem
