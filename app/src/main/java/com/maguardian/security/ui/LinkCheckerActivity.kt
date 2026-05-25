@@ -73,7 +73,7 @@ class LinkCheckerActivity : AppCompatActivity() {
         }
 
         tvVerdictIcon.text = icon
-        tvVerdict.text = result.verdict
+        tvVerdict.text = "${result.verdict} — ${result.category}"
         tvVerdict.setTextColor(Color.parseColor(colorHex))
         tvScore.text = "Risco: ${result.score}%"
 
