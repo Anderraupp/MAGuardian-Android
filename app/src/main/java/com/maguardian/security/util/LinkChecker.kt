@@ -141,7 +141,42 @@ object LinkChecker {
     )
 
     // ════════════════════════════════════════════════════════════════════════
-    // 12. APK PIRATA / MALWARE
+    // 12. EXTENSÕES DE ARQUIVO EXECUTÁVEL / MALICIOSO NA URL
+    // ════════════════════════════════════════════════════════════════════════
+    private val maliciousExtensions = listOf(
+        ".exe", ".msi", ".bat", ".cmd", ".ps1", ".vbs", ".scr", ".pif",
+        ".jar", ".com", ".hta", ".cpl", ".reg", ".inf", ".lnk", ".dll",
+        ".js", ".jse", ".wsf", ".wsh", ".vbe"
+    )
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 13. HOSPEDAGEM RAW / COMPARTILHAMENTO SEM DOMÍNIO PRÓPRIO
+    // ════════════════════════════════════════════════════════════════════════
+    private val rawHostingDomains = listOf(
+        "raw.githubusercontent.com", "raw.githubu",
+        "pastebin.com", "hastebin.com", "ghostbin.com", "rentry.co",
+        "paste.ee", "filebin.net", "temp.sh", "file.io", "gofile.io",
+        "transfer.sh", "anonfiles.com", "bayfiles.com", "zippyshare.com",
+        "mediafire.com", "4shared.com", "sendspace.com", "uploadfiles.io",
+        "1fichier.com", "katfile.com", "rapidgator.net", "nitroflare.com"
+    )
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 14. FERRAMENTAS DE CHEAT/HACK / MALWARE NOMEADO
+    // ════════════════════════════════════════════════════════════════════════
+    private val cheatToolNames = listOf(
+        "sigmagui", "sigma-gui", "sigma-aim", "sigmahack",
+        "weaim", "we-aim", "aimware", "nohope", "skinchanger",
+        "multihack", "cheatengine", "cheat-engine", "pubghack",
+        "freecheat", "wallhack", "aimbot", "speedhack", "esp-hack",
+        "bypass-vac", "vac-bypass", "bepinex-mod",
+        "kiddion", "kiddion-modest", "stand-mod", "phantom-x",
+        "neverlose", "gamesense", "skeet-io", "onetap-io",
+        "predator-hack", "hvh-cheat", "supergui", "pubslounge", "pubs-lounge"
+    )
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 15. APK PIRATA / MALWARE
     // ════════════════════════════════════════════════════════════════════════
     private val apkMalwareKeywords = listOf(
         "modapk", "apkmod", "mod-apk", "apk-mod", "moddedapk", "apkpremium",
@@ -221,6 +256,43 @@ object LinkChecker {
         val reasons  = mutableListOf<String>()
         var score    = 0
         var topCategory = "Desconhecido"
+
+        // ── 0. ARQUIVO EXECUTÁVEL NA URL — risco máximo ──────────────────────
+        // Detecta antes de qualquer outra coisa. .exe, .msi, .bat, .ps1, .vbs etc.
+        // num link são quase sempre malware — nenhum serviço legítimo envia assim.
+        val urlNoQuery = lower.substringBefore("?").substringBefore("#")
+        val execExt = maliciousExtensions.firstOrNull { urlNoQuery.endsWith(it) }
+        if (execExt != null) {
+            score += 80
+            reasons.add(
+                "URL aponta diretamente para arquivo executável ($execExt) — " +
+                "jamais baixe .exe/.msi/.bat de links enviados por mensagem"
+            )
+            topCategory = "Download de Malware"
+        }
+
+        // ── 0b. HOSPEDAGEM RAW + executável → risco muito alto ───────────────
+        val isRawHosting = rawHostingDomains.any { host == it || host.endsWith(".$it") }
+        if (isRawHosting) {
+            val bonus = if (execExt != null) 15 else 30
+            score += bonus
+            reasons.add(
+                "Arquivo hospedado em serviço raw/compartilhamento (${host}) sem domínio próprio — " +
+                "padrão clássico de distribuição de malware"
+            )
+            if (topCategory == "Desconhecido") topCategory = "Download Suspeito"
+        }
+
+        // ── 0c. FERRAMENTA DE CHEAT/HACK CONHECIDA ──────────────────────────
+        val cheatHit = cheatToolNames.firstOrNull { lower.contains(it) }
+        if (cheatHit != null) {
+            score += 70
+            reasons.add(
+                "Ferramenta de cheat/hack conhecida (\"$cheatHit\") — " +
+                "distribui malware, rouba contas e credenciais do jogo"
+            )
+            topCategory = "Malware / Cheat Tool"
+        }
 
         // ── 1. Encurtador de URL ─────────────────────────────────────────────
         val shortener = urlShorteners.firstOrNull { host == it || host.endsWith(".$it") }
