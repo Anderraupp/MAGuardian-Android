@@ -44,9 +44,10 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        const val TAG = "MainActivity"
-        const val COLOR_RED    = 0xFFDC2626.toInt()
-        const val COLOR_YELLOW = 0xFFF59E0B.toInt()
+        const val TAG             = "MainActivity"
+        const val COLOR_RED       = 0xFFDC2626.toInt()
+        const val COLOR_YELLOW    = 0xFFF59E0B.toInt()
+        const val REQ_PHONE_STATE = 9002
     }
 
     private val pendingUninstall = mutableSetOf<String>()
@@ -174,6 +175,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_PHONE_STATE) {
+            if (grantResults.isNotEmpty() &&
+                grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                onPhonePermissionGranted()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Permissão necessária para monitorar ligações em todas as versões Android.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     private fun setupUI() {
         val btnScan = findViewById<Button>(R.id.btnScan)
         val btnToggle = findViewById<TextView>(R.id.btnToggle)
@@ -202,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val btnCallScanner = findViewById<Button>(R.id.btnCallScanner)
-        btnCallScanner.setOnClickListener { setupCallScanner() }
+        btnCallScanner.setOnClickListener { requestPhonePermissionAndSetup() }
         updateCallScannerButton()
 
         refreshCacheInfo()
@@ -392,6 +414,31 @@ class MainActivity : AppCompatActivity() {
                 refreshCacheInfo()
             }
         }.start()
+    }
+
+    /**
+     * Pede READ_PHONE_STATE (necessário para o CallMonitorService funcionar em
+     * todas as versões Android) e depois ativa o CallScreeningService no Android 10+.
+     */
+    private fun requestPhonePermissionAndSetup() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_STATE)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(android.Manifest.permission.READ_PHONE_STATE),
+                REQ_PHONE_STATE
+            )
+        } else {
+            onPhonePermissionGranted()
+        }
+    }
+
+    private fun onPhonePermissionGranted() {
+        // Inicia o serviço universal de monitoramento de ligações
+        com.maguardian.security.service.CallMonitorService.start(this)
+        // No Android 10+ também ativa a role oficial de triagem
+        setupCallScanner()
     }
 
     /**
