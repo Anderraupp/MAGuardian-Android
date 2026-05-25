@@ -141,6 +141,16 @@
             android:enabled="true"
             android:exported="false" />
 
+        <!-- Bloquear número via botão na notificação -->
+        <receiver
+            android:name=".receiver.BlockCallReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.maguardian.security.BLOCK_NUMBER" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
