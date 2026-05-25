@@ -41,6 +41,29 @@ class CallScannerService : CallScreeningService() {
             result = applyStirShaken(callDetails, result)
         }
 
+        // ── callerDisplayName: detecta labels de cobrança/telemarketing do sistema ──
+        // A Samsung (e outras) preenche callerDisplayName com o nome/categoria da empresa
+        // detectada — ex: "SPEECH", "COBRANCA", "TELEMARKETING". Usamos isso para boostar
+        // o score mesmo quando o formato do número é BR válido (ex: DDD 45, 12 dígitos).
+        val displayName = callDetails.callerDisplayName ?: ""
+        if (displayName.isNotBlank()) {
+            val keywords = listOf(
+                "cobran", "cobrança", "telemar", "speech", "crédito", "credito",
+                "financ", "recupera", "cartão", "cartao", "vendas", "central de",
+                "atendimento", "promotor", "collector", "collect"
+            )
+            if (keywords.any { displayName.contains(it, ignoreCase = true) }) {
+                val boosted = (result.score + 30).coerceAtMost(100)
+                result = result.copy(
+                    score   = boosted,
+                    label   = when { boosted >= 70 -> "Possível Golpe"; boosted >= 45 -> "Número Muito Suspeito"; else -> "Telemarketing / Cobrança" },
+                    emoji   = when { boosted >= 70 -> "🚨"; boosted >= 45 -> "🔴"; else -> "⚠️" },
+                    reasons = result.reasons +
+                        "Identificado como \"$displayName\" pelo sistema — central de atendimento/cobrança"
+                )
+            }
+        }
+
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = PrefsHelper.isNumberBlocked(this, number)
 
