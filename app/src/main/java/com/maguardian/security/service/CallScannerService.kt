@@ -32,7 +32,31 @@ class CallScannerService : CallScreeningService() {
         const val NOTIF_ANALYSIS   = 2003
     }
 
+    // Palavras-chave que identificam centrais de cobrança/telemarketing pelo sistema
+    private val spamKeywords = listOf(
+        "cobran", "cobrança", "cobranca", "telemar", "speech", "crédito", "credito",
+        "financ", "recupera", "cartão", "cartao", "vendas", "central de", "central_de",
+        "atendimento", "promotor", "collector", "collect", "spam", "golpe",
+        "fraude", "banco", "empréstimo", "emprestimo", "seguro", "oferta",
+        "sac ", "sac-", "call center", "callcenter", "cobrança ativa"
+    )
+
     override fun onScreenCall(callDetails: Call.Details) {
+        val displayNameEarly = callDetails.callerDisplayName ?: ""
+        if (displayNameEarly.isNotBlank()) {
+            // Samsung/CNAM já preencheu callerDisplayName — triagem imediata
+            performScreening(callDetails, displayNameEarly)
+        } else {
+            // callerDisplayName vazio: aguarda 500ms para Samsung SmartCall / CNAM
+            // completar a consulta assíncrona antes de decidir bloqueio.
+            // Mantém-se seguro abaixo do timeout do CallScreeningService (~5s).
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                performScreening(callDetails, callDetails.callerDisplayName ?: "")
+            }, 500L)
+        }
+    }
+
+    private fun performScreening(callDetails: Call.Details, displayName: String) {
         val number = callDetails.handle?.schemeSpecificPart ?: ""
         var result = PhoneAnalyzer.analyze(number)
 
@@ -41,21 +65,11 @@ class CallScannerService : CallScreeningService() {
             result = applyStirShaken(callDetails, result)
         }
 
-        // ── callerDisplayName: detecta labels do sistema (Samsung/ANATEL/operadora) ──
-        // Palavras-chave que identificam centrais de cobrança/telemarketing independente
-        // do score — permite bloquear mesmo números com formato BR 100% válido (score 0).
-        val displayName = callDetails.callerDisplayName ?: ""
-        val spamKeywords = listOf(
-            "cobran", "cobrança", "telemar", "speech", "crédito", "credito",
-            "financ", "recupera", "cartão", "cartao", "vendas", "central de",
-            "atendimento", "promotor", "collector", "collect", "spam", "golpe",
-            "fraude", "banco", "empréstimo", "emprestimo", "seguro", "oferta"
-        )
+        // ── callerDisplayName: label do sistema (Samsung SmartCall / CNAM / ANATEL) ──
         val isSystemLabeledSpam = displayName.isNotBlank() &&
             spamKeywords.any { displayName.contains(it, ignoreCase = true) }
 
         if (isSystemLabeledSpam) {
-            // Garante que o resultado reflete "Telemarketing / Cobrança" na notificação/overlay
             result = result.copy(
                 score   = result.score.coerceAtLeast(25),
                 label   = if (result.score < 25) "Telemarketing / Cobrança" else result.label,
@@ -68,20 +82,18 @@ class CallScannerService : CallScreeningService() {
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = PrefsHelper.isNumberBlocked(this, number)
 
-        // Normaliza o número para comparação de prefixo (E.164 +55 → local 0...)
+        // Normaliza E.164 (+5504533...) → local (004533...) para checar prefixo 0303
         val localNumber = when {
             number.startsWith("+55") -> "0${number.substring(3)}"
             number.startsWith("55") && number.length >= 12 -> "0${number.substring(2)}"
             else -> number
         }
-        // 0303 = prefixo ANATEL obrigatório para telemarketing (Resolução 632).
-        // É telemarketing com CERTEZA — bloqueia direto quando toggle está ativo.
         val isAnatelTelemarketing = localNumber.startsWith("0303")
 
         val shouldBlock = when {
             isManuallyBlocked                              -> true  // lista negra manual
             result.score >= 70                             -> true  // golpe confirmado — sempre
-            isAnatelTelemarketing && blockTelemarketing    -> true  // 0303 + toggle ativo
+            isAnatelTelemarketing && blockTelemarketing    -> true  // 0303 ANATEL + toggle
             isSystemLabeledSpam   && blockTelemarketing    -> true  // label sistema + toggle
             result.score >= 25    && blockTelemarketing    -> true  // score ≥ 25 + toggle
             else                                           -> false
