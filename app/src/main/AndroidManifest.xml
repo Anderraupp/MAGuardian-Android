@@ -76,7 +76,10 @@
             android:name=".service.CallMonitorService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="phoneCall">
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Monitora estado de ligações via TelephonyManager para alertar o usuário sobre chamadas suspeitas e golpes" />
         </service>
 
         <!-- Triagem de Ligações Suspeitas (API oficial Android — sem permissões especiais) -->
