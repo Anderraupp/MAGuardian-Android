@@ -49,6 +49,8 @@ class CallMonitorService : Service() {
     private var telephonyManager: TelephonyManager? = null
     private var legacyListener: PhoneStateListener? = null
     private var modernCallback: TelephonyCallback? = null
+    // Android 12+ não fornece o número — CallScannerService assume análise/overlay
+    private var numberUnavailable = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -82,11 +84,11 @@ class CallMonitorService : Service() {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Android 12+ — TelephonyCallback
+            // Android 12+ não fornece o número via TelephonyCallback — o CallScannerService
+            // (que tem Call.Details) assumirá a análise e o overlay.
+            numberUnavailable = true
             val cb = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
                 override fun onCallStateChanged(state: Int) {
-                    // Android 12+ não fornece o número por privacidade;
-                    // mostramos análise baseada no que o sistema permite.
                     handleState(state, null)
                 }
             }
@@ -96,7 +98,6 @@ class CallMonitorService : Service() {
                     Executors.newSingleThreadExecutor(), cb
                 )
             } catch (e: SecurityException) {
-                // READ_PHONE_STATE não concedido — serviço continua mas sem monitoramento de chamadas
                 android.util.Log.w("CallMonitorService", "Sem permissão READ_PHONE_STATE: ${e.message}")
             }
         } else {
@@ -131,10 +132,14 @@ class CallMonitorService : Service() {
         val nm = getSystemService(NotificationManager::class.java)
         when (state) {
             TelephonyManager.CALL_STATE_RINGING -> {
+                if (numberUnavailable) {
+                    // Android 12+: número indisponível via TelephonyCallback.
+                    // CallScannerService tem o número real e mostra o overlay/notificação corretos.
+                    // Evitamos o falso positivo de "Número oculto / Telemarketing".
+                    return
+                }
                 val result = PhoneAnalyzer.analyze(number ?: "")
-                // Overlay sobre a tela de chamada (aparece sem puxar barra)
                 CallOverlayManager.show(applicationContext, number ?: "", result)
-                // Notificação como backup (barra de status)
                 showCallNotif(number ?: "", result, nm)
             }
             TelephonyManager.CALL_STATE_IDLE -> {
@@ -142,9 +147,8 @@ class CallMonitorService : Service() {
                 nm.cancel(NOTIF_CALL)
             }
             TelephonyManager.CALL_STATE_OFFHOOK -> {
-                // Ligação atendida — remove overlay e notificação segura
                 CallOverlayManager.dismiss(applicationContext)
-                if (true) nm.cancel(NOTIF_CALL)
+                nm.cancel(NOTIF_CALL)
             }
         }
     }
