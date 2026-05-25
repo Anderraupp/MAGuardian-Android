@@ -144,28 +144,50 @@ class CallMonitorService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val (channelId, priority, color, title, body) = if (isSafe) {
-            val msg = if (number.isBlank())
-                "Número oculto — ${ result.label}"
-            else
-                "$displayNumber — ${result.label}"
-            NotifConfig(
-                CHANNEL_CALL_SAFE,
-                NotificationCompat.PRIORITY_DEFAULT,
-                0xFF22C55E.toInt(),
-                "✅ Ligação Verificada — M&A Guardian",
-                msg
-            )
-        } else {
-            val reasons = result.reasons.joinToString(" • ")
-            NotifConfig(
-                CHANNEL_CALL_ALERT,
-                if (result.score >= 55) NotificationCompat.PRIORITY_MAX
-                else NotificationCompat.PRIORITY_HIGH,
-                if (result.score >= 55) 0xFFDC2626.toInt() else 0xFFF59E0B.toInt(),
-                "${result.emoji} ${result.label} — Risco ${result.score}%",
-                "$displayNumber\n$reasons"
-            )
+        val (channelId, priority, color, title, body) = when {
+            result.score < 25 -> {
+                val msg = "$displayNumber — ${result.label}"
+                NotifConfig(
+                    CHANNEL_CALL_SAFE,
+                    NotificationCompat.PRIORITY_DEFAULT,
+                    0xFF22C55E.toInt(),
+                    "✅ Ligação Verificada — M&A Guardian",
+                    msg
+                )
+            }
+            result.score < 45 -> {
+                // Telemarketing / Cobrança
+                val reasons = result.reasons.joinToString(" • ")
+                NotifConfig(
+                    CHANNEL_CALL_ALERT,
+                    NotificationCompat.PRIORITY_DEFAULT,
+                    0xFF6B7280.toInt(),
+                    "${result.emoji} ${result.label}",
+                    "$displayNumber\n$reasons"
+                )
+            }
+            result.score < 70 -> {
+                // Número Muito Suspeito
+                val reasons = result.reasons.joinToString(" • ")
+                NotifConfig(
+                    CHANNEL_CALL_ALERT,
+                    NotificationCompat.PRIORITY_HIGH,
+                    0xFFF59E0B.toInt(),
+                    "${result.emoji} ${result.label} — Risco ${result.score}%",
+                    "$displayNumber\n$reasons"
+                )
+            }
+            else -> {
+                // Possível Golpe
+                val reasons = result.reasons.joinToString(" • ")
+                NotifConfig(
+                    CHANNEL_CALL_ALERT,
+                    NotificationCompat.PRIORITY_MAX,
+                    0xFFDC2626.toInt(),
+                    "${result.emoji} ${result.label} — Risco ${result.score}%",
+                    "$displayNumber\n$reasons"
+                )
+            }
         }
 
         val notif = NotificationCompat.Builder(this, channelId)
