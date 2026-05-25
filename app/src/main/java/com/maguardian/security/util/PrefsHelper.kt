@@ -202,6 +202,27 @@ object PrefsHelper {
     fun setTrialAlarmSet(ctx: Context, value: Boolean) =
         prefs(ctx).edit().putBoolean(KEY_TRIAL_ALARM_SET, value).apply()
 
+    // ── Lista de números bloqueados manualmente ────────────────────────────────
+    private const val KEY_BLOCKED_NUMBERS = "blocked_numbers"
+
+    fun getBlockedNumbers(ctx: Context): Set<String> =
+        prefs(ctx).getStringSet(KEY_BLOCKED_NUMBERS, emptySet()) ?: emptySet()
+
+    fun blockNumber(ctx: Context, number: String) {
+        val current = getBlockedNumbers(ctx).toMutableSet()
+        current.add(number.trim())
+        prefs(ctx).edit().putStringSet(KEY_BLOCKED_NUMBERS, current).apply()
+    }
+
+    fun unblockNumber(ctx: Context, number: String) {
+        val current = getBlockedNumbers(ctx).toMutableSet()
+        current.remove(number.trim())
+        prefs(ctx).edit().putStringSet(KEY_BLOCKED_NUMBERS, current).apply()
+    }
+
+    fun isNumberBlocked(ctx: Context, number: String): Boolean =
+        number.trim() in getBlockedNumbers(ctx)
+
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }
