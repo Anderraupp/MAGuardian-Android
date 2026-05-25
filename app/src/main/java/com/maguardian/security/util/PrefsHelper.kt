@@ -21,7 +21,8 @@ object PrefsHelper {
     private const val KEY_SUBSCRIPTION_ACTIVE = "subscription_active"
     private const val KEY_TRIAL_NOTIF_COUNT  = "trial_notif_count"
     private const val KEY_LAST_TRIAL_POPUP   = "last_trial_popup"
-    private const val KEY_TRIAL_ALARM_SET    = "trial_alarm_set"
+    private const val KEY_TRIAL_ALARM_SET        = "trial_alarm_set"
+    private const val KEY_BLOCK_TELEMARKETING    = "block_telemarketing"
 
     private const val STATS_RESET_INTERVAL_MS = 12 * 60 * 60 * 1000L // 12 horas
 
@@ -42,6 +43,12 @@ object PrefsHelper {
 
     fun setAutoRemoveEnabled(ctx: Context, enabled: Boolean) =
         prefs(ctx).edit().putBoolean(KEY_AUTO_REMOVE, enabled).apply()
+
+    fun isBlockTelemarketingEnabled(ctx: Context): Boolean =
+        prefs(ctx).getBoolean(KEY_BLOCK_TELEMARKETING, false)
+
+    fun setBlockTelemarketingEnabled(ctx: Context, enabled: Boolean) =
+        prefs(ctx).edit().putBoolean(KEY_BLOCK_TELEMARKETING, enabled).apply()
 
     fun isNotificationsEnabled(ctx: Context): Boolean =
         prefs(ctx).getBoolean(KEY_NOTIFICATIONS, true)
