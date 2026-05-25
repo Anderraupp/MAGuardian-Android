@@ -54,7 +54,16 @@ class CallMonitorService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannels()
-        startForeground(NOTIF_PERSISTENT, buildPersistentNotif())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Android 14+ exige que o tipo declarado no manifest seja passado aqui
+            startForeground(
+                NOTIF_PERSISTENT,
+                buildPersistentNotif(),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIF_PERSISTENT, buildPersistentNotif())
+        }
         registerListener()
     }
 
