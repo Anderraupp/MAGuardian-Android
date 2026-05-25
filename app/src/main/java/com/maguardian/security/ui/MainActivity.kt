@@ -227,6 +227,22 @@ class MainActivity : AppCompatActivity() {
         btnCallScanner.setOnClickListener { requestPhonePermissionAndSetup() }
         updateCallScannerButton()
 
+        // Toggle: Bloquear Telemarketing / Cobrança
+        val switchBlock = findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switchBlockTelemarketing)
+        val tvBlockStatus = findViewById<TextView>(R.id.tvBlockTelemarketingStatus)
+        val isBlocking = PrefsHelper.isBlockTelemarketingEnabled(this)
+        switchBlock.isChecked = isBlocking
+        updateBlockTelemarketingStatus(tvBlockStatus, isBlocking)
+        switchBlock.setOnCheckedChangeListener { _, checked ->
+            PrefsHelper.setBlockTelemarketingEnabled(this, checked)
+            updateBlockTelemarketingStatus(tvBlockStatus, checked)
+            val msg = if (checked)
+                "🚫 Telemarketing e cobrança serão bloqueados automaticamente"
+            else
+                "Bloqueio de telemarketing desativado"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
+
         refreshCacheInfo()
     }
 
@@ -466,6 +482,16 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             showCallScannerFallbackDialog()
+        }
+    }
+
+    private fun updateBlockTelemarketingStatus(tv: TextView, enabled: Boolean) {
+        if (enabled) {
+            tv.text = "Ativado — telemarketing e cobrança bloqueados automaticamente"
+            tv.setTextColor(android.graphics.Color.parseColor("#22C55E"))
+        } else {
+            tv.text = "Desativado — ligações de cobrança passam normalmente"
+            tv.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
         }
     }
 
