@@ -10,8 +10,10 @@ import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import androidx.core.app.NotificationCompat
 import com.maguardian.security.R
+import com.maguardian.security.receiver.BlockCallReceiver
 import com.maguardian.security.ui.MainActivity
 import com.maguardian.security.util.PhoneAnalyzer
+import com.maguardian.security.util.PrefsHelper
 import java.util.concurrent.Executors
 
 /**
@@ -190,7 +192,7 @@ class CallMonitorService : Service() {
             }
         }
 
-        val notif = NotificationCompat.Builder(this, channelId)
+        val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_shield_alert)
             .setContentTitle(title)
             .setContentText(body)
@@ -200,10 +202,30 @@ class CallMonitorService : Service() {
             .setAutoCancel(true)
             .setContentIntent(openIntent)
             .setColor(color)
-            .setTimeoutAfter(if (isSafe) 10_000L else 60_000L)
-            .build()
+            .setTimeoutAfter(if (result.score < 25) 10_000L else 60_000L)
 
-        nm.notify(NOTIF_CALL, notif)
+        // Adiciona botão "Bloquear" apenas para ligações suspeitas/telemarketing
+        // que não sejam de número oculto e que ainda não estejam na lista de bloqueados
+        if (result.score >= 25 && number.isNotBlank() &&
+            !PrefsHelper.isNumberBlocked(this, number)
+        ) {
+            val blockIntent = PendingIntent.getBroadcast(
+                this,
+                number.hashCode(),
+                Intent(BlockCallReceiver.ACTION_BLOCK_NUMBER).apply {
+                    setPackage(packageName)
+                    putExtra(BlockCallReceiver.EXTRA_NUMBER, number)
+                },
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            builder.addAction(
+                R.drawable.ic_shield_alert,
+                "🚫 Bloquear este número",
+                blockIntent
+            )
+        }
+
+        nm.notify(NOTIF_CALL, builder.build())
     }
 
     // ── Notificação persistente do serviço ────────────────────────────────────
