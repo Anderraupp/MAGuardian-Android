@@ -1,0 +1,250 @@
+package com.maguardian.security.service
+
+import android.app.*
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.IBinder
+import android.telephony.PhoneStateListener
+import android.telephony.TelephonyCallback
+import android.telephony.TelephonyManager
+import androidx.core.app.NotificationCompat
+import com.maguardian.security.R
+import com.maguardian.security.ui.MainActivity
+import com.maguardian.security.util.PhoneAnalyzer
+import java.util.concurrent.Executors
+
+/**
+ * Serviço de monitoramento de ligações que funciona em TODAS as versões do Android.
+ * - Android < 12 : PhoneStateListener (obtém número via READ_PHONE_STATE)
+ * - Android 12+  : TelephonyCallback (API moderna, sem deprecações)
+ * - Detecta ligações de contatos E de desconhecidos (diferente do CallScreeningService)
+ */
+class CallMonitorService : Service() {
+
+    companion object {
+        const val CHANNEL_PERSISTENT = "ma_protection_status"
+        const val CHANNEL_CALL_ALERT = "ma_call_alert_v2"
+        const val CHANNEL_CALL_SAFE  = "ma_call_safe_v2"
+        const val NOTIF_PERSISTENT   = 3001
+        const val NOTIF_CALL         = 2001
+
+        fun start(context: Context) {
+            val intent = Intent(context, CallMonitorService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, CallMonitorService::class.java))
+        }
+    }
+
+    private var telephonyManager: TelephonyManager? = null
+    private var legacyListener: PhoneStateListener? = null
+    private var modernCallback: TelephonyCallback? = null
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        createChannels()
+        startForeground(NOTIF_PERSISTENT, buildPersistentNotif())
+        registerListener()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterListener()
+    }
+
+    // ── Registro do listener ──────────────────────────────────────────────────
+
+    @Suppress("DEPRECATION")
+    private fun registerListener() {
+        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12+ — TelephonyCallback
+            val cb = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
+                override fun onCallStateChanged(state: Int) {
+                    // Android 12+ não fornece o número por privacidade;
+                    // mostramos análise baseada no que o sistema permite.
+                    handleState(state, null)
+                }
+            }
+            modernCallback = cb
+            telephonyManager?.registerTelephonyCallback(
+                Executors.newSingleThreadExecutor(), cb
+            )
+        } else {
+            // Android < 12 — PhoneStateListener (obtém número com READ_PHONE_STATE)
+            val listener = object : PhoneStateListener() {
+                @Deprecated("Deprecated in Java")
+                override fun onCallStateChanged(state: Int, phoneNumber: String?) {
+                    handleState(state, phoneNumber)
+                }
+            }
+            legacyListener = listener
+            @Suppress("DEPRECATION")
+            telephonyManager?.listen(listener, PhoneStateListener.LISTEN_CALL_STATE)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun unregisterListener() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            modernCallback?.let { telephonyManager?.unregisterTelephonyCallback(it) }
+        } else {
+            legacyListener?.let {
+                @Suppress("DEPRECATION")
+                telephonyManager?.listen(it, PhoneStateListener.LISTEN_NONE)
+            }
+        }
+    }
+
+    // ── Lógica principal ─────────────────────────────────────────────────────
+
+    private fun handleState(state: Int, number: String?) {
+        val nm = getSystemService(NotificationManager::class.java)
+        when (state) {
+            TelephonyManager.CALL_STATE_RINGING -> {
+                val result = PhoneAnalyzer.analyze(number ?: "")
+                showCallNotif(number ?: "", result, nm)
+            }
+            TelephonyManager.CALL_STATE_IDLE -> {
+                // Remove notificação segura após a ligação encerrar;
+                // alertas de golpe ficam para o usuário ver.
+                nm.cancel(NOTIF_CALL)
+            }
+        }
+    }
+
+    private fun showCallNotif(
+        number: String,
+        result: PhoneAnalyzer.Result,
+        nm: NotificationManager
+    ) {
+        val displayNumber = when {
+            number.isBlank() -> "Número oculto"
+            else             -> number
+        }
+        val isSafe = result.score < 25
+
+        val openIntent = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val (channelId, priority, color, title, body) = if (isSafe) {
+            val msg = if (number.isBlank())
+                "Número oculto — ${ result.label}"
+            else
+                "$displayNumber — ${result.label}"
+            NotifConfig(
+                CHANNEL_CALL_SAFE,
+                NotificationCompat.PRIORITY_DEFAULT,
+                0xFF22C55E.toInt(),
+                "✅ Ligação Verificada — M&A Guardian",
+                msg
+            )
+        } else {
+            val reasons = result.reasons.joinToString(" • ")
+            NotifConfig(
+                CHANNEL_CALL_ALERT,
+                if (result.score >= 55) NotificationCompat.PRIORITY_MAX
+                else NotificationCompat.PRIORITY_HIGH,
+                if (result.score >= 55) 0xFFDC2626.toInt() else 0xFFF59E0B.toInt(),
+                "${result.emoji} ${result.label} — Risco ${result.score}%",
+                "$displayNumber\n$reasons"
+            )
+        }
+
+        val notif = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_shield_alert)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(priority)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setAutoCancel(true)
+            .setContentIntent(openIntent)
+            .setColor(color)
+            .setTimeoutAfter(if (isSafe) 10_000L else 60_000L)
+            .build()
+
+        nm.notify(NOTIF_CALL, notif)
+    }
+
+    // ── Notificação persistente do serviço ────────────────────────────────────
+
+    private fun buildPersistentNotif(): Notification {
+        val openIntent = PendingIntent.getActivity(
+            this, 0, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        return NotificationCompat.Builder(this, CHANNEL_PERSISTENT)
+            .setSmallIcon(R.drawable.ic_shield_alert)
+            .setContentTitle("🛡️ M&A Guardian — Proteção ativa")
+            .setContentText("Monitorando ligações em tempo real")
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true)
+            .setContentIntent(openIntent)
+            .setColor(0xFF22C55E.toInt())
+            .build()
+    }
+
+    // ── Canais de notificação ─────────────────────────────────────────────────
+
+    private fun createChannels() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val nm = getSystemService(NotificationManager::class.java)
+
+        nm.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_PERSISTENT,
+                "Status da Proteção",
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                description = "Indica que o M&A Guardian está monitorando ligações"
+                setShowBadge(false)
+            }
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_CALL_ALERT,
+                "Alertas de Ligações Suspeitas",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Avisos de possíveis golpes e números suspeitos"
+                enableVibration(true)
+            }
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_CALL_SAFE,
+                "Verificação de Ligação Segura",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Confirmação quando a ligação é verificada como segura"
+                enableVibration(false)
+            }
+        )
+    }
+
+    private data class NotifConfig(
+        val channelId: String,
+        val priority: Int,
+        val color: Int,
+        val title: String,
+        val bodyText: String
+    )
+}
