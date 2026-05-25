@@ -68,12 +68,23 @@ class CallScannerService : CallScreeningService() {
         val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = PrefsHelper.isNumberBlocked(this, number)
 
+        // Normaliza o número para comparação de prefixo (E.164 +55 → local 0...)
+        val localNumber = when {
+            number.startsWith("+55") -> "0${number.substring(3)}"
+            number.startsWith("55") && number.length >= 12 -> "0${number.substring(2)}"
+            else -> number
+        }
+        // 0303 = prefixo ANATEL obrigatório para telemarketing (Resolução 632).
+        // É telemarketing com CERTEZA — bloqueia direto quando toggle está ativo.
+        val isAnatelTelemarketing = localNumber.startsWith("0303")
+
         val shouldBlock = when {
-            isManuallyBlocked                        -> true   // sempre bloqueia número na lista
-            result.score >= 70                       -> true   // golpe confirmado — bloqueia sempre
-            isSystemLabeledSpam && blockTelemarketing -> true  // label do sistema + toggle ativo
-            result.score >= 25 && blockTelemarketing  -> true  // score ≥ 25 + toggle ativo
-            else                                     -> false
+            isManuallyBlocked                              -> true  // lista negra manual
+            result.score >= 70                             -> true  // golpe confirmado — sempre
+            isAnatelTelemarketing && blockTelemarketing    -> true  // 0303 + toggle ativo
+            isSystemLabeledSpam   && blockTelemarketing    -> true  // label sistema + toggle
+            result.score >= 25    && blockTelemarketing    -> true  // score ≥ 25 + toggle
+            else                                           -> false
         }
 
         respondToCall(
