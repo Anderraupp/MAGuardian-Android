@@ -61,6 +61,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Alerta de ligação — aparece sobre tela de chamada via USE_FULL_SCREEN_INTENT -->
+        <activity
+            android:name=".ui.CallAlertActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MAGuardian.CallAlert"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true" />
+
         <!-- Tela de Assinatura -->
         <activity
             android:name=".ui.SubscriptionActivity"
