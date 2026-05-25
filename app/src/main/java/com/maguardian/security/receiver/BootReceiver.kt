@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import com.maguardian.security.service.CallMonitorService
 import com.maguardian.security.service.PopupDetectorService
 import com.maguardian.security.util.PrefsHelper
 
@@ -25,11 +26,15 @@ class BootReceiver : BroadcastReceiver() {
             return
         }
 
-        val serviceIntent = Intent(context, PopupDetectorService::class.java)
+        // Inicia o serviço de detecção de pop-ups
+        val popupIntent = Intent(context, PopupDetectorService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
+            context.startForegroundService(popupIntent)
         } else {
-            context.startService(serviceIntent)
+            context.startService(popupIntent)
         }
+
+        // Inicia o monitor de ligações (funciona em todas as versões Android)
+        CallMonitorService.start(context)
     }
 }
