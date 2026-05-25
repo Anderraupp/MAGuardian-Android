@@ -26,8 +26,8 @@ class CallMonitorService : Service() {
 
     companion object {
         const val CHANNEL_PERSISTENT = "ma_protection_status"
-        const val CHANNEL_CALL_ALERT = "ma_call_alert_v2"
-        const val CHANNEL_CALL_SAFE  = "ma_call_safe_v2"
+        const val CHANNEL_CALL_ALERT = "ma_call_alert_v3"   // v3 força recriação com IMPORTANCE_HIGH
+        const val CHANNEL_CALL_SAFE  = "ma_call_safe_v3"    // v3 força recriação com IMPORTANCE_HIGH
         const val NOTIF_PERSISTENT   = 3001
         const val NOTIF_CALL         = 2001
 
@@ -90,9 +90,14 @@ class CallMonitorService : Service() {
                 }
             }
             modernCallback = cb
-            telephonyManager?.registerTelephonyCallback(
-                Executors.newSingleThreadExecutor(), cb
-            )
+            try {
+                telephonyManager?.registerTelephonyCallback(
+                    Executors.newSingleThreadExecutor(), cb
+                )
+            } catch (e: SecurityException) {
+                // READ_PHONE_STATE não concedido — serviço continua mas sem monitoramento de chamadas
+                android.util.Log.w("CallMonitorService", "Sem permissão READ_PHONE_STATE: ${e.message}")
+            }
         } else {
             // Android < 12 — PhoneStateListener (obtém número com READ_PHONE_STATE)
             val listener = object : PhoneStateListener() {
@@ -201,17 +206,27 @@ class CallMonitorService : Service() {
             }
         }
 
+        // fullScreenIntent faz a notificação aparecer SOBRE a tela de chamada recebida
+        val fullScreenIntent = PendingIntent.getActivity(
+            this, 1,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_shield_alert)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(priority)
-            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setCategory(NotificationCompat.CATEGORY_CALL)   // CATEGORY_CALL tem prioridade máxima
             .setAutoCancel(true)
             .setContentIntent(openIntent)
+            .setFullScreenIntent(fullScreenIntent, result.score >= 45) // alta prioridade p/ suspeito/golpe
             .setColor(color)
-            .setTimeoutAfter(if (result.score < 25) 10_000L else 60_000L)
+            .setTimeoutAfter(if (result.score < 25) 15_000L else 90_000L)
 
         // Adiciona botão "Bloquear" apenas para ligações suspeitas/telemarketing
         // que não sejam de número oculto e que ainda não estejam na lista de bloqueados
@@ -279,13 +294,14 @@ class CallMonitorService : Service() {
             ).apply {
                 description = "Avisos de possíveis golpes e números suspeitos"
                 enableVibration(true)
+                setBypassDnd(true)  // aparece mesmo em Não Perturbe
             }
         )
         nm.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_CALL_SAFE,
                 "Verificação de Ligação Segura",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH  // HIGH para aparecer como heads-up sobre a tela de chamada
             ).apply {
                 description = "Confirmação quando a ligação é verificada como segura"
                 enableVibration(false)
