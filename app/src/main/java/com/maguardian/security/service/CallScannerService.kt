@@ -39,7 +39,10 @@ class CallScannerService : CallScreeningService() {
         "financ", "recupera", "cartão", "cartao", "vendas", "central de", "central_de",
         "atendimento", "promotor", "collector", "collect", "spam", "golpe",
         "fraude", "banco", "empréstimo", "emprestimo", "seguro", "oferta",
-        "sac ", "sac-", "call center", "callcenter", "cobrança ativa"
+        "sac ", "sac-", "call center", "callcenter", "cobrança ativa",
+        // Rótulos do Samsung SmartCall / sistema operacional
+        "bloqueado", "informado", "suspeito", "spam call", "possível spam",
+        "possivelmente", "desconhecido", "scam", "nuisance", "robocall"
     )
 
     override fun onScreenCall(callDetails: Call.Details) {
