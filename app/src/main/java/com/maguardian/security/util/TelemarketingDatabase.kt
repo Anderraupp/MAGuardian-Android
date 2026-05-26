@@ -73,6 +73,8 @@ object TelemarketingDatabase {
         "4599987",   // Cobrança/telemarketing Cascavel/PR (relatado 26/05/2026)
         "4599100",   // Spam DDD 45 Paraná (relatado 26/05/2026)
         "4598834",   // Cobrança/telemarketing Cascavel/PR (relatado 26/05/2026)
+        "4598815",   // Spam DDD 45 Paraná (relatado 26/05/2026)
+        "4593300",   // Spam DDD 45 Paraná — cobre 045933005651 e 045933005904 (relatado 26/05/2026)
         "4592003",   // Spam DDD 45 Paraná (relatado 26/05/2026)
         "4525050",   // Fixo suspeito Cascavel/PR (relatado 25/05/2026)
 
@@ -181,7 +183,7 @@ object TelemarketingDatabase {
     // ════════════════════════════════════════════════════════════════════════
     private val prefixes6: Set<String> = setOf(
         // ── Denunciados pelo usuário (DDD 45 — PR) ───────────────────────
-        "459911", "459913", "459910", "459998", "459883", "459200", "452505",
+        "459911", "459913", "459910", "459998", "459881", "459883", "459330", "459200", "452505",
 
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
         "453301", "453302", "453303", "453330", "453331",
@@ -220,6 +222,9 @@ object TelemarketingDatabase {
         "45988348952",  // Cobrança/telemarketing Cascavel/PR (26/05/2026)
         "45920039185",  // Spam DDD 45 Paraná (26/05/2026)
         "45991002213",  // Spam DDD 45 Paraná (26/05/2026)
+        "45933005651",  // Spam DDD 45 Paraná (26/05/2026)
+        "45933005904",  // Spam DDD 45 Paraná (26/05/2026)
+        "45988156723",  // Spam DDD 45 Paraná (26/05/2026)
         "4525050025",   // Fixo suspeito Cascavel/PR (25/05/2026)
 
         // SPEECH Cascavel
