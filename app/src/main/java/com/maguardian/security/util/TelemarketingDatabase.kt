@@ -228,6 +228,10 @@ object TelemarketingDatabase {
         "45988413231",  // Spam DDD 45 Paraná (26/05/2026)
         "45920039140",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
         "45933005881",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4593300 já coberto
+        "45920039197",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
+        "45920039230",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
+        "45920039133",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
+        "45920039240",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
         "45920039232",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
         "45920039161",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
         "45920039185",  // Spam DDD 45 Paraná (26/05/2026)
