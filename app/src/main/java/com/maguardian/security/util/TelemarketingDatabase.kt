@@ -71,6 +71,7 @@ object TelemarketingDatabase {
         "4599119",   // Edson Mandelli Stumpf — cobrança (relatado 26/05/2026)
         "4599137",   // Cobrança/telemarketing Cascavel/PR (relatado 26/05/2026)
         "4599987",   // Cobrança/telemarketing Cascavel/PR (relatado 26/05/2026)
+        "4599100",   // Spam DDD 45 Paraná (relatado 26/05/2026)
         "4598834",   // Cobrança/telemarketing Cascavel/PR (relatado 26/05/2026)
         "4592003",   // Spam DDD 45 Paraná (relatado 26/05/2026)
         "4525050",   // Fixo suspeito Cascavel/PR (relatado 25/05/2026)
@@ -180,7 +181,7 @@ object TelemarketingDatabase {
     // ════════════════════════════════════════════════════════════════════════
     private val prefixes6: Set<String> = setOf(
         // ── Denunciados pelo usuário (DDD 45 — PR) ───────────────────────
-        "459911", "459913", "459998", "459883", "459200", "452505",
+        "459911", "459913", "459910", "459998", "459883", "459200", "452505",
 
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
         "453301", "453302", "453303", "453330", "453331",
@@ -218,6 +219,7 @@ object TelemarketingDatabase {
         "45999878611",  // Cobrança/telemarketing Cascavel/PR (26/05/2026)
         "45988348952",  // Cobrança/telemarketing Cascavel/PR (26/05/2026)
         "45920039185",  // Spam DDD 45 Paraná (26/05/2026)
+        "45991002213",  // Spam DDD 45 Paraná (26/05/2026)
         "4525050025",   // Fixo suspeito Cascavel/PR (25/05/2026)
 
         // SPEECH Cascavel
