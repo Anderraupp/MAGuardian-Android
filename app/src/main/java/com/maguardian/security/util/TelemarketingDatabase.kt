@@ -68,6 +68,7 @@ object TelemarketingDatabase {
     // ════════════════════════════════════════════════════════════════════════
     private val prefixes7: Set<String> = setOf(
         // ── Números denunciados pelo usuário (DDD 45 — PR) ───────────────
+        "4598406",   // Spam DDD 45 Paraná (relatado 26/05/2026)
         "4598841",   // Spam DDD 45 Paraná (relatado 26/05/2026)
         "4599973",   // Spam DDD 45 Paraná (relatado 26/05/2026)
         "4599157",   // Spam DDD 45 Paraná (relatado 26/05/2026)
@@ -186,7 +187,7 @@ object TelemarketingDatabase {
     // ════════════════════════════════════════════════════════════════════════
     private val prefixes6: Set<String> = setOf(
         // ── Denunciados pelo usuário (DDD 45 — PR) ───────────────────────
-        "459997", "459915", "459911", "459913", "459910", "459998", "459884", "459881", "459883", "459330", "459200", "452505",
+        "459997", "459915", "459911", "459913", "459910", "459998", "459884", "459881", "459883", "459840", "459330", "459200", "452505",
 
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
         "453301", "453302", "453303", "453330", "453331",
@@ -225,6 +226,8 @@ object TelemarketingDatabase {
         "45988348952",  // Cobrança/telemarketing Cascavel/PR (26/05/2026)
         "45991574479",  // Spam DDD 45 Paraná (26/05/2026)
         "45999731255",  // Spam DDD 45 Paraná (26/05/2026)
+        "45984067238",  // Spam DDD 45 Paraná (26/05/2026)
+        "45933005847",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4593300 já coberto
         "45988413231",  // Spam DDD 45 Paraná (26/05/2026)
         "45920039140",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4592003 já coberto
         "45933005881",  // Spam DDD 45 Paraná (26/05/2026) — prefixo 4593300 já coberto
