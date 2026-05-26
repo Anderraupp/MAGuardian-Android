@@ -8,10 +8,12 @@ package com.maguardian.security.util
  *         reclameaqui.com.br e bases ANATEL de prefixos homologados.
  *
  * Estrutura de verificação (da mais específica para a mais geral):
+ *   0. Prefixo 0303 (ANATEL obrigatório telemarketing) → confidence 92
  *   1. Número exato → confidence 85
  *   2. Prefixo de 7 dígitos (DDD + 5 digits) → confidence 70
  *   3. Prefixo de 6 dígitos (DDD + 4 digits) → confidence 55
- *   4. Nome da empresa no callerDisplayName → confidence 75
+ *   4. Prefixo de 5 dígitos (DDD + 3 digits) — blocos confirmados → confidence 40
+ *   5. Nome da empresa no callerDisplayName → confidence 75
  */
 object TelemarketingDatabase {
 
@@ -95,6 +97,7 @@ object TelemarketingDatabase {
         "4597361",   // Spam DDD 45 Paraná — 045973616846 (relatado 26/05/2026)
         "4598489",   // Spam DDD 45 Paraná — 045984894356 (relatado 26/05/2026)
         "4599958",   // Spam DDD 45 Paraná — 045999581592 + 045999582206 (relatado 26/05/2026)
+        "4599149",   // Spam DDD 45 Paraná — 045991496750 (relatado 26/05/2026)
 
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
         "4521047",   // SPEECH fixo — 04521047520 (26/05/2026, Samsung: COBRANÇA)
@@ -252,6 +255,41 @@ object TelemarketingDatabase {
     )
 
     // ════════════════════════════════════════════════════════════════════════
+    // PREFIXOS DE 5 DÍGITOS — DDD + 3 primeiros dígitos do número local
+    // Cobertura ampla — apenas blocos inteiros CONFIRMADOS como spam pelo usuário
+    // Confidence 40 → suficiente para exibir overlay (limiar ≥ 25)
+    // ════════════════════════════════════════════════════════════════════════
+    private val prefixes5: Set<String> = setOf(
+        // ── DDD 45 Paraná — blocos inteiros confirmados hoje (26/05/2026) ──
+        // Qualquer celular 0459XX... nesses blocos mostrou overlay ou foi denunciado
+        "45973",  // 45973616846 confirmado
+        "45974",  // 45974864071 confirmado
+        "45979",  // 45979712325 confirmado
+        "45984",  // 45984067238, 45984345481, 45984894356 confirmados
+        "45988",  // 45988015109, 45988156723, 45988348952, 45988413231, 45988422302 confirmados
+        "45990",  // 45990812970 confirmado
+        "45991",  // 45991002213, 45991193388, 45991371335, 45991441077, 45991496750, 45991574479 confirmados
+        "45992",  // 45992765079, 45992895846 confirmados
+        "45997",  // 45999731255 → na verdade 45997x — bloco suspeito
+        "45999",  // 45999172214, 45999470544, 45999581592, 45999878611 confirmados
+        "45920",  // SPEECH — 45920039xxx confirmados
+        "45933",  // SPEECH — 45933005xxx confirmados
+        "45252",  // Fixos suspeitos Cascavel
+
+        // ── Outros DDDs — blocos de grandes call centers confirmados ──────
+        "11210",  // Atento SP
+        "11310",  // Atento/Teleperformance SP
+        "11313",  // Teleperformance SP
+        "31310",  // AeC MG
+        "21210",  // Contax RJ
+        "21310",  // Contax RJ
+        "41310",  // Almaviva CWB
+        "51310",  // Cobrança POA
+        "48321",  // URANET SC
+        "19310"   // Callink Campinas
+    )
+
+    // ════════════════════════════════════════════════════════════════════════
     // PREFIXOS DE 6 DÍGITOS — DDD + 4 dígitos
     // Precisão média — cobre variações dentro da mesma central
     // ════════════════════════════════════════════════════════════════════════
@@ -337,6 +375,7 @@ object TelemarketingDatabase {
         "45984894356",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "45999581592",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "45999582206",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
+        "45991496750",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
 
         // SPEECH Cascavel — fixo 4521047xxx
         "4521047520",  // SPEECH cobrança fixo (26/05/2026, Samsung: COBRANÇA)
@@ -537,7 +576,19 @@ object TelemarketingDatabase {
             }
         }
 
-        // ── 4. Nome da empresa no callerDisplayName ────────────────────────
+        // ── 4. Prefixo de 5 dígitos — bloco inteiro confirmado ────────────
+        if (normalized.length >= 5) {
+            val p5 = normalized.substring(0, 5)
+            if (p5 in prefixes5) {
+                return Match(
+                    matched    = true,
+                    confidence = 40,
+                    reason     = "Bloco (${p5}xxxxxx) confirmado como faixa de telemarketing/cobrança denunciada"
+                )
+            }
+        }
+
+        // ── 5. Nome da empresa no callerDisplayName ────────────────────────
         if (callerName.isNotBlank()) {
             val nameLower = callerName.lowercase()
             val hit = knownCallerNames.firstOrNull { nameLower.contains(it) }
