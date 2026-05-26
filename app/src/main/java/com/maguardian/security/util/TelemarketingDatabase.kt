@@ -88,6 +88,8 @@ object TelemarketingDatabase {
         "4597486",   // Spam DDD 45 Paraná — 045974864071 (relatado 26/05/2026)
         "4599947",   // Spam DDD 45 Paraná — 045999470544 (relatado 26/05/2026, Samsung: spam)
         "4598434",   // Spam DDD 45 Paraná — 045984345481 (relatado 26/05/2026)
+        "4599081",   // Spam DDD 45 Paraná — 045990812970 (relatado 26/05/2026)
+        "4599276",   // Spam DDD 45 Paraná — 045992765079 (relatado 26/05/2026)
 
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
         "4533014", "4533015", "4533016", "4533017", "4533018",
@@ -320,6 +322,8 @@ object TelemarketingDatabase {
         "45974864071",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "45999470544",  // Spam DDD 45 Paraná — detectado pelo app + Samsung spam (26/05/2026)
         "45984345481",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
+        "45990812970",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
+        "45992765079",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
 
         // SPEECH Cascavel
         "4533014910", "4533014911", "4533014912", "4533014913",
