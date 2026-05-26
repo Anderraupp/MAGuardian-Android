@@ -55,6 +55,9 @@ object TelemarketingDatabase {
         "havan cobranças", "casas bahia cobranças", "magazine cobrança",
         "americanas cobrança", "shoptime cobrança",
 
+        // ── Empresas de cobrança DDD 45 Paraná ────────────────────────────
+        "r1 telecom", "r1telecom", "r1 cobranças", "r1 cobranca",
+
         // ── Genéricos reconhecidos como spam ──────────────────────────────
         "cobrança", "cobranca", "telemarketing", "central de atendimento",
         "sac cobrança", "recuperação de crédito", "recuperacao de credito",
@@ -100,6 +103,8 @@ object TelemarketingDatabase {
         "4599149",   // Spam DDD 45 Paraná — 045991496750 (relatado 26/05/2026)
 
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
+        "4521019",   // R1 TELECOM cobrança DDD 45 — 04521019490 (26/05/2026, Samsung: COBRANÇA)
+        "4521018", "4521020", "4521021",             // faixas adjacentes R1 TELECOM
         "4521047",   // SPEECH fixo — 04521047520 (26/05/2026, Samsung: COBRANÇA)
         "4521048", "4521049", "4521050", "4521051",  // faixas adjacentes SPEECH fixo
         "4533014", "4533015", "4533016", "4533017", "4533018",
@@ -402,6 +407,7 @@ object TelemarketingDatabase {
     private val prefixes6: Set<String> = setOf(
         // ── Denunciados pelo usuário (DDD 45 — PR) ───────────────────────
         "459997", "459915", "459911", "459913", "459910", "459998", "459884", "459881", "459883", "459840", "459330", "459200", "452505",
+        "452101", "452102",  // R1 TELECOM DDD 45 — bloco fixo cobrança
 
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
         "453301", "453302", "453303", "453330", "453331",
@@ -482,6 +488,7 @@ object TelemarketingDatabase {
         "45999581592",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "45999582206",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "45991496750",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
+        "4521019490",   // R1 TELECOM cobrança DDD 45 — Samsung confirma COBRANÇA (26/05/2026)
 
         // SPEECH Cascavel — fixo 4521047xxx
         "4521047520",  // SPEECH cobrança fixo (26/05/2026, Samsung: COBRANÇA)
