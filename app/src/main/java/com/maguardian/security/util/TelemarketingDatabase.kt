@@ -67,6 +67,10 @@ object TelemarketingDatabase {
     // Formato: DDD (2d) + local (5d), sem 0 e sem +55
     // ════════════════════════════════════════════════════════════════════════
     private val prefixes7: Set<String> = setOf(
+        // ── Números denunciados pelo usuário (DDD 45 — PR) ───────────────
+        "4599119",   // Edson Mandelli Stumpf — cobrança (relatado 26/05/2026)
+        "4525050",   // Fixo suspeito Cascavel/PR (relatado 25/05/2026)
+
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
         "4533014", "4533015", "4533016", "4533017", "4533018",
         "4533020", "4533021", "4533022", "4533023", "4533030",
@@ -171,6 +175,9 @@ object TelemarketingDatabase {
     // Precisão média — cobre variações dentro da mesma central
     // ════════════════════════════════════════════════════════════════════════
     private val prefixes6: Set<String> = setOf(
+        // ── Denunciados pelo usuário (DDD 45 — PR) ───────────────────────
+        "459911", "452505",
+
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
         "453301", "453302", "453303", "453330", "453331",
         // ── URANET (DDD 48) ──────────────────────────────────────────────
@@ -201,6 +208,10 @@ object TelemarketingDatabase {
     // Fonte: quemeligou.com.br, 0800legal.com.br (TOP denúncias)
     // ════════════════════════════════════════════════════════════════════════
     private val knownNumbers: Set<String> = setOf(
+        // Denunciados pelo usuário — DDD 45 Paraná
+        "45991193388",  // Edson Mandelli Stumpf — cobrança (26/05/2026)
+        "4525050025",   // Fixo suspeito Cascavel/PR (25/05/2026)
+
         // SPEECH Cascavel
         "4533014910", "4533014911", "4533014912", "4533014913",
         "4533014920", "4533014921", "4533014930", "4533014931",
