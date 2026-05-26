@@ -276,17 +276,123 @@ object TelemarketingDatabase {
         "45933",  // SPEECH — 45933005xxx confirmados
         "45252",  // Fixos suspeitos Cascavel
 
-        // ── Outros DDDs — blocos de grandes call centers confirmados ──────
+        // ── DDD 11 São Paulo — principais call centers ────────────────────
         "11210",  // Atento SP
         "11310",  // Atento/Teleperformance SP
         "11313",  // Teleperformance SP
-        "31310",  // AeC MG
+        "11350",  // Concentrix/Sitel SP
+        "11400",  // SAC/cobrança genérico SP
+        "11410",  // SAC/cobrança genérico SP
+        "11413",  // Sitel/Alorica SP
+        "11414",  // Alorica SP
+        "11415",  // TTEC SP
+
+        // ── DDD 19 Campinas/interior SP ───────────────────────────────────
+        "19310",  // Callink Campinas
+        "19413",  // Cobranças Campinas
+        "19350",  // SAC genérico Campinas
+
+        // ── DDD 21 Rio de Janeiro ──────────────────────────────────────────
         "21210",  // Contax RJ
         "21310",  // Contax RJ
+        "21350",  // SAC/cobrança RJ
+        "21413",  // Alorica RJ
+        "21325",  // Recovery RJ
+
+        // ── DDD 31 Belo Horizonte ──────────────────────────────────────────
+        "31310",  // AeC BH
+        "31350",  // SAC/cobrança BH
+        "31410",  // Cobranças Contagem
+        "31413",  // SAC genérico MG
+
+        // ── DDD 41 Curitiba ────────────────────────────────────────────────
         "41310",  // Almaviva CWB
-        "51310",  // Cobrança POA
+        "41350",  // SAC/cobrança CWB
+        "41413",  // SAC genérico CWB
+
+        // ── DDD 51 Porto Alegre ────────────────────────────────────────────
+        "51310",  // Cobranças POA
+        "51413",  // SAC genérico POA
+        "51321",  // Banrisul/SICREDI POA
+
+        // ── DDD 61 Brasília/DF ─────────────────────────────────────────────
+        "61310",  // CEF/BB cobrança DF
+        "61334",  // Governo/CEF DF
+        "61335",  // Governo/BB DF
+        "61413",  // SAC genérico DF
+
+        // ── DDD 71 Salvador/BA ─────────────────────────────────────────────
+        "71310",  // Oi/Atento BA
+        "71311",  // Oi cobrança BA
+        "71313",  // Teleperformance BA
+        "71325",  // Atento BA
+
+        // ── DDD 81 Recife/PE ───────────────────────────────────────────────
+        "81310",  // Cobranças PE
+        "81312",  // SAC genérico PE
+        "81317",  // Cetelem PE
+        "81342",  // Callink PE
+
+        // ── DDD 85 Fortaleza/CE ────────────────────────────────────────────
+        "85310",  // Cobranças CE
+        "85325",  // Losango CE
+        "85344",  // Portocred CE
+        "85413",  // SAC genérico CE
+
+        // ── DDD 62 Goiânia/GO ──────────────────────────────────────────────
+        "62310",  // AeC/Recovery GO
+        "62332",  // AeC GO
+        "62325",  // Recovery GO
+        "62413",  // SAC genérico GO
+
+        // ── DDD 48 Florianópolis/SC ───────────────────────────────────────
         "48321",  // URANET SC
-        "19310"   // Callink Campinas
+        "48322",  // URANET SC
+        "48319",  // URANET SC
+
+        // ── DDD 47 Blumenau/Joinville SC ─────────────────────────────────
+        "47332",  // Flex Contact SC
+        "47333",  // Flex Contact SC
+
+        // ── DDD 27 Vitória/ES ─────────────────────────────────────────────
+        "27321",  // Oi/Telemar ES
+        "27331",  // Cobrança ES
+
+        // ── DDD 92 Manaus/AM ──────────────────────────────────────────────
+        "92310",  // Cobranças AM
+        "92321",  // Atento AM
+        "92413",  // SAC genérico AM
+
+        // ── DDD 91 Belém/PA ────────────────────────────────────────────────
+        "91310",  // Cobranças PA
+        "91413",  // SAC genérico PA
+
+        // ── DDD 82 Maceió/AL ──────────────────────────────────────────────
+        "82310",  // Cobranças AL
+
+        // ── DDD 83 João Pessoa/PB ─────────────────────────────────────────
+        "83310",  // Cobranças PB
+
+        // ── DDD 84 Natal/RN ───────────────────────────────────────────────
+        "84310",  // Cobranças RN
+
+        // ── DDD 86 Teresina/PI ────────────────────────────────────────────
+        "86310",  // Cobranças PI
+
+        // ── DDD 79 Aracaju/SE ─────────────────────────────────────────────
+        "79310",  // Cobranças SE
+
+        // ── DDD 42 Ponta Grossa/PR — interior próximo DDD 45 ─────────────
+        "42310",  // SAC/cobrança PR interior
+        "42333",  // Cobrança Ponta Grossa
+
+        // ── DDD 43 Londrina/PR ─────────────────────────────────────────────
+        "43310",  // SAC/cobrança Londrina
+        "43333",  // Cobrança Londrina
+
+        // ── DDD 44 Maringá/PR ─────────────────────────────────────────────
+        "44310",  // SAC/cobrança Maringá
+        "44333"   // Cobrança Maringá
     )
 
     // ════════════════════════════════════════════════════════════════════════
