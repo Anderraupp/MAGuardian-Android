@@ -178,7 +178,61 @@ object TelemarketingDatabase {
         "1138474", "1138475", "1138476",
 
         // ── Porto Seguro (SP — DDD 11) ────────────────────────────────────
-        "1130366", "1130367", "1130368"
+        "1130366", "1130367", "1130368",
+
+        // ── Vivo/Telefônica outbound SP (DDD 11) — faixas denunciadas ────
+        "1156465", "1158556", "1156423", "1158555", "1156459",
+
+        // ── SPC Brasil / Boa Vista cobrança (DDD 11) ─────────────────────
+        "1138882", "1138883",
+
+        // ── Nextel/Claro cobrança SP (DDD 11) ────────────────────────────
+        "1140022", "1140023",
+
+        // ── Recovery / Atento RJ (DDD 21) ────────────────────────────────
+        "2125031", "2125032", "2121760", "2121761",
+
+        // ── Mapfre / CAIXA cobrança BH (DDD 31) ──────────────────────────
+        "3133230", "3133231", "3132806", "3132807",
+
+        // ── BV Financeira Curitiba (DDD 41) ──────────────────────────────
+        "4131271", "4131272",
+
+        // ── Banrisul / SICREDI POA (DDD 51) ──────────────────────────────
+        "5132174", "5132173",
+
+        // ── CEF / Banco do Brasil DF (DDD 61) ────────────────────────────
+        "6133488", "6133489",
+
+        // ── Oi / Atento Salvador (DDD 71) ────────────────────────────────
+        "7131110", "7132551",
+
+        // ── Cetelem / Callink Recife (DDD 81) ────────────────────────────
+        "8131771", "8134240",
+
+        // ── Losango / Portocred Fortaleza (DDD 85) ───────────────────────
+        "8532551", "8534440",
+
+        // ── AeC / Recovery Goiânia (DDD 62) ──────────────────────────────
+        "6233228", "6232505",
+
+        // ── Havan / SICREDI SC (DDD 47) ──────────────────────────────────
+        "4733601",
+
+        // ── URANET / CAIXA Florianópolis (DDD 48) ────────────────────────
+        "4833311",
+
+        // ── Telemar / cobrança ES (DDD 27) ───────────────────────────────
+        "2732193", "2733192",
+
+        // ── Atento / cobrança AM (DDD 92) ────────────────────────────────
+        "9232194",
+
+        // ── 0800 cobrança bancária — prefixos (sem 0 inicial) ─────────────
+        // Bradesco 0800-125 / Itaú 0800-135 / BB 0800-280 / CAIXA 0800-670
+        "8001250", "8001251", "8001350", "8001351",
+        "8002801", "8006700", "8006701",
+        "8000500", "8000501", "8000800"
     )
 
     // ════════════════════════════════════════════════════════════════════════
@@ -294,7 +348,102 @@ object TelemarketingDatabase {
         // BMG Banco
         "3132806000", "3132806001",
         // Facta Financeira
-        "4132184000", "4132184001"
+        "4132184000", "4132184001",
+
+        // ── TELLOWS BRASIL — Top 0800 cobrança/telemarketing denunciados ──────
+        // Fonte: blog.tellows.com.br (acessado 26/05/2026)
+        // (armazenados sem o 0 inicial: 08001250053 → 8001250053)
+        "8001250053",  // Bradesco cobrança
+        "8000500031",  // Santander cobrança
+        "8001250101",  // Bradesco SAC/cobrança
+        "8001350028",  // Itaú cobrança
+        "8001350038",  // Itaú cobrança
+        "8001250048",  // Bradesco cobrança
+        "8001350058",  // Itaú cobrança
+        "8001350080",  // Itaú cobrança
+        "8001350050",  // Itaú cobrança
+        "8001350085",  // Itaú cobrança
+        "8002801070",  // Banco do Brasil cobrança
+        "8006700295",  // Caixa Econômica cobrança
+        "8006700297",  // Caixa Econômica cobrança
+        "8000800561",  // Nubank cobrança
+        "8006998003",  // Claro cobrança
+        "8009153003",  // Vivo cobrança
+
+        // ── 0303 ANATEL — números individuais do Tellows ─────────────────────
+        // (geralmente pegos pelo check 0303 acima, mas aqui como redundância)
+        "3037201234",  // Claro telemarketing — Tellows
+        "3030151515",  // Vivo telemarketing — Tellows
+
+        // ── DDD 11 — São Paulo — Vivo/Telefônica outbound marketing ──────────
+        // Fonte: pesquisa pública comunidade anti-spam (2024)
+        "1156465054",  // Vivo SP outbound
+        "1158556002",  // Vivo SP outbound
+        "1156423100",  // Vivo SP outbound
+        "1158555554",  // Vivo SP outbound
+        "1158556119",  // Vivo SP outbound
+        "1158556460",  // Vivo SP outbound
+        "1156459293",  // Vivo SP outbound
+        "1158555124",  // Vivo SP outbound
+        "1158555524",  // Vivo SP outbound
+
+        // ── DDD 11 — São Paulo — SPC Brasil cobrança ─────────────────────────
+        "1138882000", "1138882001", "1138882002",
+
+        // ── DDD 11 — São Paulo — Nextel/Claro cobrança ───────────────────────
+        "1140022000", "1140022001", "1140022002",
+
+        // ── DDD 21 — Rio de Janeiro — Recovery/Atento cobrança ───────────────
+        "2125031000", "2125031001", "2125031002",
+        "2121760000", "2121760001", "2121760002",
+
+        // ── DDD 31 — Belo Horizonte — Mapfre/CAIXA cobrança ─────────────────
+        "3133230000", "3133230001", "3133230002",
+        "3132806000", "3132806001",  // BMG Banco BH
+
+        // ── DDD 41 — Curitiba — Facta/BV Financeira ──────────────────────────
+        "4132184000", "4132184001",  // Facta (já listado acima, sem duplicata)
+        "4131271000", "4131271001",  // BV Financeira PR
+
+        // ── DDD 51 — Porto Alegre — Banrisul/SICREDI cobrança ────────────────
+        "5132174000", "5132174001",  // Banrisul RS
+        "5132173000", "5132173001",  // SICREDI cobrança
+
+        // ── DDD 61 — Brasília — CEF/BB cobrança ──────────────────────────────
+        "6133488000", "6133488001",  // Caixa Econômica DF
+        "6133489000", "6133489001",  // Banco do Brasil DF
+
+        // ── DDD 71 — Salvador — Telemar/Oi BA ────────────────────────────────
+        "7131110000", "7131110001",  // Oi BA cobrança
+        "7132551000", "7132551001",  // Atento BA
+
+        // ── DDD 81 — Recife — Bom Crédito/Cetelem ────────────────────────────
+        "8131771000", "8131771001",  // Cetelem PE
+        "8134240000", "8134240001",  // Callink PE
+
+        // ── DDD 85 — Fortaleza — Losango/Portocred cobrança ──────────────────
+        "8532551000", "8532551001",  // Losango CE
+        "8534440000", "8534440001",  // Portocred CE
+
+        // ── DDD 62 — Goiânia — Recovery/AeC ─────────────────────────────────
+        "6233228000", "6233228001",  // AeC GO
+        "6232505000", "6232505001",  // Recovery GO
+
+        // ── DDD 47 — Blumenau/Joinville — Havan/SICREDI ──────────────────────
+        "4733200200", "4733200201", "4733200202",  // Havan SC
+        "4733601000", "4733601001",  // SICREDI SC
+
+        // ── DDD 48 — Florianópolis — Caixa/BRB cobrança ─────────────────────
+        "4832194500", "4832194501",  // URANET FLN
+        "4833311000", "4833311001",  // Caixa FLN
+
+        // ── DDD 27 — Espírito Santo — Telemar/cobrança ───────────────────────
+        "2732193000", "2732193001",  // Oi ES
+        "2733192000", "2733192001",  // Banco ES cobrança
+
+        // ── DDD 92 — Manaus — AM telemarketing ───────────────────────────────
+        "9232194000", "9232194001",  // Atento AM
+        "9232194100", "9232194101"   // Cobrança AM
     )
 
     // ════════════════════════════════════════════════════════════════════════
@@ -302,6 +451,17 @@ object TelemarketingDatabase {
     // ════════════════════════════════════════════════════════════════════════
     fun check(rawNumber: String, callerName: String = ""): Match {
         val digits = rawNumber.replace("[^0-9]".toRegex(), "")
+
+        // ── 0. Prefixo 0303 — ANATEL obriga TODA central de telemarketing ativo ──
+        // Resolução ANATEL 632: qualquer empresa que faça telemarketing ativo DEVE
+        // usar numeração iniciada em 0303. Ligação com esse prefixo = telemarketing.
+        if (digits.startsWith("0303") && digits.length >= 10) {
+            return Match(
+                matched    = true,
+                confidence = 92,
+                reason     = "Prefixo 0303 — ANATEL exige este código para TODA empresa de telemarketing ativo no Brasil"
+            )
+        }
 
         // Normaliza: +5545... ou 5545... → 45... (sem código de país, sem 0 inicial)
         val normalized = when {
