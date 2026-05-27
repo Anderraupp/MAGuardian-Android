@@ -105,6 +105,7 @@ object TelemarketingDatabase {
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
         "4599844",   // Spam DDD 45 Paraná — 045998441639 (27/05/2026)
         "4597603",   // Fraude DDD 45 — 45976037257 Samsung: Possível fraude (27/05/2026)
+        "4597290",   // Fraude DDD 45 — 45972902480 (27/05/2026)
         "4199948",   // Fraude DDD 41 CWB — 41999480555 + 41999480842 (27/05/2026)
         "4199949",   // Faixa adjacente DDD 41 fraude
         "4531030",   // Spam fixo DDD 45 — 04531030042 passou sem overlay (27/05/2026)
@@ -273,10 +274,9 @@ object TelemarketingDatabase {
     private val prefixes5: Set<String> = setOf(
         // ── DDD 45 Paraná — blocos inteiros confirmados hoje (26/05/2026) ──
         // Qualquer celular 0459XX... nesses blocos mostrou overlay ou foi denunciado
-        "45973",  // 45973616846 confirmado
-        "45974",  // 45974864071 confirmado
-        "45976",  // 45976037257 confirmado — Samsung: "Possível fraude" (27/05/2026)
-        "45979",  // 45979712325 confirmado
+        // Faixa 4597x completa — múltiplos confirmados: 45972, 45973, 45974, 45976, 45979
+        "45970", "45971", "45972", "45973", "45974",
+        "45975", "45976", "45977", "45978", "45979",
         "45984",  // 45984067238, 45984345481, 45984894356 confirmados
         "45988",  // 45988015109, 45988156723, 45988348952, 45988413231, 45988422302 confirmados
         "45990",  // 45990812970 confirmado
@@ -419,6 +419,7 @@ object TelemarketingDatabase {
         "459997", "459915", "459911", "459913", "459910", "459998", "459884", "459881", "459883", "459840", "459330", "459200", "452505",
         "459984",  // R1 TELECOM / spam DDD 45 — 45998441639 (27/05/2026)
         "459760",  // Fraude DDD 45 — 45976037257 Samsung: Possível fraude (27/05/2026)
+        "459729",  // Fraude DDD 45 — 45972902480 (27/05/2026)
         "453103",  // Spam fixo DDD 45 — 04531030042 passou sem overlay (27/05/2026)
         "419994",  // Fraude DDD 41 CWB — 41999480555 + 41999480842 Samsung: Possível fraude (27/05/2026)
         "452101", "452102",  // R1 TELECOM DDD 45 — bloco fixo cobrança
@@ -505,6 +506,7 @@ object TelemarketingDatabase {
         "4521019490",   // R1 TELECOM cobrança DDD 45 — Samsung confirma COBRANÇA (26/05/2026)
         "45998441639",  // Spam DDD 45 Paraná — passou sem overlay (27/05/2026)
         "45976037257",  // Fraude DDD 45 — Samsung: Possível fraude (27/05/2026)
+        "45972902480",  // Fraude DDD 45 — passou sem overlay (27/05/2026)
         "4531030042",   // Spam fixo DDD 45 — passou sem overlay (27/05/2026)
         "41999480555",  // Fraude DDD 41 CWB — Samsung: Possível fraude (27/05/2026)
         "41999480842",  // Fraude DDD 41 CWB — Samsung: Possível fraude (27/05/2026)
