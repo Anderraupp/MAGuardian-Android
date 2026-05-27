@@ -105,6 +105,8 @@ object TelemarketingDatabase {
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
         "4599844",   // Spam DDD 45 Paraná — 045998441639 (27/05/2026)
         "4597603",   // Fraude DDD 45 — 45976037257 Samsung: Possível fraude (27/05/2026)
+        "4199948",   // Fraude DDD 41 CWB — 41999480555 + 41999480842 (27/05/2026)
+        "4199949",   // Faixa adjacente DDD 41 fraude
         "4531030",   // Spam fixo DDD 45 — 04531030042 passou sem overlay (27/05/2026)
         "4531031", "4531032", "4531033",  // faixas adjacentes
         "4521019",   // R1 TELECOM cobrança DDD 45 — 04521019490 (26/05/2026, Samsung: COBRANÇA)
@@ -321,6 +323,7 @@ object TelemarketingDatabase {
         "41310",  // Almaviva CWB
         "41350",  // SAC/cobrança CWB
         "41413",  // SAC genérico CWB
+        "41999",  // Fraude DDD 41 — 41999480555 + 41999480842 Samsung: Possível fraude (27/05/2026)
 
         // ── DDD 51 Porto Alegre ────────────────────────────────────────────
         "51310",  // Cobranças POA
@@ -417,6 +420,7 @@ object TelemarketingDatabase {
         "459984",  // R1 TELECOM / spam DDD 45 — 45998441639 (27/05/2026)
         "459760",  // Fraude DDD 45 — 45976037257 Samsung: Possível fraude (27/05/2026)
         "453103",  // Spam fixo DDD 45 — 04531030042 passou sem overlay (27/05/2026)
+        "419994",  // Fraude DDD 41 CWB — 41999480555 + 41999480842 Samsung: Possível fraude (27/05/2026)
         "452101", "452102",  // R1 TELECOM DDD 45 — bloco fixo cobrança
 
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
@@ -502,6 +506,8 @@ object TelemarketingDatabase {
         "45998441639",  // Spam DDD 45 Paraná — passou sem overlay (27/05/2026)
         "45976037257",  // Fraude DDD 45 — Samsung: Possível fraude (27/05/2026)
         "4531030042",   // Spam fixo DDD 45 — passou sem overlay (27/05/2026)
+        "41999480555",  // Fraude DDD 41 CWB — Samsung: Possível fraude (27/05/2026)
+        "41999480842",  // Fraude DDD 41 CWB — Samsung: Possível fraude (27/05/2026)
 
         // SPEECH Cascavel — fixo 4521047xxx
         "4521047520",  // SPEECH cobrança fixo (26/05/2026, Samsung: COBRANÇA)
