@@ -103,6 +103,7 @@ object TelemarketingDatabase {
         "4599149",   // Spam DDD 45 Paraná — 045991496750 (relatado 26/05/2026)
 
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
+        "4599844",   // Spam DDD 45 Paraná — 045998441639 (27/05/2026)
         "4521019",   // R1 TELECOM cobrança DDD 45 — 04521019490 (26/05/2026, Samsung: COBRANÇA)
         "4521018", "4521020", "4521021",             // faixas adjacentes R1 TELECOM
         "4521047",   // SPEECH fixo — 04521047520 (26/05/2026, Samsung: COBRANÇA)
@@ -276,6 +277,7 @@ object TelemarketingDatabase {
         "45991",  // 45991002213, 45991193388, 45991371335, 45991441077, 45991496750, 45991574479 confirmados
         "45992",  // 45992765079, 45992895846 confirmados
         "45997",  // 45999731255 → na verdade 45997x — bloco suspeito
+        "45998",  // 45998441639 confirmado (27/05/2026)
         "45999",  // 45999172214, 45999470544, 45999581592, 45999878611 confirmados
         "45920",  // SPEECH — 45920039xxx confirmados
         "45933",  // SPEECH — 45933005xxx confirmados
@@ -407,6 +409,7 @@ object TelemarketingDatabase {
     private val prefixes6: Set<String> = setOf(
         // ── Denunciados pelo usuário (DDD 45 — PR) ───────────────────────
         "459997", "459915", "459911", "459913", "459910", "459998", "459884", "459881", "459883", "459840", "459330", "459200", "452505",
+        "459984",  // R1 TELECOM / spam DDD 45 — 45998441639 (27/05/2026)
         "452101", "452102",  // R1 TELECOM DDD 45 — bloco fixo cobrança
 
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
@@ -489,6 +492,7 @@ object TelemarketingDatabase {
         "45999582206",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "45991496750",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "4521019490",   // R1 TELECOM cobrança DDD 45 — Samsung confirma COBRANÇA (26/05/2026)
+        "45998441639",  // Spam DDD 45 Paraná — passou sem overlay (27/05/2026)
 
         // SPEECH Cascavel — fixo 4521047xxx
         "4521047520",  // SPEECH cobrança fixo (26/05/2026, Samsung: COBRANÇA)
