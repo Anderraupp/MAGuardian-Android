@@ -104,6 +104,9 @@ object TelemarketingDatabase {
 
         // ── SPEECH (Cascavel, PR — DDD 45) ───────────────────────────────
         "4599844",   // Spam DDD 45 Paraná — 045998441639 (27/05/2026)
+        "4597603",   // Fraude DDD 45 — 45976037257 Samsung: Possível fraude (27/05/2026)
+        "4531030",   // Spam fixo DDD 45 — 04531030042 passou sem overlay (27/05/2026)
+        "4531031", "4531032", "4531033",  // faixas adjacentes
         "4521019",   // R1 TELECOM cobrança DDD 45 — 04521019490 (26/05/2026, Samsung: COBRANÇA)
         "4521018", "4521020", "4521021",             // faixas adjacentes R1 TELECOM
         "4521047",   // SPEECH fixo — 04521047520 (26/05/2026, Samsung: COBRANÇA)
@@ -270,6 +273,7 @@ object TelemarketingDatabase {
         // Qualquer celular 0459XX... nesses blocos mostrou overlay ou foi denunciado
         "45973",  // 45973616846 confirmado
         "45974",  // 45974864071 confirmado
+        "45976",  // 45976037257 confirmado — Samsung: "Possível fraude" (27/05/2026)
         "45979",  // 45979712325 confirmado
         "45984",  // 45984067238, 45984345481, 45984894356 confirmados
         "45988",  // 45988015109, 45988156723, 45988348952, 45988413231, 45988422302 confirmados
@@ -282,6 +286,7 @@ object TelemarketingDatabase {
         "45920",  // SPEECH — 45920039xxx confirmados
         "45933",  // SPEECH — 45933005xxx confirmados
         "45252",  // Fixos suspeitos Cascavel
+        "45310",  // Fixos DDD 45 — 04531030042 passou sem overlay (27/05/2026)
 
         // ── DDD 11 São Paulo — principais call centers ────────────────────
         "11210",  // Atento SP
@@ -410,6 +415,8 @@ object TelemarketingDatabase {
         // ── Denunciados pelo usuário (DDD 45 — PR) ───────────────────────
         "459997", "459915", "459911", "459913", "459910", "459998", "459884", "459881", "459883", "459840", "459330", "459200", "452505",
         "459984",  // R1 TELECOM / spam DDD 45 — 45998441639 (27/05/2026)
+        "459760",  // Fraude DDD 45 — 45976037257 Samsung: Possível fraude (27/05/2026)
+        "453103",  // Spam fixo DDD 45 — 04531030042 passou sem overlay (27/05/2026)
         "452101", "452102",  // R1 TELECOM DDD 45 — bloco fixo cobrança
 
         // ── SPEECH bloco principal (DDD 45) ──────────────────────────────
@@ -493,6 +500,8 @@ object TelemarketingDatabase {
         "45991496750",  // Spam DDD 45 Paraná — detectado pelo app (26/05/2026)
         "4521019490",   // R1 TELECOM cobrança DDD 45 — Samsung confirma COBRANÇA (26/05/2026)
         "45998441639",  // Spam DDD 45 Paraná — passou sem overlay (27/05/2026)
+        "45976037257",  // Fraude DDD 45 — Samsung: Possível fraude (27/05/2026)
+        "4531030042",   // Spam fixo DDD 45 — passou sem overlay (27/05/2026)
 
         // SPEECH Cascavel — fixo 4521047xxx
         "4521047520",  // SPEECH cobrança fixo (26/05/2026, Samsung: COBRANÇA)
