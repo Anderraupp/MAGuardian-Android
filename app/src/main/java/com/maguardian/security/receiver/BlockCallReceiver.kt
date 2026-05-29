@@ -25,6 +25,16 @@ class BlockCallReceiver : BroadcastReceiver() {
         val number = intent.getStringExtra(EXTRA_NUMBER) ?: return
         if (number.isBlank()) return
 
+        // Bloqueio manual é exclusivo para assinantes
+        if (!PrefsHelper.hasFullAccess(context)) {
+            Toast.makeText(
+                context,
+                "🔒 Bloqueio de números é exclusivo para assinantes M&A Guardian Premium",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
         PrefsHelper.blockNumber(context, number)
 
         // Reporta ao servidor comunitário (assíncrono, fire-and-forget)
