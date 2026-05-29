@@ -138,6 +138,25 @@ class CallMonitorService : Service() {
                     // Evitamos o falso positivo de "Número oculto / Telemarketing".
                     return
                 }
+
+                // ── Verifica lista negra manual ANTES de analisar ─────────────────
+                // Bug fix: número bloqueado não deve disparar overlay nem notificação.
+                // O CallScannerService (se tiver ROLE_CALL_SCREENING) rejeita a ligação;
+                // aqui apenas silenciamos o feedback visual para não confundir o usuário.
+                if (number != null && PrefsHelper.isNumberBlocked(this, number)) {
+                    val notif = androidx.core.app.NotificationCompat.Builder(this, CHANNEL_CALL_ALERT)
+                        .setSmallIcon(R.drawable.ic_shield_alert)
+                        .setContentTitle("🚫 Ligação bloqueada — M&A Guardian")
+                        .setContentText("${PrefsHelper.normalizeForBlock(number)} · Na sua lista negra")
+                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
+                        .setAutoCancel(true)
+                        .setColor(0xFFDC2626.toInt())
+                        .setTimeoutAfter(10_000L)
+                        .build()
+                    nm.notify(NOTIF_CALL, notif)
+                    return
+                }
+
                 val result = PhoneAnalyzer.analyze(number ?: "")
                 CallOverlayManager.show(applicationContext, number ?: "", result)
                 showCallNotif(number ?: "", result, nm)
