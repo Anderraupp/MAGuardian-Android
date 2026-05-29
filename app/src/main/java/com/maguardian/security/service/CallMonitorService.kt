@@ -187,8 +187,6 @@ class CallMonitorService : Service() {
             number.isBlank() -> "Número oculto"
             else             -> number
         }
-        val isSafe = result.score < 25
-
         val openIntent = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java).apply {
