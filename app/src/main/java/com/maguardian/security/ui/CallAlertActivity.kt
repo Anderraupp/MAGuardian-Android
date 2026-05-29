@@ -15,6 +15,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.maguardian.security.util.CommunityBlocksApi
 import com.maguardian.security.util.PrefsHelper
 
 /**
@@ -164,6 +165,7 @@ class CallAlertActivity : Activity() {
                 setPadding(dp(14), dp(6), dp(14), dp(6))
                 setOnClickListener {
                     PrefsHelper.blockNumber(this@CallAlertActivity, number)
+                    CommunityBlocksApi.reportBlock(number)
                     finish()
                 }
             }
