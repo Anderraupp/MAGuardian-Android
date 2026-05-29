@@ -154,16 +154,25 @@ class CallAlertActivity : Activity() {
         rowBtns.addView(btnDismiss)
 
         if (number.isNotBlank()) {
+            val isSubscribed = PrefsHelper.hasFullAccess(this)
             val btnBlock = Button(this).apply {
-                text = "🚫 Bloquear"
+                text = if (isSubscribed) "🚫 Bloquear" else "🔒 Bloquear"
                 setTextColor(Color.WHITE)
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE
                     cornerRadius = dp(8).toFloat()
-                    setColor(0xFFDC2626.toInt())
+                    setColor(if (isSubscribed) 0xFFDC2626.toInt() else 0xFF6B7280.toInt())
                 }
                 setPadding(dp(14), dp(6), dp(14), dp(6))
                 setOnClickListener {
+                    if (!PrefsHelper.hasFullAccess(this@CallAlertActivity)) {
+                        android.widget.Toast.makeText(
+                            this@CallAlertActivity,
+                            "🔒 Bloqueio de números é exclusivo para assinantes M&A Guardian Premium",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                        return@setOnClickListener
+                    }
                     PrefsHelper.blockNumber(this@CallAlertActivity, number)
                     CommunityBlocksApi.reportBlock(number)
                     finish()
