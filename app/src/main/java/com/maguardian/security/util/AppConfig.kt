@@ -11,7 +11,7 @@ object AppConfig {
      * URL base da API colaborativa.
      * Troque pela URL do seu deploy no Replit após publicar.
      */
-    const val API_BASE_URL = "https://antivirus-ma.replit.app"
+    const val API_BASE_URL = "https://antivirus-m-a.replit.app"
 
     /** Mínimo de denúncias para um número entrar na lista comunitária local. */
     const val COMMUNITY_BLOCK_MIN_REPORTS = 2
