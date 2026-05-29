@@ -242,12 +242,31 @@ object PrefsHelper {
     }
 
     /**
-     * Normaliza o número antes de comparar — garante que E.164 (+5545...),
-     * formato local (045...) e sem prefixo (45...) sejam todos equivalentes.
+     * Verifica se o número está na lista manual OU na lista comunitária baixada do servidor.
+     * Normaliza o número antes de comparar (E.164, local com 0, sem prefixo — tudo equivalente).
      */
     fun isNumberBlocked(ctx: Context, number: String): Boolean {
         val normalized = normalizeForBlock(number)
-        return normalized.isNotBlank() && normalized in getBlockedNumbers(ctx)
+        if (normalized.isBlank()) return false
+        return normalized in getBlockedNumbers(ctx) || normalized in getCommunityBlocks(ctx)
+    }
+
+    // ── Lista comunitária baixada do servidor ──────────────────────────────────
+    private const val KEY_COMMUNITY_BLOCKS   = "community_blocks_cache"
+    private const val KEY_COMMUNITY_SYNC_AT  = "community_sync_at"
+
+    fun getCommunityBlocks(ctx: Context): Set<String> =
+        prefs(ctx).getStringSet(KEY_COMMUNITY_BLOCKS, emptySet()) ?: emptySet()
+
+    fun saveCommunityBlocks(ctx: Context, numbers: Set<String>) {
+        prefs(ctx).edit().putStringSet(KEY_COMMUNITY_BLOCKS, numbers).apply()
+        prefs(ctx).edit().putLong(KEY_COMMUNITY_SYNC_AT, System.currentTimeMillis()).apply()
+    }
+
+    /** Retorna true se o intervalo de sincronização já passou (precisa sincronizar de novo). */
+    fun needsCommunitySync(ctx: Context): Boolean {
+        val lastSync = prefs(ctx).getLong(KEY_COMMUNITY_SYNC_AT, 0L)
+        return (System.currentTimeMillis() - lastSync) >= AppConfig.COMMUNITY_SYNC_INTERVAL_MS
     }
 
     private fun prefs(ctx: Context) =
