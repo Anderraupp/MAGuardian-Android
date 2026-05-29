@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import com.maguardian.security.util.CommunityBlocksApi
 import com.maguardian.security.util.PrefsHelper
 
 /**
@@ -25,6 +26,9 @@ class BlockCallReceiver : BroadcastReceiver() {
         if (number.isBlank()) return
 
         PrefsHelper.blockNumber(context, number)
+
+        // Reporta ao servidor comunitário (assíncrono, fire-and-forget)
+        CommunityBlocksApi.reportBlock(number)
 
         // Cancela a notificação que gerou o botão
         val nm = context.getSystemService(NotificationManager::class.java)
