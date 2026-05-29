@@ -13,6 +13,7 @@ import com.maguardian.security.R
 import com.maguardian.security.receiver.BlockCallReceiver
 import com.maguardian.security.ui.MainActivity
 import com.maguardian.security.util.CallOverlayManager
+import com.maguardian.security.util.CommunityBlocksApi
 import com.maguardian.security.util.PhoneAnalyzer
 import com.maguardian.security.util.PrefsHelper
 import java.util.concurrent.Executors
@@ -68,6 +69,13 @@ class CallMonitorService : Service() {
             startForeground(NOTIF_PERSISTENT, buildPersistentNotif())
         }
         registerListener()
+
+        // ── Sincroniza lista comunitária de bloqueios (6h/vez, assíncrono) ────
+        if (PrefsHelper.needsCommunitySync(this)) {
+            CommunityBlocksApi.syncToLocal(this) { count ->
+                android.util.Log.d("CallMonitorService", "Lista comunitária: $count números")
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
