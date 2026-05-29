@@ -70,8 +70,8 @@ class CallMonitorService : Service() {
         }
         registerListener()
 
-        // ── Sincroniza lista comunitária de bloqueios (6h/vez, assíncrono) ────
-        if (PrefsHelper.needsCommunitySync(this)) {
+        // ── Sincroniza lista comunitária de bloqueios — apenas assinantes (6h/vez) ──
+        if (PrefsHelper.hasFullAccess(this) && PrefsHelper.needsCommunitySync(this)) {
             CommunityBlocksApi.syncToLocal(this) { count ->
                 android.util.Log.d("CallMonitorService", "Lista comunitária: $count números")
             }
@@ -147,11 +147,9 @@ class CallMonitorService : Service() {
                     return
                 }
 
-                // ── Verifica lista negra manual ANTES de analisar ─────────────────
-                // Bug fix: número bloqueado não deve disparar overlay nem notificação.
-                // O CallScannerService (se tiver ROLE_CALL_SCREENING) rejeita a ligação;
-                // aqui apenas silenciamos o feedback visual para não confundir o usuário.
-                if (number != null && PrefsHelper.isNumberBlocked(this, number)) {
+                // ── Verifica lista negra manual ANTES de analisar (apenas assinantes) ───
+                if (number != null && PrefsHelper.hasFullAccess(this) &&
+                    PrefsHelper.isNumberBlocked(this, number)) {
                     val notif = androidx.core.app.NotificationCompat.Builder(this, CHANNEL_CALL_ALERT)
                         .setSmallIcon(R.drawable.ic_shield_alert)
                         .setContentTitle("🚫 Ligação bloqueada — M&A Guardian")
@@ -267,9 +265,9 @@ class CallMonitorService : Service() {
             .setColor(color)
             .setTimeoutAfter(if (result.score < 25) 15_000L else 90_000L)
 
-        // Adiciona botão "Bloquear" apenas para ligações suspeitas/telemarketing
-        // que não sejam de número oculto e que ainda não estejam na lista de bloqueados
+        // Botão "Bloquear" — apenas para assinantes, ligações suspeitas e número visível
         if (result.score >= 25 && number.isNotBlank() &&
+            PrefsHelper.hasFullAccess(this) &&
             !PrefsHelper.isNumberBlocked(this, number)
         ) {
             val blockIntent = PendingIntent.getBroadcast(
