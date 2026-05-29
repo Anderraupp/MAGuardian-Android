@@ -510,6 +510,7 @@ object TelemarketingDatabase {
         "4531030042",   // Spam fixo DDD 45 — passou sem overlay (27/05/2026)
         "41999480555",  // Fraude DDD 41 CWB — Samsung: Possível fraude (27/05/2026)
         "41999480842",  // Fraude DDD 41 CWB — Samsung: Possível fraude (27/05/2026)
+        "41999480547",  // Fraude DDD 41 CWB — Samsung: Possível fraude (29/05/2026)
 
         // SPEECH Cascavel — fixo 4521047xxx
         "4521047520",  // SPEECH cobrança fixo (26/05/2026, Samsung: COBRANÇA)
