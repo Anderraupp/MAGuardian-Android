@@ -105,8 +105,9 @@ class CallScannerService : CallScreeningService() {
             )
         }
 
-        val blockTelemarketing = PrefsHelper.isBlockTelemarketingEnabled(this)
-        val isManuallyBlocked  = PrefsHelper.isNumberBlocked(this, number)
+        val isSubscribed       = PrefsHelper.hasFullAccess(this)
+        val blockTelemarketing = isSubscribed && PrefsHelper.isBlockTelemarketingEnabled(this)
+        val isManuallyBlocked  = isSubscribed && PrefsHelper.isNumberBlocked(this, number)
 
         // Normaliza E.164 (+5504533...) → local (004533...) para checar prefixo 0303
         val localNumber = when {
@@ -116,9 +117,10 @@ class CallScannerService : CallScreeningService() {
         }
         val isAnatelTelemarketing = localNumber.startsWith("0303")
 
+        // Bloqueio real de chamadas é exclusivo para assinantes
         val shouldBlock = when {
-            isManuallyBlocked                              -> true  // lista negra manual
-            result.score >= 70                             -> true  // golpe confirmado — sempre
+            isManuallyBlocked                              -> true  // lista negra manual (assinante)
+            result.score >= 70 && isSubscribed             -> true  // golpe confirmado (assinante)
             isAnatelTelemarketing && blockTelemarketing    -> true  // 0303 ANATEL + toggle
             isSystemLabeledSpam   && blockTelemarketing    -> true  // label sistema + toggle
             result.score >= 25    && blockTelemarketing    -> true  // score ≥ 25 + toggle
@@ -214,8 +216,9 @@ class CallScannerService : CallScreeningService() {
             .setColor(color)
             .setTimeoutAfter(if (result.score < 25) 15_000L else 90_000L)
 
-        // Botão "Bloquear" na notificação (para números suspeitos)
-        if (number.isNotBlank() && !PrefsHelper.isNumberBlocked(this, number)) {
+        // Botão "Bloquear" na notificação — exclusivo para assinantes
+        if (number.isNotBlank() && PrefsHelper.hasFullAccess(this) &&
+            !PrefsHelper.isNumberBlocked(this, number)) {
             val blockPi = PendingIntent.getBroadcast(
                 this,
                 number.hashCode(),
