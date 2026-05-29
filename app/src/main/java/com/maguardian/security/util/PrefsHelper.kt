@@ -205,23 +205,50 @@ object PrefsHelper {
     // ── Lista de números bloqueados manualmente ────────────────────────────────
     private const val KEY_BLOCKED_NUMBERS = "blocked_numbers"
 
+    /**
+     * Normaliza qualquer formato de número para comparação segura:
+     *   +5545991234567  →  45991234567
+     *   045991234567    →  45991234567
+     *   5545991234567   →  45991234567
+     *   45991234567     →  45991234567
+     * Garante que o bloqueio funcione independente do formato recebido
+     * pelo CallScannerService (E.164) ou CallMonitorService (local).
+     */
+    fun normalizeForBlock(number: String): String {
+        val digits = number.filter { it.isDigit() }
+        return when {
+            digits.startsWith("55") && digits.length >= 12 -> digits.substring(2)
+            digits.startsWith("0")  && digits.length >= 11 -> digits.substring(1)
+            else -> digits
+        }
+    }
+
     fun getBlockedNumbers(ctx: Context): Set<String> =
         prefs(ctx).getStringSet(KEY_BLOCKED_NUMBERS, emptySet()) ?: emptySet()
 
     fun blockNumber(ctx: Context, number: String) {
+        val normalized = normalizeForBlock(number)
+        if (normalized.isBlank()) return
         val current = getBlockedNumbers(ctx).toMutableSet()
-        current.add(number.trim())
+        current.add(normalized)
         prefs(ctx).edit().putStringSet(KEY_BLOCKED_NUMBERS, current).apply()
     }
 
     fun unblockNumber(ctx: Context, number: String) {
+        val normalized = normalizeForBlock(number)
         val current = getBlockedNumbers(ctx).toMutableSet()
-        current.remove(number.trim())
+        current.remove(normalized)
         prefs(ctx).edit().putStringSet(KEY_BLOCKED_NUMBERS, current).apply()
     }
 
-    fun isNumberBlocked(ctx: Context, number: String): Boolean =
-        number.trim() in getBlockedNumbers(ctx)
+    /**
+     * Normaliza o número antes de comparar — garante que E.164 (+5545...),
+     * formato local (045...) e sem prefixo (45...) sejam todos equivalentes.
+     */
+    fun isNumberBlocked(ctx: Context, number: String): Boolean {
+        val normalized = normalizeForBlock(number)
+        return normalized.isNotBlank() && normalized in getBlockedNumbers(ctx)
+    }
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
