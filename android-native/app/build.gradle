@@ -1,0 +1,65 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.maguardian.security'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.maguardian.security"
+        minSdk 26
+        targetSdk 35
+        versionCode 28
+        versionName "1.5.1"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+
+    // Para TWA (Trusted Web Activity)
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+
+    // Google Play Billing — assinaturas
+    implementation 'com.android.billingclient:billing-ktx:7.0.0'
+
+    // Meta (Facebook) SDK — rastreamento de campanhas
+    implementation 'com.facebook.android:facebook-android-sdk:17.0.1'
+
+    // TikTok Business SDK — arquivo local (evita problemas de resolução JitPack)
+    implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'])
+    implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
+    implementation 'com.android.installreferrer:installreferrer:2.2'
+
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
