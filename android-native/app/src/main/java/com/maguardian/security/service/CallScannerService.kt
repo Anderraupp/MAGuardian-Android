@@ -51,12 +51,12 @@ class CallScannerService : CallScreeningService() {
             // Samsung/CNAM já preencheu callerDisplayName — triagem imediata
             performScreening(callDetails, displayNameEarly)
         } else {
-            // callerDisplayName vazio: aguarda 1200ms para Samsung SmartCall / CNAM
-            // completar a consulta assíncrona (responde tipicamente em < 1s).
+            // callerDisplayName vazio: aguarda 1800ms para Samsung SmartCall / CNAM
+            // completar a consulta assíncrona (responde tipicamente em < 1,5s).
             // Mantém-se bem abaixo do timeout do CallScreeningService (~5s).
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 performScreening(callDetails, callDetails.callerDisplayName ?: "")
-            }, 1200L)
+            }, 1800L)
         }
     }
 
