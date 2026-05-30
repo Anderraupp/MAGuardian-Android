@@ -243,6 +243,17 @@ class MainActivity : AppCompatActivity() {
         switchBlock.isChecked = isBlocking
         updateBlockTelemarketingStatus(tvBlockStatus, isBlocking)
         switchBlock.setOnCheckedChangeListener { _, checked ->
+            // Bloqueio de telemarketing é exclusivo para assinantes
+            if (checked && !PrefsHelper.hasFullAccess(this)) {
+                switchBlock.isChecked = false
+                Toast.makeText(
+                    this,
+                    "🔒 Bloqueio de telemarketing é exclusivo para assinantes M&A Guardian Premium",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnCheckedChangeListener
+            }
+
             PrefsHelper.setBlockTelemarketingEnabled(this, checked)
             updateBlockTelemarketingStatus(tvBlockStatus, checked)
             if (checked) {
@@ -271,7 +282,63 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Botão: Denunciar / Bloquear número manualmente
+        val btnReportNumber = findViewById<Button>(R.id.btnReportNumber)
+        btnReportNumber.setOnClickListener {
+            if (!PrefsHelper.hasFullAccess(this)) {
+                Toast.makeText(
+                    this,
+                    "🔒 Denúncia de números é exclusiva para assinantes M&A Guardian Premium",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnClickListener
+            }
+            showReportNumberDialog()
+        }
+
         refreshCacheInfo()
+    }
+
+    private fun showReportNumberDialog() {
+        val input = android.widget.EditText(this).apply {
+            hint = "Ex: 45999123456 ou +5545999123456"
+            inputType = android.text.InputType.TYPE_CLASS_PHONE
+            setPadding(48, 32, 48, 32)
+        }
+
+        // Tenta colar da área de transferência automaticamente
+        val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+        val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString() ?: ""
+        if (clip.replace("[^0-9+]".toRegex(), "").length >= 8) {
+            input.setText(clip.trim())
+            input.setSelection(input.text.length)
+        }
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("📋 Denunciar Número")
+            .setMessage("O número será bloqueado localmente e reportado para a lista comunitária, protegendo todos os usuários do M&A Guardian.")
+            .setView(input)
+            .setPositiveButton("Bloquear e Reportar") { _, _ ->
+                val raw = input.text.toString().trim()
+                val normalized = PrefsHelper.normalizeForBlock(raw)
+                if (normalized.length < 8) {
+                    Toast.makeText(this, "⚠️ Número inválido — mínimo 8 dígitos", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                if (PrefsHelper.isNumberBlocked(this, raw)) {
+                    Toast.makeText(this, "ℹ️ Número $normalized já está bloqueado", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                PrefsHelper.blockNumber(this, raw)
+                com.maguardian.security.util.CommunityBlocksApi.reportBlock(raw)
+                Toast.makeText(
+                    this,
+                    "✅ Número $normalized bloqueado e reportado para a comunidade!",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
