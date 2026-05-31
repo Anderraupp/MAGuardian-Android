@@ -36,6 +36,14 @@ import com.maguardian.security.util.PermissionHelper
 import com.maguardian.security.util.PrefsHelper
 import android.webkit.CookieManager
 import android.webkit.WebStorage
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.play.core.appupdate.AppUpdateInfo
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -48,6 +56,15 @@ class MainActivity : AppCompatActivity() {
         const val COLOR_RED       = 0xFFDC2626.toInt()
         const val COLOR_YELLOW    = 0xFFF59E0B.toInt()
         const val REQ_PHONE_STATE = 9002
+        const val REQ_APP_UPDATE  = 9003
+    }
+
+    private lateinit var appUpdateManager: AppUpdateManager
+
+    private val installStateListener = InstallStateUpdatedListener { state ->
+        if (state.installStatus() == InstallStatus.DOWNLOADED) {
+            showInstallSnackbar()
+        }
     }
 
     private val pendingUninstall = mutableSetOf<String>()
@@ -108,6 +125,42 @@ class MainActivity : AppCompatActivity() {
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()
         scheduleTrialAlertsIfNeeded()
+        initAppUpdate()
+    }
+
+    private fun initAppUpdate() {
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        appUpdateManager.registerListener(installStateListener)
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+            ) {
+                showUpdateDialog(info)
+            }
+        }
+    }
+
+    private fun showUpdateDialog(info: AppUpdateInfo) {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("🔄 Nova Atualização Disponível")
+            .setMessage("Uma nova versão do M&A Guardian está disponível com melhorias e correções de segurança. Deseja atualizar agora?")
+            .setPositiveButton("Atualizar Agora") { _, _ ->
+                appUpdateManager.startUpdateFlowForResult(
+                    info, AppUpdateType.FLEXIBLE, this, REQ_APP_UPDATE
+                )
+            }
+            .setNegativeButton("Depois", null)
+            .show()
+    }
+
+    private fun showInstallSnackbar() {
+        Snackbar.make(
+            findViewById(android.R.id.content),
+            "✅ Atualização baixada! Reinicie para aplicar.",
+            Snackbar.LENGTH_INDEFINITE
+        ).setAction("Reiniciar Agora") {
+            appUpdateManager.completeUpdate()
+        }.show()
     }
 
     private fun initBilling() {
@@ -120,10 +173,20 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         if (::billing.isInitialized) billing.destroy()
+        if (::appUpdateManager.isInitialized) appUpdateManager.unregisterListener(installStateListener)
     }
 
     override fun onResume() {
         super.onResume()
+
+        // Verifica se uma atualização já foi baixada e aguarda instalação
+        if (::appUpdateManager.isInitialized) {
+            appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+                if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                    showInstallSnackbar()
+                }
+            }
+        }
 
         // Reset automático de 12 horas — limpa histórico se o prazo expirou
         PrefsHelper.maybeAutoReset(this)
@@ -181,6 +244,9 @@ class MainActivity : AppCompatActivity() {
             if (resultCode == RESULT_OK) {
                 Toast.makeText(this, "✅ Proteção de ligações ativada!", Toast.LENGTH_SHORT).show()
             }
+        }
+        if (requestCode == REQ_APP_UPDATE && resultCode != RESULT_OK) {
+            Log.w(TAG, "Atualização cancelada ou falhou (resultCode=$resultCode)")
         }
     }
 
