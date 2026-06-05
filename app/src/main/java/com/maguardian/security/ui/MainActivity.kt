@@ -1001,6 +1001,7 @@ class MainActivity : AppCompatActivity() {
         var tick = 0
 
         // Varredura real em background — popula o banco de ameaças corretamente
+        val freeThreatsFound = java.util.concurrent.atomic.AtomicInteger(0)
         Thread {
             try {
                 ensureThreatChannelExists()
@@ -1026,11 +1027,11 @@ class MainActivity : AppCompatActivity() {
                          android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
                     val hasLauncher = pkgName in launcherPkgs
 
-                    MalwareDatabase.isMalware(pkgName)?.let { PrefsHelper.saveThreat(this, it) }
+                    MalwareDatabase.isMalware(pkgName)?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                     MalwareDatabase.checkHiddenApp(pkgName, appLabel, pkg.requestedPermissions, hasLauncher, isSystemApp)
-                        ?.let { PrefsHelper.saveThreat(this, it) }
+                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                     MalwareDatabase.checkHeuristic(pkgName, appLabel, pkg.requestedPermissions)
-                        ?.let { PrefsHelper.saveThreat(this, it) }
+                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                 }
                 PrefsHelper.setLastScan(this, System.currentTimeMillis())
                 PrefsHelper.incrementScanCount(this)
@@ -1059,20 +1060,34 @@ class MainActivity : AppCompatActivity() {
                     btnScan.text = "Escanear"
                     refreshUI()
 
-                    android.app.AlertDialog.Builder(this@MainActivity)
-                        .setTitle("⚠️ Varredura Concluída")
-                        .setMessage(
-                            "Foram detectados dados que podem estar vulneráveis no seu dispositivo.\n\n" +
-                            "Apps em segundo plano podem estar acessando informações " +
-                            "sem monitoramento ativo.\n\n" +
-                            "Ative a proteção Premium para remover ameaças e manter " +
-                            "seu celular seguro em tempo real."
-                        )
-                        .setPositiveButton("🔒 Proteja-se — Seja Premium") { _, _ ->
-                            subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
-                        }
-                        .setNegativeButton("Agora não", null)
-                        .show()
+                    val count = freeThreatsFound.get()
+                    if (count > 0) {
+                        android.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle("⚠️ $count Ameaça(s) Encontrada(s)!")
+                            .setMessage(
+                                "$count ameaça(s) detectada(s) no seu dispositivo.\n\n" +
+                                "Assine o M&A Guardian Premium para remover as ameaças " +
+                                "e manter seu celular protegido em tempo real."
+                            )
+                            .setPositiveButton("🔒 Remover Ameaças — Seja Premium") { _, _ ->
+                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
+                            }
+                            .setNegativeButton("Agora não", null)
+                            .show()
+                    } else {
+                        android.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle("✅ Dispositivo Seguro!")
+                            .setMessage(
+                                "Nenhuma ameaça encontrada no seu dispositivo.\n\n" +
+                                "Ative a proteção Premium para monitoramento em tempo real, " +
+                                "bloqueio de links suspeitos e proteção contra chamadas fraudulentas."
+                            )
+                            .setPositiveButton("🔒 Ativar Proteção Premium") { _, _ ->
+                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
+                            }
+                            .setNegativeButton("Agora não", null)
+                            .show()
+                    }
                 }
             }
         }
