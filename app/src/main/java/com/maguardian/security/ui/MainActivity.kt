@@ -120,13 +120,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
-        PrefsHelper.initTrial(this)
         setupUI()
         initBilling()
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()
         scheduleTrialAlertsIfNeeded()
-        showTrialWelcomeIfNeeded()
+        showTrialExpirationReminderIfNeeded()
         initAppUpdate()
     }
 
@@ -172,41 +171,41 @@ class MainActivity : AppCompatActivity() {
         billing.connect { }
     }
 
-    private fun showTrialWelcomeIfNeeded() {
+    private fun showTrialExpirationReminderIfNeeded() {
         if (PrefsHelper.isSubscriptionActive(this)) return
         val start = PrefsHelper.getTrialStartDate(this)
-        val isFirstOpen = (System.currentTimeMillis() - start) < 60_000L // menos de 1 minuto = primeira abertura
-        if (!isFirstOpen) {
-            // Mostra lembrete quando restam 2 dias ou menos
-            val daysLeft = PrefsHelper.trialDaysRemaining(this)
-            if (daysLeft in 1..2) {
-                android.app.AlertDialog.Builder(this)
-                    .setTitle("⏳ Trial expira em $daysLeft dia(s)!")
-                    .setMessage("Seu período gratuito está acabando.\n\nAssine agora por R\$9,99/mês e continue com toda a proteção ativa.")
-                    .setPositiveButton("Assinar Agora") { _, _ ->
-                        subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
-                    }
-                    .setNegativeButton("Depois", null)
-                    .show()
-            } else if (!PrefsHelper.isTrialActive(this)) {
-                android.app.AlertDialog.Builder(this)
-                    .setTitle("🔓 Trial Expirado")
-                    .setMessage("Seu período gratuito de 7 dias chegou ao fim.\n\nAssine o M&A Guardian Premium por R\$9,99/mês para continuar protegido.")
-                    .setPositiveButton("Assinar Agora") { _, _ ->
-                        subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
-                    }
-                    .setNegativeButton("Fechar", null)
-                    .show()
-            }
-            return
+        if (start == 0L) return // trial ainda não foi ativado — aguarda o scan
+        val daysLeft = PrefsHelper.trialDaysRemaining(this)
+        if (daysLeft in 1..2) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("⏳ Trial expira em $daysLeft dia(s)!")
+                .setMessage("Seu período gratuito está acabando.\n\nAssine agora por R\$9,99/mês e continue com toda a proteção ativa.")
+                .setPositiveButton("Assinar Agora") { _, _ ->
+                    subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+                }
+                .setNegativeButton("Depois", null)
+                .show()
+        } else if (!PrefsHelper.isTrialActive(this)) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("🔓 Trial Expirado")
+                .setMessage("Seu período gratuito de 7 dias chegou ao fim.\n\nAssine o M&A Guardian Premium por R\$9,99/mês para continuar protegido.")
+                .setPositiveButton("Assinar Agora") { _, _ ->
+                    subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+                }
+                .setNegativeButton("Fechar", null)
+                .show()
         }
+    }
+
+    private fun activateTrial() {
+        PrefsHelper.initTrial(this)
+        refreshUI()
         android.app.AlertDialog.Builder(this)
             .setTitle("🎉 7 Dias Grátis Ativados!")
             .setMessage(
-                "Bem-vindo ao M&A Guardian!\n\n" +
-                "Você tem 7 dias de acesso completo e gratuito a todos os recursos:\n\n" +
+                "Proteção completa ativada por 7 dias!\n\n" +
                 "✅ Proteção em tempo real\n" +
-                "✅ Verificação de vírus completa\n" +
+                "✅ Remoção de ameaças\n" +
                 "✅ Bloqueio de links suspeitos\n" +
                 "✅ Proteção contra chamadas fraudulentas\n\n" +
                 "Após 7 dias, assine por apenas R\$9,99/mês para continuar protegido."
@@ -1108,14 +1107,14 @@ class MainActivity : AppCompatActivity() {
                     val count = freeThreatsFound.get()
                     if (count > 0) {
                         android.app.AlertDialog.Builder(this@MainActivity)
-                            .setTitle("⚠️ $count Ameaça(s) Encontrada(s)!")
+                            .setTitle("⚠️ $count Ameaça(s) Detectada(s)!")
                             .setMessage(
-                                "$count ameaça(s) detectada(s) no seu dispositivo.\n\n" +
-                                "Assine o M&A Guardian Premium para remover as ameaças " +
-                                "e manter seu celular protegido em tempo real."
+                                "Encontramos $count ameaça(s) no seu dispositivo.\n\n" +
+                                "Ative os 7 dias grátis para visualizar os apps infectados " +
+                                "e removê-los agora."
                             )
-                            .setPositiveButton("🔒 Remover Ameaças — Seja Premium") { _, _ ->
-                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
+                            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
+                                activateTrial()
                             }
                             .setNegativeButton("Agora não", null)
                             .show()
@@ -1124,11 +1123,11 @@ class MainActivity : AppCompatActivity() {
                             .setTitle("✅ Dispositivo Seguro!")
                             .setMessage(
                                 "Nenhuma ameaça encontrada no seu dispositivo.\n\n" +
-                                "Ative a proteção Premium para monitoramento em tempo real, " +
-                                "bloqueio de links suspeitos e proteção contra chamadas fraudulentas."
+                                "Ative os 7 dias grátis para manter seu celular protegido " +
+                                "em tempo real contra vírus, links suspeitos e chamadas fraudulentas."
                             )
-                            .setPositiveButton("🔒 Ativar Proteção Premium") { _, _ ->
-                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
+                            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
+                                activateTrial()
                             }
                             .setNegativeButton("Agora não", null)
                             .show()
