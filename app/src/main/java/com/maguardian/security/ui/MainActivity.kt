@@ -1114,7 +1114,7 @@ class MainActivity : AppCompatActivity() {
                                 "e removê-los agora."
                             )
                             .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
-                                activateTrial()
+                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
                             }
                             .setNegativeButton("Agora não", null)
                             .show()
@@ -1127,7 +1127,7 @@ class MainActivity : AppCompatActivity() {
                                 "em tempo real contra vírus, links suspeitos e chamadas fraudulentas."
                             )
                             .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
-                                activateTrial()
+                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
                             }
                             .setNegativeButton("Agora não", null)
                             .show()
