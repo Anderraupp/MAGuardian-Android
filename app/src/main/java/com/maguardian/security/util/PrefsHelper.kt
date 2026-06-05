@@ -23,8 +23,10 @@ object PrefsHelper {
     private const val KEY_LAST_TRIAL_POPUP   = "last_trial_popup"
     private const val KEY_TRIAL_ALARM_SET        = "trial_alarm_set"
     private const val KEY_BLOCK_TELEMARKETING    = "block_telemarketing"
+    private const val KEY_TRIAL_START            = "trial_start_date"
 
     private const val STATS_RESET_INTERVAL_MS = 12 * 60 * 60 * 1000L // 12 horas
+    private const val TRIAL_DURATION_MS       = 7 * 24 * 60 * 60 * 1000L // 7 dias
 
     fun hasAskedNotifPermission(ctx: Context): Boolean =
         prefs(ctx).getBoolean(KEY_NOTIF_ASKED, false)
@@ -177,8 +179,35 @@ object PrefsHelper {
     fun setSubscriptionActive(ctx: Context, active: Boolean) =
         prefs(ctx).edit().putBoolean(KEY_SUBSCRIPTION_ACTIVE, active).apply()
 
+    // ── Trial de 7 dias ──
+
+    /** Inicia o trial na primeira vez que o usuário abre o app. */
+    fun initTrial(ctx: Context) {
+        val p = prefs(ctx)
+        if (p.getLong(KEY_TRIAL_START, 0L) == 0L) {
+            p.edit().putLong(KEY_TRIAL_START, System.currentTimeMillis()).apply()
+        }
+    }
+
+    fun getTrialStartDate(ctx: Context): Long =
+        prefs(ctx).getLong(KEY_TRIAL_START, 0L)
+
+    fun isTrialActive(ctx: Context): Boolean {
+        val start = getTrialStartDate(ctx)
+        if (start == 0L) return false
+        return (System.currentTimeMillis() - start) < TRIAL_DURATION_MS
+    }
+
+    /** Dias restantes do trial (0 se expirado). */
+    fun trialDaysRemaining(ctx: Context): Int {
+        val start = getTrialStartDate(ctx)
+        if (start == 0L) return 0
+        val remaining = TRIAL_DURATION_MS - (System.currentTimeMillis() - start)
+        return if (remaining > 0) ((remaining / (24 * 60 * 60 * 1000L)) + 1).toInt() else 0
+    }
+
     fun hasFullAccess(ctx: Context): Boolean =
-        isSubscriptionActive(ctx)
+        isSubscriptionActive(ctx) || isTrialActive(ctx)
 
     // ── Alertas para não-assinantes ──
 
