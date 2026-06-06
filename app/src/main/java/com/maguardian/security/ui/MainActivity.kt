@@ -1335,7 +1335,7 @@ class MainActivity : AppCompatActivity() {
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setAutoCancel(true)
                 .setContentIntent(subPi)
-                .addAction(R.drawable.ic_shield_alert, "🔒 Seja Premium", subPi)
+                .addAction(R.drawable.ic_shield_alert, "🎁 7 Dias Grátis", subPi)
                 .setColor(0xFFDC2626.toInt())
                 .build()
         }
@@ -1629,10 +1629,10 @@ class MainActivity : AppCompatActivity() {
             .setTitle("⚠️ Alerta de Segurança")
             .setMessage(
                 "$alertMsg\n\n" +
-                "Seja Premium e proteja seu celular com monitoramento em tempo real, " +
+                "Ative 7 dias grátis e proteja seu celular com monitoramento em tempo real, " +
                 "remoção de ameaças e detecção de adware."
             )
-            .setPositiveButton("🔒 Seja Premium — Proteja seu Celular") { _, _ ->
+            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
                 subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
             }
             .setNegativeButton("Agora não", null)
