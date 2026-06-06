@@ -530,7 +530,7 @@ class PopupDetectorService : Service() {
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setAutoCancel(true)
                 .setContentIntent(subPendingIntent)
-                .addAction(R.drawable.ic_shield_alert, "🔒 Seja Premium", subPendingIntent)
+                .addAction(R.drawable.ic_shield_alert, "🎁 7 Dias Grátis", subPendingIntent)
                 .setColor(0xFFDC2626.toInt())
                 .build()
         }
