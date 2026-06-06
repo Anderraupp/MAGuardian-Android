@@ -61,12 +61,12 @@ class TrialAlertReceiver : BroadcastReceiver() {
             .setContentText(message)
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$message\n\nSeja Premium e proteja seu celular agora.")
+                    .bigText("$message\n\nAtive 7 dias grátis e proteja seu celular agora.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(openPi)
-            .addAction(R.drawable.ic_shield_alert, "🔒 Seja Premium", subscribePi)
+            .addAction(R.drawable.ic_shield_alert, "🎁 7 Dias Grátis", subscribePi)
             .setColor(0xFFDC2626.toInt())
             .build()
 
