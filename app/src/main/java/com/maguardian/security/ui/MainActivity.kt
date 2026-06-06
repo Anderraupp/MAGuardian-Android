@@ -1442,6 +1442,7 @@ class MainActivity : AppCompatActivity() {
             ivShield.setImageResource(R.drawable.ic_shield_check)
             btnToggle.text = "Desativar"
             btnToggle.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.btn_secondary)
         } else {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.card_status_inactive)
             tvStatus.text = when {
@@ -1459,8 +1460,9 @@ class MainActivity : AppCompatActivity() {
                 else -> "Ative a proteção para monitorar ameaças automaticamente."
             }
             ivShield.setImageResource(R.drawable.ic_shield_alert)
-            btnToggle.text = "Ativar"
-            btnToggle.setTextColor(ContextCompat.getColor(this, R.color.primary))
+            btnToggle.text = "Ativar Proteção"
+            btnToggle.setTextColor(android.graphics.Color.WHITE)
+            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.btn_blue)
         }
 
         // Estatísticas
