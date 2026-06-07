@@ -1628,9 +1628,7 @@ class MainActivity : AppCompatActivity() {
         val alertMsg = messages[idx]
 
         android.app.AlertDialog.Builder(this)
-            .setTitle("⚠️ Alerta de Segurança")
             .setMessage(
-                "$alertMsg\n\n" +
                 "Ative 7 dias grátis e proteja seu celular com monitoramento em tempo real, " +
                 "remoção de ameaças e detecção de adware."
             )
