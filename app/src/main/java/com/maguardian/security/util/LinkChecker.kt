@@ -217,7 +217,24 @@ object LinkChecker {
         ".club", ".link", ".tk", ".cf", ".gq", ".ml", ".ga", ".pw",
         ".rest", ".fun", ".monster", ".digital", ".cyou", ".world", ".vip",
         ".fit", ".buzz", ".live", ".shop", ".hair", ".beauty", ".loan",
-        ".date", ".download", ".racing", ".stream", ".accountant", ".cricket"
+        ".date", ".download", ".racing", ".stream", ".accountant", ".cricket",
+        ".info", ".biz", ".mobi", ".name", ".pro", ".ws", ".in", ".to"
+    )
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GOLPE DE DEPÓSITO / "DEPOSITE E GANHE" / RENDA FÁCIL
+    // ════════════════════════════════════════════════════════════════════════
+    private val advanceFeeKeywords = listOf(
+        "deposite", "depositar", "deposito-", "-deposito",
+        "ganhe-", "-ganhe", "ganhar-dinheiro", "ganho-garantido",
+        "saque-liberado", "saque-disponivel", "liberar-saque",
+        "voce-foi-selecionado", "foi-selecionado", "selecionado-",
+        "recompensa-", "-recompensa", "ativar-recompensa", "resgatar-recompensa",
+        "lucro-rapido", "lucro-imediato", "dinheiro-na-hora",
+        "ganhe-agora", "receba-agora", "resgate-agora",
+        "multiplique", "dobrar-dinheiro", "dinheiro-dobrado",
+        "cashback-garantido", "bonus-garantido", "retorno-imediato",
+        "investimento-rapido", "renda-passiva-facil", "lucro-diario-garantido"
     )
 
     // ════════════════════════════════════════════════════════════════════════
@@ -300,6 +317,15 @@ object LinkChecker {
             score += 30
             reasons.add("Encurtador de URL ($shortener) — destino real ocultado")
             topCategory = "Link Encurtado"
+        }
+
+        // ── 1b. Subdomínio "go." — redirect tracker de campanha ──────────────
+        // go.nondi.info, go.anycrazysite.info etc. — padrão de rastreamento
+        // de cliques usado em spam/golpes enviados por WhatsApp e SMS
+        if (host.startsWith("go.") && !host.endsWith("google.com") && !host.endsWith("go.com")) {
+            score += 35
+            reasons.add("Subdomínio \"go.\" ($host) é padrão de link de rastreamento usado em golpes por WhatsApp e SMS — o destino real está oculto")
+            if (topCategory == "Desconhecido" || topCategory == "Link Encurtado") topCategory = "Link Suspeito / Redirect"
         }
 
         // ── 2. IP direto ────────────────────────────────────────────────────
@@ -420,6 +446,14 @@ object LinkChecker {
             score += 40
             reasons.add("Golpe de romance ou conteúdo adulto falso: \"$romanceHit\"")
             if (topCategory == "Desconhecido") topCategory = "Romance / Conteúdo Falso"
+        }
+
+        // ── 15b. Golpe de depósito / "deposite e ganhe" ──────────────────────
+        val advanceFeeHit = advanceFeeKeywords.firstOrNull { lower.contains(it) }
+        if (advanceFeeHit != null) {
+            score += 55
+            reasons.add("Golpe de depósito/renda fácil: \"$advanceFeeHit\" — esquema \"deposite X e ganhe Y\" nunca é real, é estelionato")
+            topCategory = "Golpe de Depósito / Renda Fácil"
         }
 
         // ── 16. APK pirata explícito ─────────────────────────────────────────
