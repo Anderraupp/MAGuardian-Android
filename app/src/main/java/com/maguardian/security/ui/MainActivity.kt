@@ -1076,6 +1076,8 @@ class MainActivity : AppCompatActivity() {
                         ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                     MalwareDatabase.checkHeuristic(pkgName, appLabel, pkg.requestedPermissions)
                         ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
+                    MalwareDatabase.checkAdwarePermissions(pkgName, appLabel, pkg.requestedPermissions, isSystemApp)
+                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                 }
                 PrefsHelper.setLastScan(this, System.currentTimeMillis())
                 PrefsHelper.incrementScanCount(this)
