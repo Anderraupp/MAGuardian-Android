@@ -14,6 +14,29 @@ object LinkChecker {
     )
 
     // ════════════════════════════════════════════════════════════════════════
+    // 0. DOMÍNIOS OFICIAIS CONFIRMADOS — nunca sinalizar como phishing
+    //    Inclui bancos com TLD próprio (gTLD de marca registrada na ICANN)
+    // ════════════════════════════════════════════════════════════════════════
+    private val trustedOfficialDomains = setOf(
+        // Bradesco — TLD próprio ".bradesco" registrado na ICANN
+        "banco.bradesco", "www.bradesco.com.br", "bradesco.com.br",
+        // Itaú
+        "www.itau.com.br", "itau.com.br", "itaucard.com.br",
+        // Santander
+        "www.santander.com.br", "santander.com.br",
+        // Caixa
+        "www.caixa.gov.br", "caixa.gov.br", "caixaeconomicafederal.com.br",
+        // Banco do Brasil
+        "www.bb.com.br", "bb.com.br", "bancodobrasil.com.br",
+        // Nubank
+        "www.nubank.com.br", "nubank.com.br",
+        // Inter
+        "www.bancointer.com.br", "bancointer.com.br", "inter.co",
+        // Governo
+        "www.gov.br", "gov.br", "receita.fazenda.gov.br", "idg.receita.fazenda.gov.br"
+    )
+
+    // ════════════════════════════════════════════════════════════════════════
     // 1. BANCOS E FINTECHS BRASILEIROS — alvos de phishing
     // ════════════════════════════════════════════════════════════════════════
     private val bankBrands = listOf(
@@ -270,6 +293,17 @@ object LinkChecker {
         val host     = noScheme.substringBefore("/").substringBefore("?")
         val path     = noScheme.removePrefix(host).lowercase()
         val hostNorm = deHomoglyph(host)     // versão com homóglifos resolvidos
+
+        // ── Domínio oficial confirmado — retorno imediato seguro ────────────
+        if (host in trustedOfficialDomains) {
+            return Result(
+                score    = 0,
+                verdict  = "Seguro",
+                category = "Domínio Oficial",
+                reasons  = listOf("Domínio oficial verificado ($host) — instituição legítima")
+            )
+        }
+
         val reasons  = mutableListOf<String>()
         var score    = 0
         var topCategory = "Desconhecido"
