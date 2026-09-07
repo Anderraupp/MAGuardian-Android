@@ -6,6 +6,7 @@ import android.util.Log
 import com.android.billingclient.api.*
 import com.maguardian.security.util.PrefsHelper
 import kotlinx.coroutines.*
+import kotlin.coroutines.resume
 
 /**
  * Gerencia toda a comunicação com o Google Play Billing.
@@ -83,8 +84,18 @@ class BillingManager(
             .setProductList(productList)
             .build()
 
-        val result = billingClient.queryProductDetails(params)
-        monthlyDetails = result.productDetailsList?.firstOrNull { it.productId == SKU_MONTHLY }
+        val details = suspendCancellableCoroutine<List<ProductDetails>> { continuation ->
+            billingClient.queryProductDetailsAsync(params) { billingResult, queryResult ->
+                val products = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    queryResult.productDetailsList
+                } else {
+                    Log.w(TAG, "Erro ao carregar produtos: ${billingResult.debugMessage}")
+                    emptyList()
+                }
+                if (continuation.isActive) continuation.resume(products)
+            }
+        }
+        monthlyDetails = details.firstOrNull { it.productId == SKU_MONTHLY }
         Log.i(TAG, "Produto mensal carregado: ${monthlyDetails != null}")
     }
 
@@ -94,8 +105,18 @@ class BillingManager(
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
-        val result = billingClient.queryPurchasesAsync(params)
-        val active = result.purchasesList.any { purchase ->
+        val purchases = suspendCancellableCoroutine<List<Purchase>> { continuation ->
+            billingClient.queryPurchasesAsync(params) { billingResult, purchaseList ->
+                val result = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    purchaseList
+                } else {
+                    Log.w(TAG, "Erro ao consultar assinatura: ${billingResult.debugMessage}")
+                    emptyList()
+                }
+                if (continuation.isActive) continuation.resume(result)
+            }
+        }
+        val active = purchases.any { purchase ->
             purchase.purchaseState == Purchase.PurchaseState.PURCHASED
         }
         PrefsHelper.setSubscriptionActive(context, active)
@@ -156,7 +177,11 @@ class BillingManager(
         val params = AcknowledgePurchaseParams.newBuilder()
             .setPurchaseToken(purchase.purchaseToken)
             .build()
-        val result = billingClient.acknowledgePurchase(params)
+        val result = suspendCancellableCoroutine<BillingResult> { continuation ->
+            billingClient.acknowledgePurchase(params) { billingResult ->
+                if (continuation.isActive) continuation.resume(billingResult)
+            }
+        }
         if (result.responseCode == BillingClient.BillingResponseCode.OK) {
             Log.i(TAG, "Compra confirmada: ${purchase.products}")
             refreshStatus()

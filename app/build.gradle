@@ -48,7 +48,7 @@ dependencies {
     implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
 
     // Google Play Billing — assinaturas
-    implementation 'com.android.billingclient:billing-ktx:9.0.0'
+    implementation 'com.android.billingclient:billing:9.0.0'
 
     // Meta (Facebook) SDK — rastreamento de campanhas
     implementation 'com.facebook.android:facebook-android-sdk:17.0.1'
