@@ -5,14 +5,14 @@ plugins {
 
 android {
     namespace 'com.maguardian.security'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.maguardian.security"
         minSdk 26
-        targetSdk 35
-        versionCode 35
-        versionName "1.5.7"
+        targetSdk 36
+        versionCode 36
+        versionName "1.5.8"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
