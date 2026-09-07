@@ -11,8 +11,8 @@ android {
         applicationId "com.maguardian.security"
         minSdk 26
         targetSdk 35
-        versionCode 28
-        versionName "1.5.1"
+        versionCode 34
+        versionName "1.5.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -48,7 +48,7 @@ dependencies {
     implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
 
     // Google Play Billing — assinaturas
-    implementation 'com.android.billingclient:billing-ktx:7.0.0'
+    implementation 'com.android.billingclient:billing-ktx:8.0.0'
 
     // Meta (Facebook) SDK — rastreamento de campanhas
     implementation 'com.facebook.android:facebook-android-sdk:17.0.1'
@@ -58,6 +58,9 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
     implementation 'com.android.installreferrer:installreferrer:2.2'
+
+    // Google Play In-App Updates
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
