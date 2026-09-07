@@ -142,19 +142,25 @@ object PrefsHelper {
         val threatsJson = prefs.getString(KEY_THREATS, "[]") ?: "[]"
         val arr = JSONArray(threatsJson)
         val updated = JSONArray()
+        var keptThreats = 0
 
         for (i in 0 until arr.length()) {
             val obj = arr.getJSONObject(i)
             if (obj.getString("packageName") == packageName) {
+                if (obj.optString("status", "detected") == "detected") {
+                    keptThreats++
+                }
                 obj.put("status", "kept")
                 obj.put("keptAt", System.currentTimeMillis())
             }
             updated.put(obj)
         }
 
+        val activeTotal = (prefs.getInt(KEY_TOTAL_FOUND, 0) - keptThreats).coerceAtLeast(0)
         prefs.edit()
             .putStringSet(KEY_KEPT_PACKAGES, keptPackages)
             .putString(KEY_THREATS, updated.toString())
+            .putInt(KEY_TOTAL_FOUND, activeTotal)
             .apply()
     }
 
