@@ -305,11 +305,12 @@ class PopupDetectorService : Service() {
             if (MalwareDatabase.isTrustedApp(pkgName)) continue
             if (MalwareDatabase.isScanExempt(pkgName)) continue
 
+            val appInfo = pkg.applicationInfo ?: continue
             val appLabel = try {
-                packageManager.getApplicationLabel(pkg.applicationInfo).toString()
+                packageManager.getApplicationLabel(appInfo).toString()
             } catch (e: Exception) { pkgName }
 
-            val isSystemApp = (pkg.applicationInfo.flags and
+            val isSystemApp = (appInfo.flags and
                 (android.content.pm.ApplicationInfo.FLAG_SYSTEM or
                  android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
             val hasLauncherIcon = pkgName in packagesWithLauncher
