@@ -183,6 +183,7 @@ class PopupDetectorService : Service() {
 
             val pkgName = intent.data?.schemeSpecificPart ?: return
             if (pkgName == packageName) return  // ignora atualização do próprio app
+            if (PrefsHelper.isThreatKept(this@PopupDetectorService, pkgName)) return
             val isReplacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
 
             // Apps de sistema, vendors confiáveis e isentos de varredura nunca são ameaças
@@ -296,6 +297,7 @@ class PopupDetectorService : Service() {
         for (pkg in installedPackages) {
             val pkgName = pkg.packageName
             if (pkgName == packageName) continue
+            if (PrefsHelper.isThreatKept(this, pkgName)) continue
             // Já notificou antes nessa sessão — pula
             if (notifiedPackages.contains(pkgName)) continue
             // Apps de sistema, vendors confiáveis e isentos de varredura nunca são ameaças
@@ -392,6 +394,10 @@ class PopupDetectorService : Service() {
                 if (event.eventType == foregroundEventType) {
                     val pkg = event.packageName
                     if (pkg == packageName) continue
+                    if (PrefsHelper.isThreatKept(this, pkg)) {
+                        heuristicCounter.remove(pkg)
+                        continue
+                    }
 
                     val timeSinceLast = event.timeStamp - lastForegroundTime
                     Log.d(TAG, "Foreground: $pkg | tempo desde último: ${timeSinceLast}ms")
@@ -465,6 +471,8 @@ class PopupDetectorService : Service() {
     }
 
     private fun onThreatDetected(malware: MalwareDatabase.MalwareEntry) {
+        // Respeita a escolha "Manter": não salva, notifica ou alerta novamente.
+        if (PrefsHelper.isThreatKept(this, malware.packageName)) return
         PrefsHelper.saveThreat(this, malware)
 
         val isSubscribed = PrefsHelper.hasFullAccess(this)

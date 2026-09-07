@@ -12,6 +12,7 @@ object PrefsHelper {
     private const val KEY_AUTO_REMOVE = "auto_remove"
     private const val KEY_NOTIFICATIONS = "notifications"
     private const val KEY_THREATS = "threats"
+    private const val KEY_KEPT_PACKAGES = "kept_threat_packages"
     private const val KEY_TOTAL_FOUND = "total_threats_found"
     private const val KEY_TOTAL_REMOVED = "total_threats_removed"
     private const val KEY_LAST_SCAN = "last_scan"
@@ -77,6 +78,9 @@ object PrefsHelper {
 
     fun saveThreat(ctx: Context, malware: MalwareDatabase.MalwareEntry) {
         val prefs = prefs(ctx)
+        // O usuário reconheceu este app e escolheu mantê-lo.
+        if (isThreatKept(ctx, malware.packageName)) return
+
         val threatsJson = prefs.getString(KEY_THREATS, "[]") ?: "[]"
         val arr = JSONArray(threatsJson)
 
@@ -128,6 +132,35 @@ object PrefsHelper {
             .putInt(KEY_TOTAL_REMOVED, totalRemoved)
             .apply()
     }
+
+    fun markThreatKept(ctx: Context, packageName: String) {
+        val prefs = prefs(ctx)
+        val keptPackages = prefs.getStringSet(KEY_KEPT_PACKAGES, emptySet())
+            ?.toMutableSet() ?: mutableSetOf()
+        keptPackages.add(packageName)
+
+        val threatsJson = prefs.getString(KEY_THREATS, "[]") ?: "[]"
+        val arr = JSONArray(threatsJson)
+        val updated = JSONArray()
+
+        for (i in 0 until arr.length()) {
+            val obj = arr.getJSONObject(i)
+            if (obj.getString("packageName") == packageName) {
+                obj.put("status", "kept")
+                obj.put("keptAt", System.currentTimeMillis())
+            }
+            updated.put(obj)
+        }
+
+        prefs.edit()
+            .putStringSet(KEY_KEPT_PACKAGES, keptPackages)
+            .putString(KEY_THREATS, updated.toString())
+            .apply()
+    }
+
+    fun isThreatKept(ctx: Context, packageName: String): Boolean =
+        prefs(ctx).getStringSet(KEY_KEPT_PACKAGES, emptySet())
+            ?.contains(packageName) == true
 
     fun getThreats(ctx: Context): JSONArray {
         val json = prefs(ctx).getString(KEY_THREATS, "[]") ?: "[]"

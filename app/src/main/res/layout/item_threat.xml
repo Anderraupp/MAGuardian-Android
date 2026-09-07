@@ -73,6 +73,15 @@
             android:ellipsize="end"
             android:layout_marginTop="2dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Uma ameaça foi detectada! Caso não reconheça o app clique em desinstalar caso seja de seu conhecimento clique em manter"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:lineSpacingExtra="2dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -87,6 +96,20 @@
                 android:layout_weight="1"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
+
+            <Button
+                android:id="@+id/btnKeep"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:layout_marginEnd="6dp"
+                android:text="Manter"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:textSize="11sp"
+                android:background="@drawable/btn_keep"
+                app:backgroundTint="@null"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp" />
 
             <Button
                 android:id="@+id/btnUninstall"

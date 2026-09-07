@@ -38,6 +38,7 @@ class PackageInstallReceiver : BroadcastReceiver() {
 
         // Ignorar atualização do próprio app
         if (packageName == context.packageName) return
+        if (PrefsHelper.isThreatKept(context, packageName)) return
 
         Log.i(TAG, "App detectado: $packageName | substituindo=$isReplacing")
 

@@ -5,6 +5,7 @@ Web-based antivirus dashboard for monitoring, detecting, and removing malicious 
 ## Collaboration Workflow
 
 - After completing and validating project changes, send them to the connected GitHub repository so they are available via `git pull`.
+- The Android source lives under `android-native/app/` in this workspace, but maps to `app/` at the root of the `Anderraupp/MAGuardian-Android` GitHub repository.
 
 ## Architecture
 

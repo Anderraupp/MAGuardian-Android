@@ -1058,6 +1058,7 @@ class MainActivity : AppCompatActivity() {
                 for (pkg in pkgs) {
                     val pkgName = pkg.packageName
                     if (pkgName == packageName) continue
+                    if (PrefsHelper.isThreatKept(this, pkgName)) continue
                     if (MalwareDatabase.isSystemPrefix(pkgName)) continue
                     if (MalwareDatabase.isTrustedApp(pkgName)) continue
                     if (MalwareDatabase.isScanExempt(pkgName)) continue
@@ -1186,6 +1187,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Pula o próprio app, apps de sistema, vendors confiáveis e isentos de varredura
                 if (pkgName == packageName) continue
+                if (PrefsHelper.isThreatKept(this, pkgName)) continue
                 if (MalwareDatabase.isSystemPrefix(pkgName)) continue
                 if (MalwareDatabase.isTrustedApp(pkgName)) continue
                 if (MalwareDatabase.isScanExempt(pkgName)) continue
@@ -1480,7 +1482,7 @@ class MainActivity : AppCompatActivity() {
         // Badge + lista de ameaças — filtra apenas ativas e ainda instaladas
         val activeThreats = (0 until threats.length())
             .map { threats.getJSONObject(it) }
-            .filter { it.optString("status", "detected") != "removed" }
+            .filter { it.optString("status", "detected") == "detected" }
             .filter { threat ->
                 // Verifica se o app ainda está instalado; se não, remove automaticamente
                 val pkg = threat.getString("packageName")
@@ -1535,9 +1537,19 @@ class MainActivity : AppCompatActivity() {
             }
 
             val btnUninstall = view.findViewById<Button>(R.id.btnUninstall)
+            val btnKeep = view.findViewById<Button>(R.id.btnKeep)
             val pkg = threat.getString("packageName")
             btnUninstall.setOnClickListener {
                 requireSubscriptionToUninstall(pkg)
+            }
+            btnKeep.setOnClickListener {
+                PrefsHelper.markThreatKept(this, pkg)
+                Toast.makeText(
+                    this,
+                    "App mantido. Você não receberá novos alertas sobre ele.",
+                    Toast.LENGTH_LONG,
+                ).show()
+                refreshUI()
             }
 
             llThreats.addView(view)
