@@ -36,6 +36,14 @@ import com.maguardian.security.util.PermissionHelper
 import com.maguardian.security.util.PrefsHelper
 import android.webkit.CookieManager
 import android.webkit.WebStorage
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.play.core.appupdate.AppUpdateInfo
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -48,6 +56,15 @@ class MainActivity : AppCompatActivity() {
         const val COLOR_RED       = 0xFFDC2626.toInt()
         const val COLOR_YELLOW    = 0xFFF59E0B.toInt()
         const val REQ_PHONE_STATE = 9002
+        const val REQ_APP_UPDATE  = 9003
+    }
+
+    private lateinit var appUpdateManager: AppUpdateManager
+
+    private val installStateListener = InstallStateUpdatedListener { state ->
+        if (state.installStatus() == InstallStatus.DOWNLOADED) {
+            showInstallSnackbar()
+        }
     }
 
     private val pendingUninstall = mutableSetOf<String>()
@@ -108,6 +125,43 @@ class MainActivity : AppCompatActivity() {
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()
         scheduleTrialAlertsIfNeeded()
+        showTrialExpirationReminderIfNeeded()
+        initAppUpdate()
+    }
+
+    private fun initAppUpdate() {
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        appUpdateManager.registerListener(installStateListener)
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+            ) {
+                showUpdateDialog(info)
+            }
+        }
+    }
+
+    private fun showUpdateDialog(info: AppUpdateInfo) {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("🔄 Nova Atualização Disponível")
+            .setMessage("Uma nova versão do M&A Guardian está disponível com melhorias e correções de segurança. Deseja atualizar agora?")
+            .setPositiveButton("Atualizar Agora") { _, _ ->
+                appUpdateManager.startUpdateFlowForResult(
+                    info, AppUpdateType.FLEXIBLE, this, REQ_APP_UPDATE
+                )
+            }
+            .setNegativeButton("Depois", null)
+            .show()
+    }
+
+    private fun showInstallSnackbar() {
+        Snackbar.make(
+            findViewById(android.R.id.content),
+            "✅ Atualização baixada! Reinicie para aplicar.",
+            Snackbar.LENGTH_INDEFINITE
+        ).setAction("Reiniciar Agora") {
+            appUpdateManager.completeUpdate()
+        }.show()
     }
 
     private fun initBilling() {
@@ -117,13 +171,66 @@ class MainActivity : AppCompatActivity() {
         billing.connect { }
     }
 
+    private fun showTrialExpirationReminderIfNeeded() {
+        if (PrefsHelper.isSubscriptionActive(this)) return
+        val start = PrefsHelper.getTrialStartDate(this)
+        if (start == 0L) return // trial ainda não foi ativado — aguarda o scan
+        val daysLeft = PrefsHelper.trialDaysRemaining(this)
+        if (daysLeft in 1..2) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("⏳ Trial expira em $daysLeft dia(s)!")
+                .setMessage("Seu período gratuito está acabando.\n\nAssine agora por R\$9,99/mês e continue com toda a proteção ativa.")
+                .setPositiveButton("Assinar Agora") { _, _ ->
+                    subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+                }
+                .setNegativeButton("Depois", null)
+                .show()
+        } else if (!PrefsHelper.isTrialActive(this)) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("🔓 Trial Expirado")
+                .setMessage("Seu período gratuito de 7 dias chegou ao fim.\n\nAssine o M&A Guardian Premium por R\$9,99/mês para continuar protegido.")
+                .setPositiveButton("Assinar Agora") { _, _ ->
+                    subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+                }
+                .setNegativeButton("Fechar", null)
+                .show()
+        }
+    }
+
+    private fun activateTrial() {
+        PrefsHelper.initTrial(this)
+        refreshUI()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("🎉 7 Dias Grátis Ativados!")
+            .setMessage(
+                "Proteção completa ativada por 7 dias!\n\n" +
+                "✅ Proteção em tempo real\n" +
+                "✅ Remoção de ameaças\n" +
+                "✅ Bloqueio de links suspeitos\n" +
+                "✅ Proteção contra chamadas fraudulentas\n\n" +
+                "Após 7 dias, assine por apenas R\$9,99/mês para continuar protegido."
+            )
+            .setPositiveButton("Entendido!") { _, _ -> }
+            .show()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         if (::billing.isInitialized) billing.destroy()
+        if (::appUpdateManager.isInitialized) appUpdateManager.unregisterListener(installStateListener)
     }
 
     override fun onResume() {
         super.onResume()
+
+        // Verifica se uma atualização já foi baixada e aguarda instalação
+        if (::appUpdateManager.isInitialized) {
+            appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+                if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                    showInstallSnackbar()
+                }
+            }
+        }
 
         // Reset automático de 12 horas — limpa histórico se o prazo expirou
         PrefsHelper.maybeAutoReset(this)
@@ -181,6 +288,9 @@ class MainActivity : AppCompatActivity() {
             if (resultCode == RESULT_OK) {
                 Toast.makeText(this, "✅ Proteção de ligações ativada!", Toast.LENGTH_SHORT).show()
             }
+        }
+        if (requestCode == REQ_APP_UPDATE && resultCode != RESULT_OK) {
+            Log.w(TAG, "Atualização cancelada ou falhou (resultCode=$resultCode)")
         }
     }
 
@@ -935,6 +1045,7 @@ class MainActivity : AppCompatActivity() {
         var tick = 0
 
         // Varredura real em background — popula o banco de ameaças corretamente
+        val freeThreatsFound = java.util.concurrent.atomic.AtomicInteger(0)
         Thread {
             try {
                 ensureThreatChannelExists()
@@ -947,6 +1058,7 @@ class MainActivity : AppCompatActivity() {
                 for (pkg in pkgs) {
                     val pkgName = pkg.packageName
                     if (pkgName == packageName) continue
+                    if (PrefsHelper.isThreatKept(this, pkgName)) continue
                     if (MalwareDatabase.isSystemPrefix(pkgName)) continue
                     if (MalwareDatabase.isTrustedApp(pkgName)) continue
                     if (MalwareDatabase.isScanExempt(pkgName)) continue
@@ -960,11 +1072,13 @@ class MainActivity : AppCompatActivity() {
                          android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
                     val hasLauncher = pkgName in launcherPkgs
 
-                    MalwareDatabase.isMalware(pkgName)?.let { PrefsHelper.saveThreat(this, it) }
+                    MalwareDatabase.isMalware(pkgName)?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                     MalwareDatabase.checkHiddenApp(pkgName, appLabel, pkg.requestedPermissions, hasLauncher, isSystemApp)
-                        ?.let { PrefsHelper.saveThreat(this, it) }
+                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                     MalwareDatabase.checkHeuristic(pkgName, appLabel, pkg.requestedPermissions)
-                        ?.let { PrefsHelper.saveThreat(this, it) }
+                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
+                    MalwareDatabase.checkAdwarePermissions(pkgName, appLabel, pkg.requestedPermissions, isSystemApp)
+                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                 }
                 PrefsHelper.setLastScan(this, System.currentTimeMillis())
                 PrefsHelper.incrementScanCount(this)
@@ -993,20 +1107,34 @@ class MainActivity : AppCompatActivity() {
                     btnScan.text = "Escanear"
                     refreshUI()
 
-                    android.app.AlertDialog.Builder(this@MainActivity)
-                        .setTitle("⚠️ Varredura Concluída")
-                        .setMessage(
-                            "Foram detectados dados que podem estar vulneráveis no seu dispositivo.\n\n" +
-                            "Apps em segundo plano podem estar acessando informações " +
-                            "sem monitoramento ativo.\n\n" +
-                            "Ative a proteção Premium para remover ameaças e manter " +
-                            "seu celular seguro em tempo real."
-                        )
-                        .setPositiveButton("🔒 Proteja-se — Seja Premium") { _, _ ->
-                            subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
-                        }
-                        .setNegativeButton("Agora não", null)
-                        .show()
+                    val count = freeThreatsFound.get()
+                    if (count > 0) {
+                        android.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle("⚠️ $count Ameaça(s) Detectada(s)!")
+                            .setMessage(
+                                "Encontramos $count ameaça(s) no seu dispositivo.\n\n" +
+                                "Ative os 7 dias grátis para visualizar os apps infectados " +
+                                "e removê-los agora."
+                            )
+                            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
+                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
+                            }
+                            .setNegativeButton("Agora não", null)
+                            .show()
+                    } else {
+                        android.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle("✅ Dispositivo Seguro!")
+                            .setMessage(
+                                "Nenhuma ameaça encontrada no seu dispositivo.\n\n" +
+                                "Ative os 7 dias grátis para manter seu celular protegido " +
+                                "em tempo real contra vírus, links suspeitos e chamadas fraudulentas."
+                            )
+                            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
+                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
+                            }
+                            .setNegativeButton("Agora não", null)
+                            .show()
+                    }
                 }
             }
         }
@@ -1059,6 +1187,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Pula o próprio app, apps de sistema, vendors confiáveis e isentos de varredura
                 if (pkgName == packageName) continue
+                if (PrefsHelper.isThreatKept(this, pkgName)) continue
                 if (MalwareDatabase.isSystemPrefix(pkgName)) continue
                 if (MalwareDatabase.isTrustedApp(pkgName)) continue
                 if (MalwareDatabase.isScanExempt(pkgName)) continue
@@ -1210,7 +1339,7 @@ class MainActivity : AppCompatActivity() {
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setAutoCancel(true)
                 .setContentIntent(subPi)
-                .addAction(R.drawable.ic_shield_alert, "🔒 Seja Premium", subPi)
+                .addAction(R.drawable.ic_shield_alert, "🎁 7 Dias Grátis", subPi)
                 .setColor(0xFFDC2626.toInt())
                 .build()
         }
@@ -1317,6 +1446,7 @@ class MainActivity : AppCompatActivity() {
             ivShield.setImageResource(R.drawable.ic_shield_check)
             btnToggle.text = "Desativar"
             btnToggle.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.btn_secondary)
         } else {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.card_status_inactive)
             tvStatus.text = when {
@@ -1334,8 +1464,9 @@ class MainActivity : AppCompatActivity() {
                 else -> "Ative a proteção para monitorar ameaças automaticamente."
             }
             ivShield.setImageResource(R.drawable.ic_shield_alert)
-            btnToggle.text = "Ativar"
-            btnToggle.setTextColor(ContextCompat.getColor(this, R.color.primary))
+            btnToggle.text = "Ativar Proteção"
+            btnToggle.setTextColor(android.graphics.Color.WHITE)
+            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.btn_blue)
         }
 
         // Estatísticas
@@ -1351,7 +1482,7 @@ class MainActivity : AppCompatActivity() {
         // Badge + lista de ameaças — filtra apenas ativas e ainda instaladas
         val activeThreats = (0 until threats.length())
             .map { threats.getJSONObject(it) }
-            .filter { it.optString("status", "detected") != "removed" }
+            .filter { it.optString("status", "detected") == "detected" }
             .filter { threat ->
                 // Verifica se o app ainda está instalado; se não, remove automaticamente
                 val pkg = threat.getString("packageName")
@@ -1406,9 +1537,19 @@ class MainActivity : AppCompatActivity() {
             }
 
             val btnUninstall = view.findViewById<Button>(R.id.btnUninstall)
+            val btnKeep = view.findViewById<Button>(R.id.btnKeep)
             val pkg = threat.getString("packageName")
             btnUninstall.setOnClickListener {
                 requireSubscriptionToUninstall(pkg)
+            }
+            btnKeep.setOnClickListener {
+                PrefsHelper.markThreatKept(this, pkg)
+                Toast.makeText(
+                    this,
+                    "App mantido. Você não receberá novos alertas sobre ele.",
+                    Toast.LENGTH_LONG,
+                ).show()
+                refreshUI()
             }
 
             llThreats.addView(view)
@@ -1501,13 +1642,11 @@ class MainActivity : AppCompatActivity() {
         val alertMsg = messages[idx]
 
         android.app.AlertDialog.Builder(this)
-            .setTitle("⚠️ Alerta de Segurança")
             .setMessage(
-                "$alertMsg\n\n" +
-                "Seja Premium e proteja seu celular com monitoramento em tempo real, " +
+                "Ative 7 dias grátis e proteja seu celular com monitoramento em tempo real, " +
                 "remoção de ameaças e detecção de adware."
             )
-            .setPositiveButton("🔒 Seja Premium — Proteja seu Celular") { _, _ ->
+            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
                 subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
             }
             .setNegativeButton("Agora não", null)
