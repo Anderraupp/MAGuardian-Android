@@ -1,10 +1,11 @@
 import { readFileSync, writeFileSync, renameSync, mkdirSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { makeEnvelope, validateCatalog } from "../shared/threat-catalog";
 
 // Offline, reviewed-input only. No scraper, paid API, APK download or auto-promotion.
-const [input, output = "threat-catalog/catalog.json"] = process.argv.slice(2);
-if (!input) throw new Error("Usage: npx tsx script/publish-threat-catalog.ts reviewed.json [catalog.json]");
+const [input, output = fileURLToPath(new URL("../threat-catalog/catalog.json", import.meta.url))] = process.argv.slice(2);
+if (!input) throw new Error("Usage: npx tsx tools/publish-threat-catalog.ts reviewed.json [catalog.json]");
 const payload = JSON.parse(readFileSync(input, "utf8"));
 const raw = makeEnvelope(payload);
 let previous: ReturnType<typeof validateCatalog> | undefined;

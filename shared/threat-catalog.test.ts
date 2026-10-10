@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { digest, makeEnvelope, validateCatalog, MAX_CATALOG_BYTES } from "./threat-catalog";
 
-const initial = () => JSON.parse(readFileSync("threat-catalog/reviewed.json", "utf8"));
+const initial = () => JSON.parse(readFileSync(new URL("../threat-catalog/reviewed.json", import.meta.url), "utf8"));
 const reject = (change: (p: any) => void) => {
   const p = initial(); change(p); assert.throws(() => makeEnvelope(p));
 };
@@ -25,8 +25,8 @@ test("versions cannot go backwards or reuse a version for changed data", () => {
   assert.doesNotThrow(() => validateCatalog(raw, old));
   const changed = initial(); changed.indicators = [];
   assert.throws(() => validateCatalog(makeEnvelope(changed), old));
-  assert.throws(() => validateCatalog(raw, { version: 2, sha256: envelope.sha256 }));
-  changed.version = 2;
+  assert.throws(() => validateCatalog(raw, { version: payload.version + 1, sha256: envelope.sha256 }));
+  changed.version = payload.version + 1;
   assert.doesNotThrow(() => validateCatalog(makeEnvelope(changed), old));
 });
 test("candidates, URLs to APKs, unknown fields and malformed metadata are rejected", () => {

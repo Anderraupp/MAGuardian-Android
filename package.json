@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "catalog:publish": "tsx tools/publish-threat-catalog.ts threat-catalog/reviewed.json",
-    "catalog:test": "tsx --test shared/threat-catalog.test.ts"
+    "catalog:test": "tsx --test shared/*.test.ts"
   },
   "devDependencies": {
     "tsx": "4.20.5",

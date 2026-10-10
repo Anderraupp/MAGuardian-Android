@@ -45,15 +45,25 @@ O catálogo não carrega código e não altera a própria origem ou regras.
    atualizar `publishedAt` e `review.reviewedAt` em UTC (`...Z` ou `...SSSZ`).
    Para corrigir/remover entradas adicionais, publicar uma **versão maior**
    com a lista completa desejada. A base embarcada é independente.
-3. No workspace: `npx tsx script/publish-threat-catalog.ts threat-catalog/reviewed.json`.
-   No repositório Android, instalar as dependências de ferramentas com `npm install`
-   e executar `npm run catalog:publish`.
+3. No workspace: `cd android-native && npm run catalog:publish`.
+   No repositório Android obtido com `git pull`, instalar as dependências de
+   ferramentas com `npm install` e executar `npm run catalog:publish` na raiz.
+   O diretório `android-native/` contém todos os arquivos necessários e mapeia
+   integralmente à raiz do repositório: `tools/`, `shared/`, `threat-catalog/`
+   e `package.json`, além de `app/`.
    O comando rejeita candidatos, ausência de fonte/licença/revisão, versão
    reutilizada/antiga, campos inesperados, pacotes duplicados, hashes inválidos,
    datas futuras e catálogos acima de 2 MiB.
 4. Revisar o diff e enviar **somente os metadados** ao branch `main`, preservando
    mudanças remotas. É importante não reformatar o `payload` depois de gerar
-   seu hash. Publicar o envelope inteiro numa única atualização do arquivo.
+   seu hash. O comando gera o arquivo, mas **não faz push**. Publicar o envelope
+   inteiro numa única atualização do arquivo:
+
+   ```sh
+   git add threat-catalog/reviewed.json threat-catalog/catalog.json
+   git commit -m "Atualizar indicadores revisados (sem novo APK)"
+   git push origin main
+   ```
 5. No Android, tocar **Atualizar base de ameaças** ou aguardar a tarefa diária.
    O app também verifica ao iniciar, com intervalo mínimo automático de 6 horas.
    Atualizar a base não desinstala apps nem inicia scan/remediação; a próxima
@@ -94,9 +104,12 @@ pois são exibidos offline no app.
 
 ## Verificação
 
-- `npx tsx --test shared/threat-catalog.test.ts server/threat-catalog.test.ts`
-- `npm run check`
-- `script/test-android-catalog.sh` — testes JVM do parser/AtomicFile com
+- Na raiz do repositório Android: `npm run catalog:test`.
+- Na raiz do workspace: `npx tsx --test shared/threat-catalog.test.ts server/threat-catalog.test.ts`.
+- No workspace: `npm run check`.
+- No workspace: `bash script/test-android-catalog.sh` — testes JVM do parser com
   dependências baixadas para `generated-artifacts/`, sem APKs de malware.
 - Compilação Android completa/emulador: requer Android SDK/Gradle e não é
   substituída pelo teste JVM.
+- Testes instrumentados de armazenamento alteram catálogo/preferências da
+  instalação-alvo; executar somente numa instalação descartável/emulador.
