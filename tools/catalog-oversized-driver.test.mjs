@@ -63,7 +63,7 @@ printf 'contract-only QA app' > app/build/outputs/apk/catalogValidation/app-cata
     for (const command of tests.filter(c => /rotationPhase recovery/.test(c))) {
       // Fresh processes between verification stages.
       const index = calls.indexOf(command);
-      assert.ok(calls.slice(0, index).some(c => c === "shell am force-stop com.maguardian.security.catalogvalidation"));
+      assert.equal(calls[index - 1], "shell am force-stop com.maguardian.security.catalogvalidation");
     }
     assert.doesNotMatch(fs.readFileSync(path.join(temp, "builds"), "utf8"), /Stage=transition/);
     assert.equal(fs.readFileSync(path.join(out, "rotation-route.txt"), "utf8"), "oversized\n");

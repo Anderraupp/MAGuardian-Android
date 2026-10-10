@@ -180,6 +180,11 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
       adb_cmd shell am force-stop "$PKG"
     fi
     adb_cmd install -r "$apk"
+    if [[ "$route" == oversized ]]; then
+      # MY_PACKAGE_REPLACED can launch QA receivers/services before instrumentation.
+      # Stop that real process; the measured cold reader must not reuse its snapshot.
+      adb_cmd shell am force-stop "$PKG"
+    fi
     run_tests "rotation-$stage" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
       -e rotationPhase "$stage" -e rotationRoute "$route"
     adb_cmd shell am force-stop "$PKG"
