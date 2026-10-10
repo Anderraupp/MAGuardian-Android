@@ -913,6 +913,17 @@
                 android:textSize="12sp" />
 
             <Button
+                android:id="@+id/btnRequestDataDeletion"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="Solicitar exclusão de conta e dados"
+                android:textAllCaps="false"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <Button
                 android:id="@+id/btnCatalogSources"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"

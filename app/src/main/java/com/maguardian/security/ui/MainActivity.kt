@@ -130,6 +130,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnCatalogAdmin).setOnClickListener {
             com.maguardian.security.util.CatalogAdmin.manage(this)
         }
+        findViewById<Button>(R.id.btnRequestDataDeletion).setOnClickListener {
+            com.maguardian.security.util.PrivacyRequests.show(this)
+        }
         initBilling()
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()
