@@ -174,7 +174,7 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
     run_tests "rotation-$stage-restart" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
       -e rotationPhase "$stage-restart" -e rotationRoute "$route"
     record_package "$stage"
-    if [[ "$route" == interrupted || "$route" == corrupt-* ]]; then
+    if [[ "$route" == interrupted || "$route" == corrupt-* || "$route" == atomic-pending ]]; then
       sha256sum "$apk" | cut -d ' ' -f 1 > "$OUT/expected-$stage.sha256"
       cmp "$OUT/expected-$stage.sha256" "$OUT/installed-$stage.sha256"
     fi
@@ -199,7 +199,8 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
       kill -0 "$ATOMIC_WRITER_PID" 2>/dev/null || {
         echo "Writer exited before the pending-file checkpoint." >&2; exit 1;
       }
-      if adb_cmd shell run-as "$PKG" test -f no_backup/atomic-pending-ready.json; then
+      if grep -q 'ATOMIC_PENDING_READY pid=' "$OUT/atomic-write.log" &&
+        adb_cmd shell run-as "$PKG" test -f no_backup/atomic-pending-ready.json; then
         ready=true
         break
       fi
