@@ -46,6 +46,13 @@ class CallScannerService : CallScreeningService() {
     )
 
     override fun onScreenCall(callDetails: Call.Details) {
+        // O Android também entrega chamadas efetuadas para identificação.
+        // respondToCall só bloqueia chamadas recebidas: não analisar nem emitir
+        // alertas de bloqueio para chamadas efetuadas (discador ou apps de chamadas).
+        if (callDetails.callDirection != Call.Details.DIRECTION_INCOMING) {
+            return
+        }
+
         val displayNameEarly = callDetails.callerDisplayName ?: ""
         if (displayNameEarly.isNotBlank()) {
             // Samsung/CNAM já preencheu callerDisplayName — triagem imediata
