@@ -220,6 +220,15 @@ esse trust store QA para assinar um AAB de produção.
 assinaturas, bootstraps e políticas das fixtures sem SDK. Esse teste sozinho
 **não** substitui a instalação sucessiva dos APKs no Android.
 
+**Resultado em 10/10/2026:** aprovado em emulador descartável Android 36
+(Google APIs, x86_64, aceleração KVM), com seis invocações instrumentadas
+aprovadas e upgrades reais 41 → 42 → 43. Confirmados cache, bootstrap de
+recuperação, rejeições por chave desconhecida/revogada, detecção por hash exato,
+base embarcada e **Manter**. Pinos/bootstrap de produção permaneceram intactos.
+[Execução e evidências públicas](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38055692298).
+O teste aguarda a gravação assíncrona de “Manter” antes do encerramento forçado
+do processo; não regrava a preferência nas fases de verificação.
+
 - Na raiz do repositório Android: `npm run catalog:test`.
 - Na raiz do workspace: `npx tsx --test shared/threat-catalog.test.ts server/threat-catalog.test.ts`.
 - No workspace: `npm run check`.
