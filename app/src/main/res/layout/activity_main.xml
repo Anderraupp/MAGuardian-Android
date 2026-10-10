@@ -33,6 +33,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvAppTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="M&amp;A Guardian"
@@ -793,17 +794,42 @@
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
                 <TextView
-                    android:id="@+id/tvCatalogStatus"
+                    android:id="@+id/tvCatalogSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:layout_marginTop="8dp" />
                 <Button
+                    android:id="@+id/btnCatalogDetails"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="Ver detalhes"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+                <Button
                     android:id="@+id/btnUpdateCatalog"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Atualizar base de ameaças" />
+                    android:text="Atualizar base de ameaças"
+                    android:textAllCaps="false"
+                    android:visibility="gone" />
+                <LinearLayout
+                    android:id="@+id/layoutCatalogDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+                    <TextView
+                        android:id="@+id/tvCatalogStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Estado vazio -->
@@ -903,6 +929,7 @@
             <Button
                 android:id="@+id/btnCatalogAdmin"
                 style="?android:attr/borderlessButtonStyle"
+                android:visibility="gone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
@@ -923,20 +950,24 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
-            <Button
-                android:id="@+id/btnCatalogSources"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="16dp"
-                android:minHeight="48dp"
-                android:text="Informações legais"
-                android:textAllCaps="false"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnCatalogSources"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:minHeight="48dp"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Informações legais"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
 
     </LinearLayout>
 </ScrollView>

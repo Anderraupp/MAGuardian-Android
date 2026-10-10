@@ -127,8 +127,21 @@ class MainActivity : AppCompatActivity() {
         setupUI()
         setupCatalogUI()
         com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent?.data)
-        findViewById<Button>(R.id.btnCatalogAdmin).setOnClickListener {
+        val adminButton = findViewById<Button>(R.id.btnCatalogAdmin)
+        adminButton.visibility = View.GONE
+        adminButton.setOnClickListener {
             com.maguardian.security.util.CatalogAdmin.manage(this)
+        }
+        // Discovery shortcut only: server-side authorization remains mandatory.
+        var adminTitleTaps = 0
+        findViewById<TextView>(R.id.tvAppTitle).setOnClickListener {
+            if (adminButton.visibility != View.VISIBLE) {
+                adminTitleTaps++
+                if (adminTitleTaps == 5) {
+                    adminButton.visibility = View.VISIBLE
+                    adminButton.performClick()
+                }
+            }
         }
         findViewById<Button>(R.id.btnRequestDataDeletion).setOnClickListener {
             com.maguardian.security.util.PrivacyRequests.show(this)
@@ -173,9 +186,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupCatalogUI() {
         showCatalogStatus()
+        val details = findViewById<View>(R.id.layoutCatalogDetails)
+        val detailsButton = findViewById<Button>(R.id.btnCatalogDetails)
+        detailsButton.setOnClickListener {
+            val expand = details.visibility != View.VISIBLE
+            details.visibility = if (expand) View.VISIBLE else View.GONE
+            detailsButton.text = if (expand) "Ocultar detalhes" else "Ver detalhes"
+        }
         findViewById<Button>(R.id.btnUpdateCatalog).setOnClickListener {
             val button = findViewById<Button>(R.id.btnUpdateCatalog)
             button.isEnabled = false
+            findViewById<TextView>(R.id.tvCatalogSummary).text = "Verificando atualização..."
             findViewById<TextView>(R.id.tvCatalogStatus).text = "Verificando atualização..."
             ThreatCatalogUpdater.update(this, manual = true, done = { status ->
                 if (!isFinishing && !isDestroyed) {
@@ -185,7 +206,9 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
-        findViewById<Button>(R.id.btnCatalogSources).setOnClickListener {
+        findViewById<TextView>(R.id.btnCatalogSources).apply {
+            paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        }.setOnClickListener {
             // License text is included in the app for offline access.
             val notices = ThreatCatalog.snapshot()?.notices?.takeIf { it.isNotEmpty() }?.joinToString("\n\n-----\n\n")
                 ?: assets.open("threat-catalog-notices.txt").bufferedReader().use { it.readText() }
@@ -201,6 +224,20 @@ class MainActivity : AppCompatActivity() {
         val base = ThreatCatalog.snapshot()
         val last = PrefsHelper.getCatalogSuccess(this)
         val date = if (last > 0) SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(last)) else "ainda não concluída"
+        val status = PrefsHelper.getCatalogStatus(this)
+        val pending = ThreatCatalogUpdater.hasPendingUpdate(this)
+        val updating = ThreatCatalogUpdater.isUpdating()
+        findViewById<Button>(R.id.btnUpdateCatalog).apply {
+            visibility = if (pending) View.VISIBLE else View.GONE
+            isEnabled = !updating
+        }
+        findViewById<TextView>(R.id.tvCatalogSummary).text = when {
+            pending && updating -> "Nova base disponível — atualizando..."
+            pending -> "Nova base disponível para atualizar."
+            status.startsWith("Falha") -> "Falha ao atualizar — base offline preservada."
+            last > 0 -> "Última verificação: $date"
+            else -> "Base offline disponível."
+        }
         findViewById<TextView>(R.id.tvCatalogStatus).text =
             "Base embarcada disponível offline.\n" +
             (base?.let { "Catálogo v${it.version}: ${it.indicators.size} indicadores revisados.\n" } ?: "") +

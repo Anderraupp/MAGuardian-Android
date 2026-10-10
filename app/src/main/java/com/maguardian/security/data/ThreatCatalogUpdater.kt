@@ -24,6 +24,11 @@ object ThreatCatalogUpdater {
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
 
+    fun isUpdating(): Boolean = running.get()
+
+    fun hasPendingUpdate(ctx: Context): Boolean =
+        PrefsHelper.getCatalogAvailableVersion(ctx) > (ThreatCatalog.snapshot()?.version ?: 0)
+
     fun schedule(ctx: Context) {
         val scheduler = ctx.getSystemService(JobScheduler::class.java) ?: run {
             PrefsHelper.setCatalogStatus(ctx, "Agendador de atualizações indisponível.")
@@ -76,12 +81,20 @@ object ThreatCatalogUpdater {
                 require(connection!!.responseCode == 200) { "Resposta HTTP inválida" }
                 require(connection!!.contentLengthLong <= ThreatCatalog.MAX_BYTES)
                 val raw = connection!!.inputStream.use { ThreatCatalog.readBounded(it) }.toString(Charsets.UTF_8)
+                // Only a fully validated, APK-trusted catalog can advertise an update.
+                // Keep this metadata if installation fails, so the user can retry.
+                ThreatCatalog.initialize(app)
+                val candidate = ThreatCatalog.parse(raw)
+                if (candidate.version > (ThreatCatalog.snapshot()?.version ?: 0)) {
+                    PrefsHelper.setCatalogAvailableVersion(app, candidate.version)
+                    app.sendBroadcast(Intent(UPDATED).setPackage(app.packageName))
+                }
                 // install verifies the APK-pinned digital signature before any
                 // cache replacement. Repository write access is not signing authority.
                 val changed = ThreatCatalog.install(app, raw)
+                PrefsHelper.setCatalogAvailableVersion(app, 0)
                 PrefsHelper.setCatalogSuccess(app, System.currentTimeMillis())
                 if (changed) {
-                    app.sendBroadcast(Intent(UPDATED).setPackage(app.packageName))
                     "Base atualizada. As próximas verificações usarão os novos indicadores."
                 } else "A base já está atualizada."
             } catch (_: Exception) {
@@ -91,6 +104,8 @@ object ThreatCatalogUpdater {
             }
             PrefsHelper.setCatalogStatus(app, status)
             running.set(false)
+            // Refresh the UI after success AND failure, with final persisted status.
+            app.sendBroadcast(Intent(UPDATED).setPackage(app.packageName))
             main.post { done?.invoke(status) }
         }
     }

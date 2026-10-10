@@ -10,6 +10,9 @@ object PrefsHelper {
     private const val PREFS_NAME = "maguardian_prefs"
     // Catalog metadata is separate from threats, counters and the user's "Manter" list.
     fun getCatalogAttempt(ctx: Context): Long = prefs(ctx).getLong("catalog_attempt", 0)
+    fun getCatalogAvailableVersion(ctx: Context): Int = prefs(ctx).getInt("catalog_available_version", 0)
+    fun setCatalogAvailableVersion(ctx: Context, version: Int) =
+        prefs(ctx).edit().putInt("catalog_available_version", version).apply()
     fun setCatalogAttempt(ctx: Context, time: Long) =
         prefs(ctx).edit().putLong("catalog_attempt", time).apply()
     fun getCatalogSuccess(ctx: Context): Long = prefs(ctx).getLong("catalog_success", 0)
