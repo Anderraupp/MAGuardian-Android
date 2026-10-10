@@ -98,7 +98,7 @@ class SubscriptionActivity : AppCompatActivity() {
             openUrl("https://anderraupp.github.io/MAGuardian-Android/terms.html")
         }
         findViewById<TextView>(R.id.tvPrivacy).setOnClickListener {
-            openUrl("https://anderraupp.github.io/MAGuardian-Android/privacy.html")
+            openUrl("https://sites.google.com/view/politicaprivacidademaguardian")
         }
     }
 

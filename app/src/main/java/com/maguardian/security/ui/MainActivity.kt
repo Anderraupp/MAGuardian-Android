@@ -126,12 +126,22 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setupUI()
         setupCatalogUI()
+        com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent?.data)
+        findViewById<Button>(R.id.btnCatalogAdmin).setOnClickListener {
+            com.maguardian.security.util.CatalogAdmin.manage(this)
+        }
         initBilling()
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()
         scheduleTrialAlertsIfNeeded()
         showTrialExpirationReminderIfNeeded()
         initAppUpdate()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent.data)) refreshUI()
     }
 
     private fun initAppUpdate() {
@@ -1598,6 +1608,14 @@ class MainActivity : AppCompatActivity() {
             val btnUninstall = view.findViewById<Button>(R.id.btnUninstall)
             val btnKeep = view.findViewById<Button>(R.id.btnKeep)
             val pkg = threat.getString("packageName")
+            view.findViewById<Button>(R.id.btnAddToCatalog).apply {
+                visibility = if (com.maguardian.security.util.CatalogAdmin.isEnabled(this@MainActivity)) View.VISIBLE else View.GONE
+                setOnClickListener {
+                    com.maguardian.security.util.CatalogAdmin.prepare(
+                        this@MainActivity, pkg, threat.getString("appName"), threat.optString("description", "")
+                    )
+                }
+            }
             btnUninstall.setOnClickListener {
                 requireSubscriptionToUninstall(pkg)
             }

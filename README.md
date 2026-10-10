@@ -18,14 +18,14 @@ não apagar arquivos existentes, mas não é usada pelo build atual.
 
 - Android Studio compatível com AGP 8.9.1 (Meerkat ou mais recente).
 - JDK 17, SDK Android 36 e Build Tools 35.0.0.
-- Versão preparada para publicação: **1.6.3 / código 41**.
+- Versão preparada para publicação: **1.6.4 / código 42**.
 - `git pull` atualiza os fontes; não atualiza sozinho o aplicativo instalado.
   Compile e use seu procedimento habitual de instalação/assinatura, sem
   desinstalar a instalação de uso apenas para rodar testes.
 
 Para enviar ao Google Play, gere **Android App Bundle** em
 **Build → Generate Signed Bundle / APK**, selecione `release` e use a mesma
-chave de upload das versões anteriores. O código 41 precisa ser maior que
+chave de upload das versões anteriores. O código 42 precisa ser maior que
 todos os códigos já enviados à sua Play Console. A chave privada do catálogo
 não é a chave de upload e não é necessária no Android Studio.
 

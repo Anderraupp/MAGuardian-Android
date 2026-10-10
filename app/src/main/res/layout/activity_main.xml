@@ -901,6 +901,18 @@
                 android:orientation="vertical" />
 
             <Button
+                android:id="@+id/btnCatalogAdmin"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:minHeight="48dp"
+                android:text="Área do administrador"
+                android:textAllCaps="false"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <Button
                 android:id="@+id/btnCatalogSources"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
