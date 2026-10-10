@@ -53,10 +53,17 @@ object ThreatCatalog {
         val stream = atomic.startWrite()
         try {
             stream.write(raw.toByteArray(Charsets.UTF_8))
+            // AtomicFile logs some sync/rename failures instead of throwing.
+            // Make sync failure explicit and confirm replacement before publishing.
+            stream.fd.sync()
             atomic.finishWrite(stream)
         } catch (e: Exception) {
             atomic.failWrite(stream)
             throw e
+        }
+        // finishWrite has already closed the stream; do not call failWrite on it.
+        check(atomic.openRead().use { readBounded(it) }.toString(Charsets.UTF_8) == raw) {
+            "Não foi possível confirmar a gravação do catálogo"
         }
         // Publish the immutable snapshot only AFTER durable atomic replacement.
         current = next

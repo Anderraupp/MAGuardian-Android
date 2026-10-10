@@ -13,15 +13,23 @@ android {
         targetSdk 36
         versionCode 40
         versionName "1.6.2"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "com.maguardian.security.data.CatalogTestRunner"
     }
 
     buildTypes {
+        // Never run mutating catalog tests against the user's installed application.
+        catalogValidation {
+            initWith debug
+            applicationIdSuffix ".catalogvalidation"
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['debug']
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    testBuildType "catalogValidation"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
