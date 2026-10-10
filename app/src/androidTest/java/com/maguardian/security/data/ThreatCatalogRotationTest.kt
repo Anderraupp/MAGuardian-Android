@@ -19,12 +19,17 @@ class ThreatCatalogRotationTest {
         check(ctx.packageName == "com.maguardian.security.catalogvalidation")
         val phase = requireNotNull(args.getString("rotationPhase"))
         val route = args.getString("rotationRoute") ?: "three-step"
-        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "atomic-pending", "oversized"))
+        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "atomic-pending", "atomic-committed", "oversized"))
         val atomicPending = route == "atomic-pending"
+        val atomicCommitted = route == "atomic-committed"
         if (atomicPending) {
             check(android.os.Build.VERSION.SDK_INT >= 30) { "This rehearsal requires AtomicFile .new semantics" }
             check(android.os.Build.HARDWARE in setOf("ranchu", "goldfish")) { "Emulator only" }
             check(phase in setOf("old", "old-restart", "atomic-write", "atomic-verify", "atomic-restart"))
+        }
+        if (atomicCommitted) {
+            check(android.os.Build.HARDWARE in setOf("ranchu", "goldfish")) { "Emulator only" }
+            check(phase in setOf("old", "old-restart", "committed-write", "committed-verify", "committed-restart"))
         }
         val oversized = route == "oversized"
         val direct = route in setOf("direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "oversized")
@@ -49,6 +54,7 @@ class ThreatCatalogRotationTest {
         val checkpoint = File(ctx.noBackupFilesDir, "rotation-checkpoint")
         val pending = File(cache.path + ".new")
         val atomicCheckpoint = File(ctx.noBackupFilesDir, "atomic-pending-ready.json")
+        val committedCheckpoint = File(ctx.noBackupFilesDir, "atomic-committed-ready.json")
         val preferences = File(ctx.applicationInfo.dataDir, "shared_prefs/maguardian_prefs.xml")
         val oversizedCheckpoint = File(ctx.noBackupFilesDir, "oversized-evidence.json")
         val partial = "{\"format\":2,\"payload\":\"unfinished".toByteArray(Charsets.UTF_8)
@@ -89,6 +95,84 @@ class ThreatCatalogRotationTest {
             assertEquals(snapshot, ThreatCatalog.snapshot())
         }
         when (phase) {
+            "committed-write" -> {
+                assertTrue(atomicCommitted)
+                assertEquals("old", stage)
+                assertEquals("old", checkpoint.readText())
+                assertFalse(committedCheckpoint.exists())
+                assertFalse(pending.exists())
+                assertFalse(File(cache.path + ".bak").exists())
+                ThreatCatalog.initialize(ctx)
+                keptAndProtected(11)
+                val previous = ThreatCatalog.snapshot()
+                val original = asset("old-cache").toByteArray(Charsets.UTF_8)
+                assertArrayEquals(original, cache.readBytes())
+                val raw = asset("direct-old-cache")
+                val next = ThreatCatalog.parse(raw) // verifies ephemeral QA signature/policy
+                assertEquals(oldId, JSONObject(raw).getString("keyId"))
+                assertTrue(next.version > previous!!.version)
+                assertNotEquals(previous.hash, next.hash)
+                val committed = raw.toByteArray(Charsets.UTF_8)
+                val prefsBefore = preferences.readBytes()
+                val prefsModified = preferences.lastModified()
+                // QA-only reproduction of the durable boundary. Do NOT call
+                // install: it would publish current before the controller kills us.
+                val atomic = AtomicFile(cache)
+                val stream = atomic.startWrite()
+                stream.write(committed)
+                stream.fd.sync()
+                atomic.finishWrite(stream)
+                assertArrayEquals(committed, cache.readBytes())
+                assertFalse(pending.exists())
+                assertFalse(File(cache.path + ".bak").exists())
+                assertEquals("Commit must not publish the new in-memory snapshot", previous, ThreatCatalog.snapshot())
+                keptAndProtected(11)
+                assertArrayEquals(prefsBefore, preferences.readBytes())
+                assertEquals(prefsModified, preferences.lastModified())
+                val evidence = JSONObject().put("pid", Process.myPid())
+                    .put("previousSha256", sha(original)).put("committedSha256", sha(committed))
+                    .put("snapshotHash", next.hash).put("version", next.version)
+                    .put("prefsSha256", sha(prefsBefore)).put("prefsModified", prefsModified)
+                FileOutputStream(committedCheckpoint).use {
+                    it.write(evidence.toString().toByteArray(Charsets.UTF_8))
+                    it.fd.sync()
+                }
+                InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+                    putString("stream", "ATOMIC_COMMITTED_READY pid=${Process.myPid()} committed=${sha(committed)} memoryVersion=11 diskVersion=${next.version}\n")
+                })
+                Thread.sleep(180_000)
+                fail("Controller did not terminate the QA writer after commit")
+            }
+            "committed-verify", "committed-restart" -> {
+                assertTrue(atomicCommitted)
+                assertEquals("old", stage)
+                assertEquals("old", checkpoint.readText())
+                val evidence = JSONObject(committedCheckpoint.readText())
+                assertNotEquals("Must verify in a different process", evidence.getInt("pid"), Process.myPid())
+                assertNull("Must load from disk, not reset process memory", ThreatCatalog.snapshot())
+                val raw = asset("direct-old-cache")
+                val committed = raw.toByteArray(Charsets.UTF_8)
+                assertArrayEquals(committed, cache.readBytes())
+                assertEquals(evidence.getString("committedSha256"), sha(cache.readBytes()))
+                assertNotEquals(evidence.getString("previousSha256"), sha(cache.readBytes()))
+                assertFalse(pending.exists())
+                assertFalse(File(cache.path + ".bak").exists())
+                assertEquals(evidence.getString("prefsSha256"), sha(preferences.readBytes()))
+                assertEquals(evidence.getLong("prefsModified"), preferences.lastModified())
+                ThreatCatalog.initialize(ctx)
+                assertEquals(ThreatCatalog.parse(raw), ThreatCatalog.snapshot())
+                assertEquals(evidence.getInt("version"), ThreatCatalog.snapshot()!!.version)
+                assertEquals(evidence.getString("snapshotHash"), ThreatCatalog.snapshot()!!.hash)
+                keptAndProtected(13)
+                assertArrayEquals(committed, cache.readBytes())
+                assertEquals(evidence.getString("committedSha256"), sha(cache.readBytes()))
+                // Read-only verification: never re-seed cache or Manter.
+                assertEquals(evidence.getString("prefsSha256"), sha(preferences.readBytes()))
+                assertEquals(evidence.getLong("prefsModified"), preferences.lastModified())
+                InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+                    putString("stream", "ATOMIC_COMMITTED_OK phase=$phase pid=${Process.myPid()} version=13 committed=${sha(committed)} snapshotHash=${ThreatCatalog.snapshot()!!.hash} detection=true manter=true prefsUnchanged=true\n")
+                })
+            }
             "oversized-prepare" -> {
                 assertTrue(oversized)
                 assertEquals("old", stage)
