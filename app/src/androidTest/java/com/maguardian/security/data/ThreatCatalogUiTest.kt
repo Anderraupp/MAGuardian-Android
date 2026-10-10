@@ -6,7 +6,6 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.*
-import android.graphics.Rect
 import android.view.View
 import android.widget.ScrollView
 import org.hamcrest.Matcher
@@ -26,8 +25,9 @@ import java.io.File
 
 /** Actual button, status rendering and offline license dialog on the isolated APK. */
 class ThreatCatalogUiTest {
-    // API 36 may apply the ScrollView's requested rectangle on the next frame.
-    // Wait for actual visibility; never bypass the real button's click constraints.
+    // Center in the real ScrollView rather than aligning to the window's bottom:
+    // API 36 edge-to-edge insets can leave a requested rectangle behind navigation.
+    // Never bypass the real button's visibility or click constraints.
     private fun settledScroll(): ViewAction = object : ViewAction {
         override fun getDescription() = "scroll and wait until the button is actually visible"
         override fun getConstraints(): Matcher<View> = allOf(
@@ -35,10 +35,17 @@ class ThreatCatalogUiTest {
             isDescendantOfA(isAssignableFrom(ScrollView::class.java))
         )
         override fun perform(controller: UiController, view: View) {
-            val rect = Rect()
+            var parent = view.parent
+            while (parent != null && parent !is ScrollView) parent = parent.parent
+            val scroll = checkNotNull(parent as? ScrollView)
+            val position = IntArray(2)
+            val origin = IntArray(2)
             repeat(20) {
-                view.getDrawingRect(rect)
-                view.requestRectangleOnScreen(rect, true)
+                view.getLocationOnScreen(position)
+                scroll.getLocationOnScreen(origin)
+                val centered = scroll.scrollY + position[1] - origin[1] -
+                    (scroll.height - view.height) / 2
+                scroll.scrollTo(scroll.scrollX, centered.coerceAtLeast(0))
                 controller.loopMainThreadForAtLeast(100)
                 if (isDisplayingAtLeast(90).matches(view)) return
             }
