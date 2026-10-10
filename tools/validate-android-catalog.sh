@@ -71,11 +71,14 @@ adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
 if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" == "--rotation-interrupted" ||
       "${1:-}" == "--rotation-corrupt-truncated" || "${1:-}" == "--rotation-corrupt-tampered" ||
-      "${1:-}" == "--atomic-pending" ]]; then
+      "${1:-}" == "--atomic-pending" || "${1:-}" == "--rotation-oversized" ]]; then
   route=three-step
   stages=(old transition recovery)
   if [[ "$1" == "--rotation-direct" || "$1" == "--rotation-interrupted" ]]; then
     route=direct
+    stages=(old recovery)
+  elif [[ "$1" == "--rotation-oversized" ]]; then
+    route=oversized
     stages=(old recovery)
   elif [[ "$1" == "--atomic-pending" ]]; then
     route=atomic-pending
@@ -124,6 +127,15 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
     apk=app/build/outputs/apk/catalogValidation/app-catalogValidation.apk
     sha256sum "$apk" | sed "s|$apk|$stage QA APK|" >> "$OUT/apk-checksums.txt"
     adb_cmd shell am force-stop "$PKG"
+    if [[ "$route" == oversized && "$stage" == recovery ]]; then
+      run_tests oversized-prepare -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+        -e rotationPhase oversized-prepare -e rotationRoute "$route"
+      record_package oversized-prepare
+      cmp "$OUT/installed-old.sha256" "$OUT/installed-oversized-prepare.sha256"
+      adb_cmd exec-out run-as "$PKG" cat no_backup/oversized-evidence.json > "$OUT/oversized-evidence.json"
+      # Metadata only: never pull the large synthetic cache into evidence.
+      adb_cmd shell am force-stop "$PKG"
+    fi
     if [[ "$route" == corrupt-* && "$stage" == recovery ]]; then
       run_tests corrupt-prepare -e class com.maguardian.security.data.ThreatCatalogRotationTest \
         -e rotationPhase corrupt-prepare -e rotationRoute "$route"
@@ -174,7 +186,7 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
     run_tests "rotation-$stage-restart" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
       -e rotationPhase "$stage-restart" -e rotationRoute "$route"
     record_package "$stage"
-    if [[ "$route" == interrupted || "$route" == corrupt-* || "$route" == atomic-pending ]]; then
+    if [[ "$route" == interrupted || "$route" == corrupt-* || "$route" == atomic-pending || "$route" == oversized ]]; then
       sha256sum "$apk" | cut -d ' ' -f 1 > "$OUT/expected-$stage.sha256"
       cmp "$OUT/expected-$stage.sha256" "$OUT/installed-$stage.sha256"
     fi
@@ -250,6 +262,10 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
       adb_cmd shell am force-stop "$PKG"
     done
     echo "Atomic pending write passed: actual QA writer killed; incomplete .new discarded by fresh reader; base bytes/hash, local detection and Manter unchanged; no APK upgrade or reboot."
+  elif [[ "$route" == oversized ]]; then
+    grep -q 'OVERSIZED_OK phase=recovery ' "$OUT/rotation-recovery.log"
+    grep -q 'OVERSIZED_OK phase=recovery-restart ' "$OUT/rotation-recovery-restart.log"
+    echo "Oversized-cache recovery passed: direct APK 41 to 43; bounded size rejection; signed bootstrap 14, local detection and Manter preserved; metadata only, no clear or reboot."
   elif [[ "$route" == corrupt-* ]]; then
     echo "Corrupt-cache recovery passed: $route cache rejected; direct APK 41 to 43; signed bootstrap 14 and update 16; local detection and Manter preserved without clearing data."
   elif [[ "$route" == interrupted ]]; then

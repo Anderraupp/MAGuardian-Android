@@ -19,21 +19,22 @@ class ThreatCatalogRotationTest {
         check(ctx.packageName == "com.maguardian.security.catalogvalidation")
         val phase = requireNotNull(args.getString("rotationPhase"))
         val route = args.getString("rotationRoute") ?: "three-step"
-        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "atomic-pending"))
+        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "atomic-pending", "oversized"))
         val atomicPending = route == "atomic-pending"
         if (atomicPending) {
             check(android.os.Build.VERSION.SDK_INT >= 30) { "This rehearsal requires AtomicFile .new semantics" }
             check(android.os.Build.HARDWARE in setOf("ranchu", "goldfish")) { "Emulator only" }
             check(phase in setOf("old", "old-restart", "atomic-write", "atomic-verify", "atomic-restart"))
         }
-        val direct = route in setOf("direct", "interrupted", "corrupt-truncated", "corrupt-tampered")
+        val oversized = route == "oversized"
+        val direct = route in setOf("direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "oversized")
         val interrupted = route == "interrupted"
         val corrupt = route.startsWith("corrupt-")
         val damagedAsset = "$route-cache"
         val directPhases = setOf("old", "old-restart", "recovery", "recovery-restart")
         val interruptedPhases = setOf("interrupted-staged", "interrupted-abandoned")
         check(!direct || phase in directPhases || (interrupted && phase in interruptedPhases) ||
-            (corrupt && phase == "corrupt-prepare"))
+            (corrupt && phase == "corrupt-prepare") || (oversized && phase == "oversized-prepare"))
         val oldCache = if (direct) "direct-old-cache" else "old-cache"
         val oldVersion = if (direct) 13 else 11
         fun asset(name: String) = ctx.assets.open("rotation-$name.json").bufferedReader().use { it.readText() }
@@ -49,9 +50,22 @@ class ThreatCatalogRotationTest {
         val pending = File(cache.path + ".new")
         val atomicCheckpoint = File(ctx.noBackupFilesDir, "atomic-pending-ready.json")
         val preferences = File(ctx.applicationInfo.dataDir, "shared_prefs/maguardian_prefs.xml")
+        val oversizedCheckpoint = File(ctx.noBackupFilesDir, "oversized-evidence.json")
         val partial = "{\"format\":2,\"payload\":\"unfinished".toByteArray(Charsets.UTF_8)
         fun sha(bytes: ByteArray) = java.security.MessageDigest.getInstance("SHA-256")
             .digest(bytes).joinToString("") { "%02x".format(it) }
+        fun fileSha(file: File): String {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { stream ->
+                val buffer = ByteArray(8192)
+                var count = stream.read(buffer)
+                while (count != -1) {
+                    digest.update(buffer, 0, count)
+                    count = stream.read(buffer)
+                }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        }
         val bundled = MalwareDatabase.KNOWN_MALWARE.first {
             !MalwareDatabase.isSystemPrefix(it.packageName) && !MalwareDatabase.isTrustedApp(it.packageName)
         }
@@ -75,6 +89,44 @@ class ThreatCatalogRotationTest {
             assertEquals(snapshot, ThreatCatalog.snapshot())
         }
         when (phase) {
+            "oversized-prepare" -> {
+                assertTrue(oversized)
+                assertEquals("old", stage)
+                assertEquals("direct-old", checkpoint.readText())
+                ThreatCatalog.initialize(ctx)
+                keptAndProtected(13)
+                val original = asset("direct-old-cache").toByteArray(Charsets.UTF_8)
+                assertArrayEquals(original, cache.readBytes())
+                val size = policy.getLong("oversizedCacheBytes")
+                assertTrue(size > ThreatCatalog.MAX_BYTES)
+                // Valid old-key envelope padded with legal JSON whitespace.
+                // Size is the only rejection reason under the old QA policy.
+                assertEquals(13, ThreatCatalog.parse(String(original, Charsets.UTF_8)).version)
+                FileOutputStream(cache).use { stream ->
+                    stream.write(original)
+                    val spaces = ByteArray(8192) { 32 }
+                    var remaining = size - original.size
+                    while (remaining > 0) {
+                        val count = minOf(remaining, spaces.size.toLong()).toInt()
+                        stream.write(spaces, 0, count)
+                        remaining -= count
+                    }
+                    stream.fd.sync()
+                }
+                assertEquals(size, cache.length())
+                val evidence = JSONObject().put("bytes", size).put("maxBytes", ThreatCatalog.MAX_BYTES)
+                    .put("sha256", fileSha(cache)).put("prefsSha256", fileSha(preferences))
+                    .put("prefsModified", preferences.lastModified()).put("preparePid", Process.myPid())
+                FileOutputStream(oversizedCheckpoint).use {
+                    it.write(evidence.toString().toByteArray(Charsets.UTF_8))
+                    it.fd.sync()
+                }
+                checkpoint.writeText("oversized-ready")
+                keptAndProtected(13)
+                InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+                    putString("stream", "OVERSIZED_PREPARED $evidence\n")
+                })
+            }
             "atomic-write" -> {
                 assertTrue(atomicPending)
                 assertEquals("old", stage)
@@ -238,6 +290,10 @@ class ThreatCatalogRotationTest {
                 assertEquals("recovery", stage)
                 assertTrue(ThreatCatalogKeys.trusted.getValue(oldId).revoked)
                 assertFalse(ThreatCatalogKeys.trusted.getValue(nextId).revoked)
+                if (oversized) {
+                    verifyOversizedRecovery(ctx, cache, preferences, oversizedCheckpoint, checkpoint,
+                        policy, stage, phase, nextId, ::asset, ::fileSha, ::keptAndProtected)
+                } else {
                 assertEquals(if (corrupt) "$route-ready" else if (direct) "direct-old" else "revocation-ready",
                     checkpoint.readText())
                 val rejectedCache = asset(if (corrupt) damagedAsset else if (direct) "direct-old-cache" else "revoked-cache")
@@ -264,16 +320,74 @@ class ThreatCatalogRotationTest {
                 assertEquals(asset("recovery-update"), cache.readText())
                 checkpoint.writeText(if (direct) "direct-recovery" else "recovery")
                 keptAndProtected(16)
+                }
             }
             "recovery-restart" -> {
                 assertEquals("recovery", stage)
+                if (oversized) {
+                    verifyOversizedRecovery(ctx, cache, preferences, oversizedCheckpoint, checkpoint,
+                        policy, stage, phase, nextId, ::asset, ::fileSha, ::keptAndProtected)
+                } else {
                 assertEquals(if (direct) "direct-recovery" else "recovery", checkpoint.readText())
                 ThreatCatalog.initialize(ctx)
                 assertEquals(asset("recovery-update"), cache.readText())
                 keptAndProtected(16)
+                }
             }
             else -> error("Unknown rotation phase")
         }
         println("ROTATION_OK route=$route phase=$phase apk=${ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionCode} catalog=${ThreatCatalog.snapshot()!!.version} manter=true")
+    }
+
+    private fun verifyOversizedRecovery(
+        ctx: android.content.Context, cache: File, preferences: File, evidenceFile: File,
+        checkpoint: File, policy: JSONObject, stage: String, phase: String, nextId: String,
+        asset: (String) -> String, fileSha: (File) -> String, keptAndProtected: (Int) -> Unit
+    ) {
+        assertEquals("recovery", stage)
+        assertEquals("oversized-ready", checkpoint.readText())
+        val evidence = JSONObject(evidenceFile.readText())
+        assertNotEquals(evidence.getInt("preparePid"), Process.myPid())
+        assertEquals(policy.getLong("oversizedCacheBytes"), cache.length())
+        assertEquals(evidence.getLong("bytes"), cache.length())
+        assertTrue(cache.length() > ThreatCatalog.MAX_BYTES)
+        assertEquals(evidence.getString("sha256"), fileSha(cache))
+        assertEquals(evidence.getString("prefsSha256"), fileSha(preferences))
+        assertNull("Real fresh-process initialization, no snapshot reset", ThreatCatalog.snapshot())
+        val started = android.os.SystemClock.elapsedRealtime()
+        ThreatCatalog.initialize(ctx)
+        val elapsed = android.os.SystemClock.elapsedRealtime() - started
+        assertTrue("Initialization must finish within 10 seconds, took $elapsed ms", elapsed < 10_000)
+        assertEquals(nextId, JSONObject(asset("recovery-bootstrap")).getString("keyId"))
+        assertEquals(ThreatCatalog.parse(asset("recovery-bootstrap")), ThreatCatalog.snapshot())
+        keptAndProtected(14)
+        // Observe the production bounded reader on the exact persisted file.
+        // Never allocate/readText/readBytes the entire oversized cache.
+        var bytesRead = 0L
+        cache.inputStream().use { input ->
+            val counted = object : java.io.FilterInputStream(input) {
+                override fun read(b: ByteArray, off: Int, len: Int): Int {
+                    val n = `in`.read(b, off, len)
+                    if (n > 0) bytesRead += n
+                    return n
+                }
+            }
+            try {
+                ThreatCatalog.readBounded(counted)
+                fail("Oversized persisted cache accepted")
+            } catch (e: IllegalArgumentException) {
+                assertEquals("Catálogo muito grande", e.message)
+            }
+        }
+        assertTrue(bytesRead > ThreatCatalog.MAX_BYTES)
+        assertTrue(bytesRead <= ThreatCatalog.MAX_BYTES + 8192L)
+        assertTrue("Must stop before reading the whole file", bytesRead < cache.length())
+        assertEquals(evidence.getString("sha256"), fileSha(cache))
+        // Read-only verification: no preference edits to hide upgrade data loss.
+        assertEquals(evidence.getString("prefsSha256"), fileSha(preferences))
+        assertEquals(evidence.getLong("prefsModified"), preferences.lastModified())
+        InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+            putString("stream", "OVERSIZED_OK phase=$phase bytes=${cache.length()} sha256=${fileSha(cache)} readBytes=$bytesRead initMs=$elapsed bootstrap=14 detection=true manter=true prefsUnchanged=true\n")
+        })
     }
 }

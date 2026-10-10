@@ -76,7 +76,9 @@ for (const [name, raw] of Object.entries(catalogs)) {
 fs.writeFileSync(path.join(assets, "threat-catalog-bootstrap.json"),
   catalogs[stage === "recovery" ? "recovery-bootstrap" : "old-bootstrap"]);
 fs.writeFileSync(path.join(assets, "rotation-policy.json"), JSON.stringify({
-  stage, old: old.id, successor: successor.id, fixtureHash
+  stage, old: old.id, successor: successor.id, fixtureHash,
+  // Recipe only: never bundle/upload the large persisted-cache content.
+  oversizedCacheBytes: 8 * 1024 * 1024
 }));
 const entries = stage === "old" ? [[old, 10, 13, false]] :
   [[old, 10, 13, stage === "recovery"], [successor, 12, 2147483647, false]];
