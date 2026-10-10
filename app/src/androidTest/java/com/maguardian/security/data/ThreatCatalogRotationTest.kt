@@ -31,7 +31,7 @@ class ThreatCatalogRotationTest {
         fun keptAndProtected(version: Int) {
             assertEquals(version, ThreatCatalog.snapshot()!!.version)
             assertNotNull("Exact harmless APK hash must still match", ThreatCatalog.match(ctx, fixture))
-            assertTrue(PrefsHelper.isThreatKept(ctx, fixture))
+            assertTrue("Persisted Manter choice must survive the upgrade", PrefsHelper.isThreatKept(ctx, fixture))
             assertNull("Manter must override catalog detection", MalwareDatabase.isMalware(fixture, ctx))
             assertNotNull("Bundled protection must remain active", MalwareDatabase.isMalware(bundled.packageName, ctx))
         }
@@ -57,6 +57,9 @@ class ThreatCatalogRotationTest {
                 assertTrue(ThreatCatalog.install(ctx, asset("old-cache")))
                 assertNotNull(MalwareDatabase.isMalware(fixture, ctx))
                 PrefsHelper.markThreatKept(ctx, fixture)
+                // apply() is asynchronous. Do not kill the instrumentation
+                // process until the user's choice has actually reached disk.
+                assertTrue(ctx.getSharedPreferences("maguardian_prefs", 0).edit().commit())
                 reject("successor", "Chave de assinatura desconhecida")
                 assertEquals(asset("old-cache"), cache.readText())
                 checkpoint.writeText("old")
