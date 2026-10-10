@@ -176,3 +176,16 @@ O conjunto de provisionamento é validado na branch descartável antes do envio
 atômico à `main`. A subpasta parcial antiga do repositório Android é preservada,
 mas o build usa a raiz com `settings.gradle` e `app/`. O ajuste externo do mínimo
 de denúncias comunitárias foi preservado, sem alterar as regras do catálogo.
+
+[Revalidação do conjunto provisionado](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38053279544)
+aprovada no commit `159fc3c5c8cf71cf9e9e70eef7110821b5b96bfd`: os 12 testes Node
+do repositório Android autossuficiente e o check público de pinos/bootstrap
+passaram sem Secret no GitHub; o build normal e a suíte Android 36 passaram
+novamente (13 casos online aprovados, 1 exclusivamente offline adiado; 2 offline,
+1 preparação e 1 verificação após reboot real). As evidências locais estão em
+`generated-artifacts/android-validation/pull-ci-passed`.
+
+Após essa aprovação, o operador autorizou disponibilizar o conjunto na `main`
+para `git pull`, incluindo catálogo v3 assinado, pinos e bootstrap públicos,
+ferramentas independentes e documentação. O workflow Build APK é somente manual
+e debug: o envio não dispara publicação de release, tag ou Play Store.
