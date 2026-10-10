@@ -1,5 +1,7 @@
 package com.maguardian.security.data
 
+import android.os.Process
+import android.util.AtomicFile
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maguardian.security.util.PrefsHelper
 import org.json.JSONObject
@@ -8,7 +10,7 @@ import org.junit.Test
 import java.io.File
 import java.io.FileOutputStream
 
-/** Real package upgrades. No injected keys, reflection resets or isolated preferences. */
+/** Real QA persistence across processes. No reflection resets or isolated preferences. */
 class ThreatCatalogRotationTest {
     @Test fun apkUpgradeRetainsProtectionAndKeepChoices() {
         val args = InstrumentationRegistry.getArguments()
@@ -17,8 +19,14 @@ class ThreatCatalogRotationTest {
         check(ctx.packageName == "com.maguardian.security.catalogvalidation")
         val phase = requireNotNull(args.getString("rotationPhase"))
         val route = args.getString("rotationRoute") ?: "three-step"
-        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered"))
-        val direct = route != "three-step"
+        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "atomic-pending"))
+        val atomicPending = route == "atomic-pending"
+        if (atomicPending) {
+            check(android.os.Build.VERSION.SDK_INT >= 30) { "This rehearsal requires AtomicFile .new semantics" }
+            check(android.os.Build.HARDWARE in setOf("ranchu", "goldfish")) { "Emulator only" }
+            check(phase in setOf("old", "old-restart", "atomic-write", "atomic-verify", "atomic-restart"))
+        }
+        val direct = route in setOf("direct", "interrupted", "corrupt-truncated", "corrupt-tampered")
         val interrupted = route == "interrupted"
         val corrupt = route.startsWith("corrupt-")
         val damagedAsset = "$route-cache"
@@ -38,6 +46,12 @@ class ThreatCatalogRotationTest {
         val cache = File(ctx.noBackupFilesDir, "threat-catalog.json")
         val fixture = "com.catalogvalidation.fixture"
         val checkpoint = File(ctx.noBackupFilesDir, "rotation-checkpoint")
+        val pending = File(cache.path + ".new")
+        val atomicCheckpoint = File(ctx.noBackupFilesDir, "atomic-pending-ready.json")
+        val preferences = File(ctx.applicationInfo.dataDir, "shared_prefs/maguardian_prefs.xml")
+        val partial = "{\"format\":2,\"payload\":\"unfinished".toByteArray(Charsets.UTF_8)
+        fun sha(bytes: ByteArray) = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(bytes).joinToString("") { "%02x".format(it) }
         val bundled = MalwareDatabase.KNOWN_MALWARE.first {
             !MalwareDatabase.isSystemPrefix(it.packageName) && !MalwareDatabase.isTrustedApp(it.packageName)
         }
@@ -61,6 +75,76 @@ class ThreatCatalogRotationTest {
             assertEquals(snapshot, ThreatCatalog.snapshot())
         }
         when (phase) {
+            "atomic-write" -> {
+                assertTrue(atomicPending)
+                assertEquals("old", stage)
+                assertEquals("old", checkpoint.readText())
+                assertFalse(atomicCheckpoint.exists())
+                assertFalse(pending.exists())
+                assertFalse(File(cache.path + ".bak").exists())
+                ThreatCatalog.initialize(ctx)
+                keptAndProtected(11)
+                val original = asset("old-cache").toByteArray(Charsets.UTF_8)
+                assertArrayEquals(original, cache.readBytes())
+                val prefsBefore = preferences.readBytes()
+                val prefsModified = preferences.lastModified()
+                // Deliberately NOT wrapped in use/try/finally. The controller
+                // kills this QA process while the stream is still open, without
+                // either failWrite (already covered by StorageTest) or finishWrite.
+                val stream = AtomicFile(cache).startWrite()
+                stream.write(partial)
+                stream.fd.sync()
+                assertArrayEquals(partial, pending.readBytes())
+                assertArrayEquals(original, cache.readBytes())
+                assertArrayEquals(prefsBefore, preferences.readBytes())
+                val evidence = JSONObject().put("pid", Process.myPid())
+                    .put("baseSha256", sha(original)).put("pendingSha256", sha(partial))
+                    .put("prefsSha256", sha(prefsBefore)).put("prefsModified", prefsModified)
+                FileOutputStream(atomicCheckpoint).use {
+                    it.write(evidence.toString().toByteArray(Charsets.UTF_8))
+                    it.fd.sync()
+                }
+                InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+                    putString("stream", "ATOMIC_PENDING_READY pid=${Process.myPid()} base=${sha(original)}\n")
+                })
+                // Bounded wait, never a successful test return. Keep the fd live.
+                Thread.sleep(180_000)
+                stream.write(0)
+                fail("Controller did not terminate the QA writer before commit")
+            }
+            "atomic-verify", "atomic-restart" -> {
+                assertTrue(atomicPending)
+                assertEquals("old", stage)
+                assertEquals("old", checkpoint.readText())
+                val evidence = JSONObject(atomicCheckpoint.readText())
+                assertNotEquals("Must verify in a different process", evidence.getInt("pid"), Process.myPid())
+                assertNull("Must load from disk, not reset process memory", ThreatCatalog.snapshot())
+                val original = asset("old-cache").toByteArray(Charsets.UTF_8)
+                assertArrayEquals(original, cache.readBytes())
+                assertEquals(evidence.getString("baseSha256"), sha(cache.readBytes()))
+                assertEquals(evidence.getString("prefsSha256"), sha(preferences.readBytes()))
+                assertEquals(evidence.getLong("prefsModified"), preferences.lastModified())
+                if (phase == "atomic-verify") {
+                    assertTrue("Killed writer must leave the incomplete .new", pending.isFile)
+                    assertArrayEquals(partial, pending.readBytes())
+                    assertEquals(evidence.getString("pendingSha256"), sha(pending.readBytes()))
+                } else {
+                    assertFalse("Discarded .new must not reappear", pending.exists())
+                }
+                ThreatCatalog.initialize(ctx)
+                assertEquals(ThreatCatalog.parse(asset("old-cache")), ThreatCatalog.snapshot())
+                keptAndProtected(11)
+                assertArrayEquals(original, cache.readBytes())
+                assertEquals(evidence.getString("baseSha256"), sha(cache.readBytes()))
+                assertFalse("AtomicFile.openRead must discard uncommitted .new", pending.exists())
+                assertFalse(File(cache.path + ".bak").exists())
+                // Read-only verification: never markThreatKept/edit/commit here.
+                assertEquals(evidence.getString("prefsSha256"), sha(preferences.readBytes()))
+                assertEquals(evidence.getLong("prefsModified"), preferences.lastModified())
+                InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+                    putString("stream", "ATOMIC_PENDING_OK phase=$phase pid=${Process.myPid()} base=${sha(original)} pending=absent detection=true manter=true prefsUnchanged=true\n")
+                })
+            }
             "old" -> {
                 assertEquals("old", stage)
                 assertEquals(setOf(oldId), ThreatCatalogKeys.trusted.keys)

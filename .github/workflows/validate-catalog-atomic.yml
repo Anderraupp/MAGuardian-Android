@@ -1,0 +1,65 @@
+name: Validate interrupted catalog file write safely
+on:
+  push:
+    branches: [qa/catalog-atomic-pending]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: catalog-atomic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pending-write:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      ANDROID_VALIDATION_OUTPUT: ${{ github.workspace }}/generated-artifacts/android-atomic
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify public trust without production secrets
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run catalog:check-trust
+          node --test tools/catalog-rotation-fixtures.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Enable acceleration on disposable runner
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo udevadm settle
+          sudo chmod a+rw /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+      - name: Kill only the QA writer and verify in fresh processes
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh --atomic-pending
+      - name: Confirm production sources, pins and normal version unchanged
+        if: always()
+        run: git diff --exit-code -- app/src/main app/build.gradle build.gradle gradle.properties threat-catalog/trusted-keys.json shared/catalog-trust.ts
+      - name: Save evidence only, never APKs or private keys
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-catalog-atomic-evidence
+          path: generated-artifacts/android-atomic/
+          retention-days: 7
+      - name: Delete ephemeral signing material
+        if: always()
+        run: rm -rf app/build/catalogRotationSession app/build/catalogValidationFixtures

@@ -37,6 +37,12 @@ restore_network() {
   adb_cmd shell svc data enable >/dev/null || true
 }
 collect_evidence() {
+  if [[ -n "${ATOMIC_WRITER_PID:-}" ]]; then
+    # The only killed Android process is our fixed, guarded disposable package.
+    adb_cmd shell am force-stop "$PKG" || true
+    kill "$ATOMIC_WRITER_PID" 2>/dev/null || true
+    wait "$ATOMIC_WRITER_PID" 2>/dev/null || true
+  fi
   # Only a session created by this disposable rehearsal can be abandoned.
   if [[ -n "${INSTALL_SESSION:-}" ]]; then
     adb_cmd shell pm install-abandon "$INSTALL_SESSION" > "$OUT/session-cleanup.txt" 2>&1 || true
@@ -64,12 +70,20 @@ adb_cmd shell settings put global transition_animation_scale 0
 adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
 if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" == "--rotation-interrupted" ||
-      "${1:-}" == "--rotation-corrupt-truncated" || "${1:-}" == "--rotation-corrupt-tampered" ]]; then
+      "${1:-}" == "--rotation-corrupt-truncated" || "${1:-}" == "--rotation-corrupt-tampered" ||
+      "${1:-}" == "--atomic-pending" ]]; then
   route=three-step
   stages=(old transition recovery)
   if [[ "$1" == "--rotation-direct" || "$1" == "--rotation-interrupted" ]]; then
     route=direct
     stages=(old recovery)
+  elif [[ "$1" == "--atomic-pending" ]]; then
+    route=atomic-pending
+    stages=(old)
+    api="$(adb_cmd shell getprop ro.build.version.sdk | tr -d '\r')"
+    [[ "$api" =~ ^[0-9]+$ && "$api" -ge 30 ]] || {
+      echo "AtomicFile .new rehearsal requires Android API 30+." >&2; exit 1;
+    }
   fi
   [[ "$1" != "--rotation-interrupted" ]] || route=interrupted
   if [[ "$1" == --rotation-corrupt-* ]]; then
@@ -165,7 +179,77 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
       cmp "$OUT/expected-$stage.sha256" "$OUT/installed-$stage.sha256"
     fi
   done
-  if [[ "$route" == corrupt-* ]]; then
+  if [[ "$route" == atomic-pending ]]; then
+    capture_atomic() {
+      local phase="$1"
+      adb_cmd exec-out run-as "$PKG" cat no_backup/threat-catalog.json > "$OUT/base-$phase.json"
+      adb_cmd exec-out run-as "$PKG" cat shared_prefs/maguardian_prefs.xml > "$OUT/prefs-$phase.xml"
+      sha256sum "$OUT/base-$phase.json" "$OUT/prefs-$phase.xml" > "$OUT/storage-$phase.sha256"
+      adb_cmd shell run-as "$PKG" ls -l no_backup > "$OUT/files-$phase.txt"
+    }
+    capture_atomic before-write
+    # Not run_tests: this invocation MUST be killed, not return JUnit success.
+    adb_cmd shell am instrument -w -r -e disposable true \
+      -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+      -e rotationPhase atomic-write -e rotationRoute "$route" "$RUNNER" \
+      > "$OUT/atomic-write.log" 2>&1 &
+    ATOMIC_WRITER_PID=$!
+    ready=false
+    for _ in $(seq 1 60); do
+      kill -0 "$ATOMIC_WRITER_PID" 2>/dev/null || {
+        echo "Writer exited before the pending-file checkpoint." >&2; exit 1;
+      }
+      if adb_cmd shell run-as "$PKG" test -f no_backup/atomic-pending-ready.json; then
+        ready=true
+        break
+      fi
+      sleep 1
+    done
+    [[ "$ready" == true ]] || { echo "Timed out waiting for pending write." >&2; exit 1; }
+    adb_cmd exec-out run-as "$PKG" cat no_backup/atomic-pending-ready.json > "$OUT/atomic-pending-ready.json"
+    writer_android_pid="$(node -e 'const e=require(process.argv[1]); if(!Number.isInteger(e.pid)||e.pid<=0)process.exit(1); console.log(e.pid)' "$OUT/atomic-pending-ready.json")"
+    [[ "$(adb_cmd shell pidof "$PKG" | tr -d '\r')" == "$writer_android_pid" ]] || {
+      echo "Writer PID does not belong to the QA package." >&2; exit 1;
+    }
+    capture_atomic pending-live
+    adb_cmd exec-out run-as "$PKG" cat no_backup/threat-catalog.json.new > "$OUT/pending-live.new"
+    cmp "$OUT/base-before-write.json" "$OUT/base-pending-live.json"
+    cmp "$OUT/prefs-before-write.xml" "$OUT/prefs-pending-live.xml"
+    adb_cmd shell am force-stop "$PKG"
+    for _ in $(seq 1 20); do
+      [[ -z "$(adb_cmd shell pidof "$PKG" | tr -d '\r')" ]] && break
+      sleep 1
+    done
+    [[ -z "$(adb_cmd shell pidof "$PKG" | tr -d '\r')" ]] || {
+      echo "QA writer is still alive." >&2; exit 1;
+    }
+    wait "$ATOMIC_WRITER_PID" || true
+    ATOMIC_WRITER_PID=
+    ! grep -Eq 'OK \([0-9]+ tests?\)' "$OUT/atomic-write.log"
+    printf 'force-stopped package=%s writerPid=%s; no commit/rollback; device not rebooted\n' \
+      "$PKG" "$writer_android_pid" > "$OUT/atomic-kill.txt"
+    capture_atomic killed
+    adb_cmd exec-out run-as "$PKG" cat no_backup/threat-catalog.json.new > "$OUT/pending-killed.new"
+    cmp "$OUT/pending-live.new" "$OUT/pending-killed.new"
+    cmp "$OUT/base-before-write.json" "$OUT/base-killed.json"
+    cmp "$OUT/prefs-before-write.xml" "$OUT/prefs-killed.xml"
+    sha256sum "$OUT/pending-live.new" "$OUT/pending-killed.new" > "$OUT/pending.sha256"
+    for phase in atomic-verify atomic-restart; do
+      run_tests "$phase" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+        -e rotationPhase "$phase" -e rotationRoute "$route"
+      grep -q "ATOMIC_PENDING_OK phase=$phase" "$OUT/$phase.log"
+      capture_atomic "$phase"
+      cmp "$OUT/base-before-write.json" "$OUT/base-$phase.json"
+      cmp "$OUT/prefs-before-write.xml" "$OUT/prefs-$phase.xml"
+      if adb_cmd shell run-as "$PKG" test -e no_backup/threat-catalog.json.new; then
+        echo "Uncommitted .new was not discarded." >&2; exit 1
+      fi
+      record_package "$phase"
+      cmp "$OUT/installed-old.sha256" "$OUT/installed-$phase.sha256"
+      adb_cmd shell am force-stop "$PKG"
+    done
+    echo "Atomic pending write passed: actual QA writer killed; incomplete .new discarded by fresh reader; base bytes/hash, local detection and Manter unchanged; no APK upgrade or reboot."
+  elif [[ "$route" == corrupt-* ]]; then
     echo "Corrupt-cache recovery passed: $route cache rejected; direct APK 41 to 43; signed bootstrap 14 and update 16; local detection and Manter preserved without clearing data."
   elif [[ "$route" == interrupted ]]; then
     echo "Interrupted recovery passed: staged/abandoned session kept APK 41 and catalog 13; real upgrade to 43 recovered via bootstrap 14 and update 16; Manter preserved."
