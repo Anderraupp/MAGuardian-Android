@@ -38,6 +38,9 @@ restore_network() {
 }
 trap restore_network EXIT
 wait_boot
+adb_cmd shell settings put global window_animation_scale 0
+adb_cmd shell settings put global transition_animation_scale 0
+adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
 bash gradlew --no-daemon :app:assembleDebug :app:assembleCatalogValidation \
   :app:assembleCatalogValidationAndroidTest | tee "$OUT/build.log"

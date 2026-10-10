@@ -8,7 +8,8 @@ assinatura de debug. Não é uma release.
 ## Pré-requisitos
 
 - JDK 17 e Android SDK (`ANDROID_HOME`), plataforma Android 36 e Build Tools 35.
-- Emulador Android 36 recém-criado, sem dados pessoais, com internet.
+- Emulador Android 11 (API 30) ou mais recente, recém-criado, sem dados pessoais,
+  com internet. A compilação continua usando a plataforma Android 36.
 - Preferencialmente aceleração KVM; execução sem aceleração é muito mais lenta.
 - Repositório Android completo, incluindo o AAR local já presente em `app/libs`.
 
@@ -62,3 +63,29 @@ O teste do handler de instalação chama sua implementação no processo
 instrumentado; ele não pretende simular um aplicativo malicioso real. A
 varredura inicial usa o PackageManager real e um APK de testes inofensivo.
 Nenhuma opção paga ou assinatura é ativada pelos testes.
+
+## Resultado da tentativa em 10/10/2026
+
+- Compilação completa com JDK 17, Gradle 8.11.1, SDK Android 36 e Build Tools 35:
+  `assembleDebug`, `assembleCatalogValidation` e
+  `assembleCatalogValidationAndroidTest` concluídos com sucesso.
+- Os seis testes Node de formato/publicação passaram.
+- Sintaxe do roteiro shell e consistência do diff verificadas.
+- **Testes instrumentados ainda não executados.** O workspace não oferece
+  `/dev/kvm`. A imagem Google APIs Android 36 apresentou ANRs do próprio SystemUI.
+  A imagem AOSP Android 11 iniciou, mas o watchdog encerrou o sistema durante a
+  instalação do APK de testes (`Broken pipe`, seguido de serviço PackageManager
+  indisponível). Não houve resultado JUnit de nenhuma fase.
+- A conexão GitHub aceitou os fontes, mas recusou criar um workflow. A alternativa
+  de execução acelerada no GitHub, portanto, não pôde ser usada.
+
+Consequentemente, atualização manual no aparelho, execução do job, modo offline,
+falhas de escrita no Android, integração dos detectores e reinício **continuam
+pendentes de confirmação em execução**, embora a suíte correspondente compile.
+Não usar esta tentativa como aprovação de release. Não foi criada release nem
+alterada a versão do aplicativo.
+
+Para finalizar, execute o roteiro em um emulador descartável com aceleração,
+ou conceda à integração GitHub permissão para criar workflows e execute a suíte
+em um runner com KVM. Os logs locais estão no diretório de evidências ignorado
+pelo Git.
