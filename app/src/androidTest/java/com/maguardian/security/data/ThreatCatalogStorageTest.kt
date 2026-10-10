@@ -16,13 +16,61 @@ class ThreatCatalogStorageTest {
     private val cache get() = File(ctx.noBackupFilesDir, "threat-catalog.json")
 
     @Before fun setUp() {
-        ctx = CatalogTestEnvironment.Sandbox(CatalogTestEnvironment.target())
+        val args = androidx.test.platform.app.InstrumentationRegistry.getArguments()
+        val target = if (args.getString("rotationRoute") == "concurrent") {
+            check(args.getString("disposable") == "true")
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.also {
+                check(it.packageName == "com.maguardian.security.catalogvalidation")
+            }
+        } else CatalogTestEnvironment.target()
+        // Rotation APK pins are immutable: use their already-signed assets,
+        // never inject the ordinary storage suite's mutable QA signing key.
+        ctx = CatalogTestEnvironment.Sandbox(target)
         CatalogTestEnvironment.resetMemory()
     }
     @After fun tearDown() {
         CatalogTestEnvironment.resetMemory()
         if (::ctx.isInitialized) ctx.close()
     }
+    @Test fun concurrentLowerFirstKeepsTheHigherSignedCatalog() = concurrentInstall(22)
+    @Test fun concurrentHigherFirstRejectsTheOlderSignedCatalog() = concurrentInstall(23)
+    @Test fun simultaneousInstallKeepsTheHigherSignedCatalog() = concurrentInstall(null)
+
+    private fun concurrentInstall(first: Int?) {
+        val rotation = androidx.test.platform.app.InstrumentationRegistry.getArguments()
+            .getString("rotationRoute") == "concurrent"
+        fun asset(name: String) = ctx.assets.open("rotation-$name.json").bufferedReader().use { it.readText() }
+        val fixture = if (rotation) "com.catalogvalidation.fixture" else pkg
+        val hash = CatalogTestEnvironment.sha(File(ctx.packageManager.getApplicationInfo(fixture, 0).sourceDir).readBytes())
+        val indicator = CatalogTestEnvironment.indicator(fixture, hash)
+        val lower = if (rotation) asset("concurrent-lower") else CatalogTestEnvironment.catalog(22, indicator)
+        val higher = if (rotation) asset("direct-old-cache") else CatalogTestEnvironment.catalog(23, indicator)
+        val lowVersion = ThreatCatalog.parse(lower).version
+        val highVersion = ThreatCatalog.parse(higher).version
+        val firstVersion = when (first) { 22 -> lowVersion; 23 -> highVersion; else -> null }
+        assertTrue(ThreatCatalog.install(ctx, if (rotation) asset("old-cache") else CatalogTestEnvironment.catalog(21, indicator)))
+        PrefsHelper.markThreatKept(ctx, fixture)
+        // Drain apply() before taking evidence; no preference write during the race.
+        assertTrue(ctx.getSharedPreferences("maguardian_prefs", 0).edit().commit())
+        val kept = PrefsHelper.getThreats(ctx).toString()
+        val results = CatalogConcurrentInstall.race(ctx, lower, higher, firstVersion)
+        CatalogConcurrentInstall.assertResults(results, lowVersion, highVersion, firstVersion)
+        assertEquals(ThreatCatalog.parse(higher), ThreatCatalog.snapshot())
+        assertArrayEquals(higher.toByteArray(Charsets.UTF_8), cache.readBytes())
+        assertEquals(CatalogTestEnvironment.sha(higher.toByteArray(Charsets.UTF_8)),
+            CatalogTestEnvironment.sha(cache.readBytes()))
+        assertFalse(File(cache.path + ".new").exists())
+        assertFalse(File(cache.path + ".bak").exists())
+        assertNotNull(ThreatCatalog.match(ctx, fixture))
+        assertTrue(PrefsHelper.isThreatKept(ctx, fixture))
+        assertNull(MalwareDatabase.isMalware(fixture, ctx))
+        assertEquals(kept, PrefsHelper.getThreats(ctx).toString())
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().sendStatus(
+            0, android.os.Bundle().apply {
+                putString("stream", "CONCURRENT_ORDER_OK first=$firstVersion results=$results version=$highVersion diskSha256=${CatalogTestEnvironment.sha(cache.readBytes())} snapshotHash=${ThreatCatalog.snapshot()!!.hash} detection=true manter=true\n")
+            })
+    }
+
     private fun rejected(raw: String) {
         try {
             ThreatCatalog.install(ctx, raw)

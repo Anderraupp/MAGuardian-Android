@@ -36,6 +36,9 @@ object ThreatCatalog {
     fun initialize(ctx: Context) {
         if (initialized) return
         try {
+            // Revalidate against this APK's immutable policy. A still-trusted
+            // newer cache survives recovery; bootstrap is only a fallback,
+            // never a reason to downgrade valid persisted metadata.
             val raw = file(ctx).openRead().use { readBounded(it) }.toString(Charsets.UTF_8)
             current = parse(raw)
         } catch (_: Exception) {

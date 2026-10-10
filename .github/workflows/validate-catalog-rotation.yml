@@ -1,0 +1,80 @@
+name: Validate catalog key rotation safely
+
+on:
+  push:
+    branches: [qa/catalog-key-rotation, qa/catalog-direct-recovery, qa/catalog-interrupted-recovery, qa/catalog-corrupt-cache, qa/catalog-valid-cache-recovery]
+  workflow_dispatch:
+    inputs:
+      route:
+        description: Disposable APK upgrade route
+        type: choice
+        options: [three-step, direct, interrupted, corrupt, valid-cache]
+        default: three-step
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-rotation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-upgrades:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        damage: ${{ (inputs.route == 'corrupt' || github.ref == 'refs/heads/qa/catalog-corrupt-cache') && fromJSON('["truncated","tampered"]') || fromJSON('["none"]') }}
+    env:
+      ANDROID_VALIDATION_OUTPUT: ${{ github.workspace }}/generated-artifacts/android-rotation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify public trust and temporary QA fixtures without production secrets
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run catalog:check-trust
+          node --test tools/catalog-rotation-fixtures.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Enable acceleration on the disposable runner
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo udevadm settle
+          sudo chmod a+rw /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+      - name: Upgrade QA APKs without clearing data
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh ${{ matrix.damage != 'none' && format('--rotation-corrupt-{0}', matrix.damage) || ((inputs.route == 'interrupted' || github.ref == 'refs/heads/qa/catalog-interrupted-recovery') && '--rotation-interrupted' || ((inputs.route == 'valid-cache' || github.ref == 'refs/heads/qa/catalog-valid-cache-recovery') && '--rotation-valid-cache' || ((inputs.route == 'direct' || (github.event_name == 'push' && github.ref == 'refs/heads/qa/catalog-direct-recovery')) && '--rotation-direct' || '--rotation'))) }}
+      - name: Confirm production sources and version were not modified
+        if: always()
+        run: git diff --exit-code -- app/src/main app/build.gradle build.gradle gradle.properties threat-catalog/trusted-keys.json shared/catalog-trust.ts
+      - name: Save public evidence only, never APKs or private keys
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.damage == 'none' && 'android-catalog-rotation-evidence' || format('android-catalog-corrupt-{0}-evidence', matrix.damage) }}
+          path: generated-artifacts/android-rotation/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Remove temporary signing material
+        if: always()
+        run: rm -rf app/build/catalogRotationSession app/build/catalogValidationFixtures

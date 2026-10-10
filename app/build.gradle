@@ -11,8 +11,8 @@ android {
         applicationId "com.maguardian.security"
         minSdk 26
         targetSdk 36
-        versionCode 40
-        versionName "1.6.2"
+        versionCode 41
+        versionName "1.6.3"
         testInstrumentationRunner "com.maguardian.security.data.CatalogTestRunner"
         // A harmless fixture outside the application's intentionally trusted prefix.
         testApplicationId "com.catalogvalidation.fixture"
@@ -53,6 +53,7 @@ android {
         catalogValidation {
             java.srcDir "build/generated/catalogValidationKeys"
             res.srcDir "build/generated/catalogValidationResources"
+            assets.srcDir "build/generated/catalogRotationAssets"
         }
     }
 }
@@ -62,6 +63,28 @@ android {
 def prepareCatalogValidationTls = tasks.register("prepareCatalogValidationTls", Exec) {
     workingDir rootProject.projectDir
     commandLine "node", "tools/catalog-validation-server.mjs", "--prepare"
+    doLast {
+        def stage = project.findProperty("catalogRotationStage")
+        if (stage != null) {
+            if (!(stage in ['old', 'transition', 'recovery'])) {
+                throw new GradleException("Invalid disposable catalog rotation stage")
+            }
+            exec {
+                workingDir rootProject.projectDir
+                commandLine "node", "tools/catalog-rotation-fixtures.mjs", stage
+            }
+        } else {
+            delete file("build/generated/catalogRotationAssets")
+        }
+    }
+}
+android.applicationVariants.all { variant ->
+    if (variant.buildType.name == "catalogValidation" && project.hasProperty("catalogRotationStage")) {
+        def versions = [old: 41, transition: 42, recovery: 43]
+        def stage = project.property("catalogRotationStage")
+        if (!versions.containsKey(stage)) throw new GradleException("Invalid rotation stage")
+        variant.outputs.each { output -> output.versionCodeOverride = versions[stage] }
+    }
 }
 tasks.configureEach {
     if (name == "preCatalogValidationBuild") dependsOn prepareCatalogValidationTls

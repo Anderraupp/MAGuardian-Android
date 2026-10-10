@@ -186,6 +186,78 @@ pois são exibidos offline no app.
 
 ## Verificação
 
+### Ensaio descartável de rotação entre APKs
+
+`DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh --rotation`
+
+Requer SDK/Gradle e emulador novo, acelerado. Recusa aparelhos físicos e uma
+instalação QA já existente. Usa exclusivamente o pacote
+`com.maguardian.security.catalogvalidation`, com assinatura debug e versões
+41 → 42 → 43. A versão de produção permanece 40; não gera releases nem publica
+APKs. O ensaio não repete os testes genéricos de reinício/Android antigo.
+
+- Gera duas chaves RSA-3072 temporárias em `app/build/catalogRotationSession/`
+  (ignorado, PEM 0600), sem ler Secrets, e fixa políticas **imutáveis** em cada
+  APK QA. Nenhuma chave é injetada no processo do teste.
+- APK antigo: bootstrap A v10, cache A v11; B v12 é rejeitado como desconhecido,
+  sem alterar bytes do cache. Nova execução em outro processo revalida A v11.
+- APK de transição: atualização real com `adb install -r`, sem limpar dados;
+  aceita A/B e instala B v12. Outro processo confirma o cache e prepara A v13,
+  ainda autorizado, para ensaiar a revogação.
+- APK de recuperação: atualização real, A revogada/B ativa; descarta A v13 como
+  fonte confiável e usa bootstrap B v14 **offline**. Rejeita atualização A v15;
+  aceita B v16 e a revalida em outro processo.
+- Em todas as fases, confere SHA-256 exato de um APK instrumentado inofensivo,
+  proteção embarcada e persistência/efeito de **Manter**. Marcadores privados
+  confirmam que os dados sobreviveram aos upgrades.
+
+Somente logs de build/teste, versões e checksums públicos vão para o diretório
+de evidências (`ANDROID_VALIDATION_OUTPUT`); APKs e chaves nunca são enviados.
+Ao terminar, descarte o emulador e `app/build/catalogRotationSession/`. Não use
+esse trust store QA para assinar um AAB de produção.
+
+`node --test tools/catalog-rotation-fixtures.test.mjs` verifica isolamento,
+assinaturas, bootstraps e políticas das fixtures sem SDK. Esse teste sozinho
+**não** substitui a instalação sucessiva dos APKs no Android.
+
+**Resultado em 10/10/2026:** aprovado em emulador descartável Android 36
+(Google APIs, x86_64, aceleração KVM), com seis invocações instrumentadas
+aprovadas e upgrades reais 41 → 42 → 43. Confirmados cache, bootstrap de
+recuperação, rejeições por chave desconhecida/revogada, detecção por hash exato,
+base embarcada e **Manter**. Pinos/bootstrap de produção permaneceram intactos.
+[Execução e evidências públicas](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38055692298).
+O teste aguarda a gravação assíncrona de “Manter” antes do encerramento forçado
+do processo; não regrava a preferência nas fases de verificação.
+
+### Recuperação direta sem instalar a transição
+
+`DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh --rotation-direct`
+
+É uma rota alternativa, não um complemento obrigatório ao ensaio de três APKs.
+Instala somente 41 → 43 no emulador descartável, sem `pm clear`, desinstalação,
+reboot ou APK 42. O APK antigo aceita e grava A v13, confirma **Manter** em disco
+e revalida ambos em outro processo. O APK de recuperação exige o marcador
+`direct-old`, rejeita explicitamente o cache A v13 pela revogação e usa o
+bootstrap assinado B v14 offline. Confere detecção local pelo hash exato,
+proteção embarcada e o efeito de **Manter**, rejeita A v15 sem mudar o estado
+e aceita B v16. Outra execução confirma B v16 e a preferência preservada.
+
+No workflow `validate-catalog-rotation.yml`, selecione `route=direct` ao executar
+manualmente. A rota padrão continua sendo `three-step`. As evidências incluem
+`rotation-route.txt`, logs das quatro fases e versões/checksums dos dois APKs;
+nenhum APK ou chave privada é publicado. As mesmas restrições de QA e de
+preservação dos pinos/bootstrap de produção se aplicam.
+
+**Resultado em 10/10/2026:** rota direta aprovada em emulador descartável Android
+36 (Google APIs, x86_64, KVM), com quatro invocações instrumentadas aprovadas:
+antigo, antigo em outro processo, recuperação e recuperação em outro processo.
+Os registros do gerenciador de pacotes e checksums mostram somente APKs 41 e 43.
+Confirmados rejeição do cache A v13 revogado, bootstrap B v14, atualização B v16,
+detecção local por hash exato, proteção embarcada e persistência/efeito de
+**Manter**, sem limpeza de dados. A verificação dos arquivos de produção passou;
+somente logs, versões e checksums públicos foram armazenados como evidência.
+[Execução direta e evidências](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38056401937).
+
 - Na raiz do repositório Android: `npm run catalog:test`.
 - Na raiz do workspace: `npx tsx --test shared/threat-catalog.test.ts server/threat-catalog.test.ts`.
 - No workspace: `npm run check`.

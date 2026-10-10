@@ -1,0 +1,55 @@
+name: Check Android release build without publishing
+
+on:
+  push:
+    branches: [qa/release-ready]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check public trust and existing catalog tests
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run catalog:check-trust
+          npm run catalog:test
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Install the existing SDK requirements
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
+      - name: Build production bundle without upload key or publishing
+        run: |
+          set -euo pipefail
+          mkdir -p generated-artifacts/release-check
+          bash gradlew --no-daemon :app:bundleRelease 2>&1 | tee generated-artifacts/release-check/build.log
+          test -s app/build/outputs/bundle/release/app-release.aab
+          sha256sum app/build/outputs/bundle/release/app-release.aab > generated-artifacts/release-check/bundle.sha256
+          grep -E 'versionCode|versionName|applicationId|targetSdk' app/build.gradle > generated-artifacts/release-check/version.txt
+          git diff --exit-code -- app/src/main app/build.gradle threat-catalog shared
+      - name: Save build evidence only (no APK, AAB or keys)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-build-evidence
+          path: generated-artifacts/release-check/
+          if-no-files-found: warn
+          retention-days: 7
