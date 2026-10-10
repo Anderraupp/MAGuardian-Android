@@ -189,3 +189,58 @@ Após essa aprovação, o operador autorizou disponibilizar o conjunto na `main`
 para `git pull`, incluindo catálogo v3 assinado, pinos e bootstrap públicos,
 ferramentas independentes e documentação. O workflow Build APK é somente manual
 e debug: o envio não dispara publicação de release, tag ou Play Store.
+
+## Processo encerrado depois do commit atômico
+
+Ensaio opcional, separado do `.new` incompleto:
+
+```bash
+DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 \
+  bash tools/validate-android-catalog.sh --atomic-committed
+```
+
+O workflow `validate-catalog-atomic.yml` seleciona `committed` na branch
+isolada `qa/catalog-atomic-committed` (ou pelo campo `boundary` no disparo
+manual). Usa emulador descartável e chaves RSA-3072 efêmeras. Não publica
+APKs, reinicia o dispositivo, faz upgrade, limpa dados ou altera produção.
+
+- `old` e `old-restart` persistem e confirmam o cache assinado 11 e “Manter”.
+- `committed-write` valida a fixture assinada 13 sob a mesma chave QA,
+  grava todos os bytes com `AtomicFile.finishWrite` e confirma disco 13
+  enquanto o snapshot em memória continua em 11. Não chama `install`
+  nem publica o novo snapshot. Após registrar evidência sincronizada e
+  `ATOMIC_COMMITTED_READY`, aguarda o controlador encerrar somente o pacote
+  `com.maguardian.security.catalogvalidation`, cujo PID é conferido.
+- `committed-verify` e `committed-restart` inicializam em processos novos,
+  sem reset por reflexão. Exigem snapshot 13 válido, bytes e SHA-256 do
+  arquivo iguais ao commit, hash do payload igual ao snapshot e ausência
+  de `.new`/`.bak`. Exigem detecção por hash do APK inofensivo, proteção
+  embutida e “Manter”, sem regravar cache ou preferências.
+- O controlador compara bytes do cache e das preferências antes/depois
+  do encerramento e das leituras. A instrumentação também compara a data
+  de modificação das preferências. Um escritor que retorna `OK` em vez de
+  ser encerrado, ou um leitor sem `ATOMIC_COMMITTED_OK`, reprova o ensaio.
+
+Evidências: `atomic-committed-ready.json`, `atomic-write.log`,
+`atomic-kill.txt`, logs das duas leituras, bytes/hashes do cache e
+preferências, versão e hash do APK QA instalado. O artefato não contém APKs
+ou chaves privadas. `tools/catalog-atomic-driver.test.mjs` verifica somente
+o contrato de comandos com ADB simulado; não substitui a execução Android.
+O ensaio não comprova queda de energia nem executa o caso `.new` pendente.
+
+### Resultado confirmado em 10/10/2026
+
+[Execução Android 36 aprovada](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38064837680)
+na branch QA `qa/catalog-atomic-committed`. As quatro verificações
+(`old`, `old-restart`, `committed-verify`, `committed-restart`) retornaram
+`OK (1 test)`. O escritor PID **5245** registrou memória **11** e disco **13**
+antes do encerramento; não retornou sucesso JUnit. Os leitores PIDs **5311**
+e **5370** carregaram o catálogo **13**, com SHA-256 do arquivo
+`9229c2ed7c62e54b6311529ce781debffe56953ed4456e18f0046757eb2de456`
+e hash do snapshot
+`5c014ee5d767d79f6189e1320522053d2bfb656b52d7dc649c319f7b5f75e779`.
+Detecção local, proteção embutida e “Manter” passaram; bytes e data das
+preferências permaneceram iguais. O hash do APK instalado permaneceu igual
+ao QA antigo **41**, sem upgrade. O workflow confirmou produção intacta e
+apagou o material privado efêmero. Evidências locais ignoradas:
+`generated-artifacts/android-committed/passed/`. A branch `main` não foi alterada.
