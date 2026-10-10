@@ -17,7 +17,7 @@ class ThreatCatalogStorageTest {
 
     @Before fun setUp() {
         val args = androidx.test.platform.app.InstrumentationRegistry.getArguments()
-        val target = if (args.getString("rotationRoute") == "concurrent") {
+        val target = if (args.getString("rotationRoute") in setOf("concurrent", "size-boundary")) {
             check(args.getString("disposable") == "true")
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.also {
                 check(it.packageName == "com.maguardian.security.catalogvalidation")
@@ -35,6 +35,95 @@ class ThreatCatalogStorageTest {
     @Test fun concurrentLowerFirstKeepsTheHigherSignedCatalog() = concurrentInstall(22)
     @Test fun concurrentHigherFirstRejectsTheOlderSignedCatalog() = concurrentInstall(23)
     @Test fun simultaneousInstallKeepsTheHigherSignedCatalog() = concurrentInstall(null)
+
+    private fun boundaryAsset(name: String): ByteArray {
+        org.junit.Assume.assumeTrue("Requires opt-in signed assets and immutable disposable QA pins",
+            androidx.test.platform.app.InstrumentationRegistry.getArguments()
+                .getString("rotationRoute") == "size-boundary")
+        return ctx.assets.open("rotation-boundary-$name.json").use { it.readBytes() }
+    }
+
+    @Test fun exactMaximumUtf8EnvelopeIsAcceptedAndPersisted() {
+        val bytes = boundaryAsset("exact")
+        assertEquals(ThreatCatalog.MAX_BYTES, bytes.size)
+        val raw = bytes.toString(Charsets.UTF_8)
+        assertTrue("Must count UTF-8 bytes, not characters", raw.length < bytes.size)
+        assertArrayEquals(bytes, ThreatCatalog.readBounded(bytes.inputStream()))
+        val parsed = ThreatCatalog.parse(raw)
+        assertEquals(12, parsed.version)
+        assertEquals("Proteção sintética UTF-8: ação, café, 漢字, 🛡️",
+            parsed.indicators.getValue("com.catalogvalidation.fixture").entry.description)
+        assertTrue(ThreatCatalog.install(ctx, raw))
+        assertEquals(parsed, ThreatCatalog.snapshot())
+        assertArrayEquals(bytes, cache.readBytes())
+        assertFalse(File(cache.path + ".new").exists())
+        assertFalse(File(cache.path + ".bak").exists())
+        boundaryStatus("EXACT_MAX_ACCEPTED bytes=${bytes.size} version=${parsed.version}")
+    }
+
+    @Test fun maximumPlusOneValidUtf8EnvelopeIsRejectedWithinBoundAndPreservesCache() {
+        val exact = boundaryAsset("exact")
+        assertTrue(ThreatCatalog.install(ctx, exact.toString(Charsets.UTF_8)))
+        val before = ThreatCatalog.snapshot()
+        val bytes = boundaryAsset("plus-one")
+        assertEquals(ThreatCatalog.MAX_BYTES + 1, bytes.size)
+        val raw = bytes.toString(Charsets.UTF_8)
+        assertTrue(raw.length < ThreatCatalog.MAX_BYTES)
+        // Prove this is not a malformed/checksum/signature/key-policy rejection.
+        val envelope = JSONObject(raw)
+        val payload = envelope.getString("payload")
+        assertEquals(CatalogTestEnvironment.sha(payload.toByteArray(Charsets.UTF_8)),
+            envelope.getString("sha256"))
+        val keyId = envelope.getString("keyId")
+        val key = ThreatCatalogKeys.trusted.getValue(keyId)
+        assertFalse(key.revoked)
+        val version = JSONObject(payload).getInt("version")
+        assertEquals(13, version)
+        assertTrue(version in key.minimumVersion..key.maximumVersion)
+        val der = java.util.Base64.getDecoder().decode(key.spkiBase64)
+        assertEquals(keyId, CatalogTestEnvironment.sha(der))
+        val publicKey = java.security.KeyFactory.getInstance("RSA")
+            .generatePublic(java.security.spec.X509EncodedKeySpec(der))
+        val verifier = java.security.Signature.getInstance("SHA256withRSA")
+        verifier.initVerify(publicKey)
+        verifier.update("maguardian/threat-catalog/v2\n$keyId\n${envelope.getString("sha256")}\n$payload"
+            .toByteArray(Charsets.UTF_8))
+        assertTrue(verifier.verify(java.util.Base64.getDecoder().decode(envelope.getString("signature"))))
+        val exactPayload = JSONObject(JSONObject(exact.toString(Charsets.UTF_8)).getString("payload"))
+        // Same validated schema and indicators as the accepted catalog, only newer.
+        assertEquals(exactPayload.toString(), JSONObject(payload).put("version", 12).toString())
+        val stream = object : java.io.ByteArrayInputStream(bytes) {
+            var consumed = 0
+            var calls = 0
+            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                calls++
+                return super.read(buffer, offset, length).also { if (it > 0) consumed += it }
+            }
+        }
+        try {
+            ThreatCatalog.readBounded(stream)
+            fail("MAX_BYTES + 1 stream accepted")
+        } catch (failure: IllegalArgumentException) {
+            assertEquals("Catálogo muito grande", failure.message)
+        }
+        assertEquals(ThreatCatalog.MAX_BYTES + 1, stream.consumed)
+        assertEquals(ThreatCatalog.MAX_BYTES / 8192 + 1, stream.calls)
+        try {
+            ThreatCatalog.parse(raw)
+            fail("MAX_BYTES + 1 envelope parsed")
+        } catch (_: IllegalArgumentException) {}
+        rejected(raw)
+        assertEquals(before, ThreatCatalog.snapshot())
+        assertArrayEquals(exact, cache.readBytes())
+        assertFalse(File(cache.path + ".new").exists())
+        assertFalse(File(cache.path + ".bak").exists())
+        boundaryStatus("MAX_PLUS_ONE_REJECTED bytes=${bytes.size} consumed=${stream.consumed} reads=${stream.calls} cacheUnchanged=true signatureValid=true")
+    }
+
+    private fun boundaryStatus(message: String) {
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().sendStatus(
+            0, android.os.Bundle().apply { putString("stream", "$message\n") })
+    }
 
     private fun concurrentInstall(first: Int?) {
         val rotation = androidx.test.platform.app.InstrumentationRegistry.getArguments()

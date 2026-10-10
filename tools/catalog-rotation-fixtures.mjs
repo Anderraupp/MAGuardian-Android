@@ -35,22 +35,37 @@ const fixtureHashPath = path.join(session, "fixture-sha256.txt");
 const fixtureHash = fs.existsSync(fixtureHashPath) ? fs.readFileSync(fixtureHashPath, "utf8").trim() : "0".repeat(64);
 if (!/^[0-9a-f]{64}$/.test(fixtureHash)) throw new Error("Invalid harmless fixture APK hash");
 fs.mkdirSync(assets, { recursive: true });
-function envelope(version, signingKey) {
-  const payload = JSON.stringify({ schemaVersion: 1, version,
+function envelope(version, signingKey, targetBytes) {
+  let payload = JSON.stringify({ schemaVersion: 1, version,
     publishedAt: "2026-01-01T00:00:00Z", indicators: [{
       packageName: "com.catalogvalidation.fixture", appName: "Harmless QA fixture",
-      threatType: "popup", severity: "high", description: "Synthetic rotation test, not malware",
+      threatType: "popup", severity: "high", description: targetBytes
+        ? "Proteção sintética UTF-8: ação, café, 漢字, 🛡️" : "Synthetic rotation test, not malware",
       apkSha256: [fixtureHash], status: "confirmed",
       source: { name: "QA", url: "https://example.org/qa", license: "CC0-1.0",
         licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
         attribution: "Synthetic disposable QA metadata" },
       review: { reviewer: "QA", reviewedAt: "2026-01-01T00:00:00Z", evidence: "Harmless local APK" }
     }] });
+  if (targetBytes !== undefined) {
+    // JSON permits trailing whitespace in the payload. It is INSIDE the
+    // signature, not untrusted outer padding, and does not exceed field limits.
+    // RSA-3072 base64 signatures and SHA-256 hex digests have fixed lengths.
+    const skeleton = JSON.stringify({ format: 2, payload, sha256: "0".repeat(64),
+      keyId: signingKey.id, signature: "A".repeat(512) });
+    const padding = targetBytes - Buffer.byteLength(skeleton, "utf8");
+    if (padding < 0) throw new Error("Boundary envelope target is too small");
+    payload += " ".repeat(padding);
+  }
   const sha256 = crypto.createHash("sha256").update(payload).digest("hex");
   const signature = crypto.sign("sha256",
     Buffer.from(`maguardian/threat-catalog/v2\n${signingKey.id}\n${sha256}\n${payload}`),
     signingKey.privateKey).toString("base64");
-  return JSON.stringify({ format: 2, payload, sha256, keyId: signingKey.id, signature });
+  const raw = JSON.stringify({ format: 2, payload, sha256, keyId: signingKey.id, signature });
+  if (targetBytes !== undefined && Buffer.byteLength(raw, "utf8") !== targetBytes) {
+    throw new Error("Boundary envelope byte count mismatch");
+  }
+  return raw;
 }
 const catalogs = {
   "old-bootstrap": envelope(10, old), "old-cache": envelope(11, old),
@@ -61,6 +76,26 @@ const catalogs = {
   "recovery-bootstrap": envelope(14, successor), "revoked-update": envelope(15, old),
   "recovery-update": envelope(16, successor)
 };
+// Opt-in only: do not enlarge ordinary rotation/upgrade APKs. Read the real
+// production limit rather than introducing a second independent QA limit.
+const boundary = process.argv[3] === "--size-boundary";
+if (process.argv[3] && !boundary) throw new Error("Unknown fixture option");
+if (boundary) {
+  const source = fs.readFileSync(path.join(root,
+    "app/src/main/java/com/maguardian/security/data/ThreatCatalog.kt"), "utf8");
+  const expression = source.match(/const val MAX_BYTES = ([\d *]+)\r?$/m)?.[1];
+  if (!expression) throw new Error("Cannot read catalog MAX_BYTES");
+  const maxBytes = expression.split("*").map(part => Number(part.trim()))
+    .reduce((a, b) => a * b, 1);
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new Error("Invalid MAX_BYTES");
+  catalogs["boundary-exact"] = envelope(12, old, maxBytes);
+  catalogs["boundary-plus-one"] = envelope(13, old, maxBytes + 1);
+} else {
+  // Prevent stale opt-in assets from leaking into subsequent normal QA runs.
+  for (const name of ["exact", "plus-one"]) {
+    fs.rmSync(path.join(assets, `rotation-boundary-${name}.json`), { force: true });
+  }
+}
 // Negative persisted-cache fixtures, never publishable catalogs. Recomputing
 // the checksum cannot authorize removal of indicators without a new signature.
 const tampered = JSON.parse(catalogs["direct-old-cache"]);

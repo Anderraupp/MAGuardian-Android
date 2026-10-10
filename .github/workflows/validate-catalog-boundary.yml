@@ -1,0 +1,77 @@
+name: Validate exact signed catalog byte boundary safely
+on:
+  push:
+    branches: [qa/catalog-size-boundary]
+permissions:
+  contents: read
+concurrency:
+  group: catalog-size-boundary-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  exact-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Enable disposable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo udevadm settle
+          sudo chmod a+rw /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+      - name: Build immutable QA pins and two exact-size signed UTF-8 envelopes
+        run: |
+          node tools/catalog-validation-server.mjs --prepare
+          node tools/catalog-rotation-fixtures.mjs new-session
+          node tools/catalog-rotation-fixtures.mjs old --size-boundary
+          chmod +x gradlew
+          ./gradlew :app:assembleCatalogValidation :app:assembleCatalogValidationAndroidTest -PcatalogRotationStage=old -x :app:prepareCatalogValidationTls --no-daemon
+      - name: Only test the exact byte boundary, no upgrade or recovery rehearsal
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: |
+            mkdir -p generated-artifacts/android-boundary
+            test "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" = 1
+            adb install -r app/build/outputs/apk/catalogValidation/app-catalogValidation.apk
+            adb install -r app/build/outputs/apk/androidTest/catalogValidation/app-catalogValidation-androidTest.apk
+            adb shell am force-stop com.maguardian.security.catalogvalidation
+            adb shell dumpsys package com.maguardian.security.catalogvalidation | grep -E 'versionCode=|versionName=' > generated-artifacts/android-boundary/package.txt
+            adb shell getprop ro.build.version.sdk > generated-artifacts/android-boundary/api.txt
+            adb shell am instrument -w -r -e disposable true -e rotationRoute size-boundary -e class 'com.maguardian.security.data.ThreatCatalogStorageTest#exactMaximumUtf8EnvelopeIsAcceptedAndPersisted,com.maguardian.security.data.ThreatCatalogStorageTest#maximumPlusOneValidUtf8EnvelopeIsRejectedWithinBoundAndPreservesCache' com.catalogvalidation.fixture/com.maguardian.security.data.CatalogTestRunner > generated-artifacts/android-boundary/instrumentation.log
+            cat generated-artifacts/android-boundary/instrumentation.log
+            grep -F 'OK (2 tests)' generated-artifacts/android-boundary/instrumentation.log
+            grep -F 'EXACT_MAX_ACCEPTED bytes=2097152' generated-artifacts/android-boundary/instrumentation.log
+            grep -F 'MAX_PLUS_ONE_REJECTED bytes=2097153 consumed=2097153 reads=257 cacheUnchanged=true signatureValid=true' generated-artifacts/android-boundary/instrumentation.log
+            ! grep -E 'FAILURES|INSTRUMENTATION_FAILED|Process crashed|shortMsg=' generated-artifacts/android-boundary/instrumentation.log
+      - name: Confirm production sources, limit, pins and version unchanged
+        if: always()
+        run: git diff --exit-code -- app/src/main app/build.gradle build.gradle gradle.properties threat-catalog/trusted-keys.json shared/catalog-trust.ts
+      - name: Save evidence only, never APKs, catalogs or private keys
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-catalog-boundary-evidence
+          path: generated-artifacts/android-boundary/
+          retention-days: 7
+      - name: Delete ephemeral signing material
+        if: always()
+        run: rm -rf app/build/catalogRotationSession app/build/catalogValidationFixtures
