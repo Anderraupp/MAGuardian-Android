@@ -1,0 +1,56 @@
+name: Validate Android catalog safely
+
+on:
+  push:
+    branches: [agent/catalog-validation]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  disposable-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ANDROID_VALIDATION_OUTPUT: ${{ github.workspace }}/generated-artifacts/android-validation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable acceleration on the disposable runner
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+      - name: Test online, offline and after an actual reboot
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh
+      - name: Confirm production sources and version were not modified
+        if: always()
+        run: git diff --exit-code -- app/src/main app/build.gradle build.gradle gradle.properties
+      - name: Save test evidence only, never publish an APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-catalog-validation-evidence
+          path: generated-artifacts/android-validation/
+          retention-days: 7
+          if-no-files-found: warn
