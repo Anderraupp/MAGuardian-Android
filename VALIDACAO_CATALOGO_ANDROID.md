@@ -82,21 +82,48 @@ cancela somente as execuções antigas desse mesmo grupo de testes descartáveis
 Uma integração posterior na branch principal exige decisão separada. O código
 do APK normal não precisa do token temporário usado para preparar a execução.
 
+### Catálogo assinado e isolamento das chaves de QA
+
+O formato atual exige RSA-3072. O roteiro inicia um servidor HTTPS real somente
+no runner (`10.0.2.2:8443` visto pelo emulador), com certificado e chave de QA
+gerados nessa instalação descartável. Não há conexão falsa nem desativação de
+verificação TLS/hostname.
+
+Somente `catalogValidation` usa esse endpoint e certificado. A compilação desse
+tipo substitui o provedor de âncoras por um provedor gerado de QA. `debug` e
+`release` continuam compilando `ThreatCatalogKeys.kt` original, a política do
+operador, e a URL original do GitHub. O provedor de produção não recebe setter,
+reset por reflexão ou chave de testes.
+
+As fixtures de alterações de indicadores recebem assinaturas RSA reais de uma
+chave criada apenas no emulador. Essa chave fica no armazenamento privado do
+pacote descartável para permitir a verificação após reboot. A chave do servidor
+fica em `app/build`, fora das evidências enviadas. Nenhuma chave privada de
+produção é usada e nenhuma chave privada é embutida nos APKs.
+
+Node e OpenSSL são necessários para preparar essa variante de testes. O build
+normal não executa essa preparação. A instalação de QA usa Application simples,
+remove o inicializador automático do Facebook e desativa autolog/ID de
+anunciante. Esses ajustes não alteram o manifesto nem os SDKs da instalação normal.
+
 ## Resultado confirmado em 10/10/2026
 
-[Execução aprovada no GitHub](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38024274338)
-no commit `1e7fa9090fc83022eccbe9a3ecbea8d69f3c0edc`.
+[Execução aprovada com o formato assinado](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38026326505)
+no commit `c2a37f4a73e716646fd522db43b75e7b5bed0a3b`.
+
+A execução anterior `38024274338` aprovou o formato anterior. Quando a integração
+do projeto trouxe a exigência de assinaturas independentes, essa proteção foi
+preservada e a suíte foi adaptada e reexecutada; a aprovação anterior não foi
+usada como prova do novo formato.
 
 - Compilação completa com JDK 17, Gradle 8.11.1, SDK Android 36 e Build Tools 35:
   `assembleDebug`, `assembleCatalogValidation` e
   `assembleCatalogValidationAndroidTest` concluídos com sucesso.
-- Os seis testes Node de formato/publicação já haviam passado; seus fontes não
-  foram alterados pelos ajustes da suíte Android.
 - Sintaxe do roteiro shell e consistência do diff verificadas.
 
 | Fase Android | Resultado |
 | --- | --- |
-| Online | `OK (12 tests)`: 11 aprovados e o caso exclusivamente offline adiado para a fase seguinte |
+| Online | `OK (14 tests)`: 13 aprovados e o caso exclusivamente offline adiado para a fase seguinte |
 | Preparação do reinício | `OK (1 test)` |
 | Sem Wi-Fi/dados | `OK (2 tests)`, incluindo o caso offline adiado e a interface/licenças |
 | Após reinício real, ainda sem rede | `OK (1 test)` |
@@ -106,6 +133,17 @@ verificou que o snapshot anterior e o arquivo anterior continuaram disponíveis.
 O job executou o atualizador real; o pedido de periodicidade diária e sua
 persistência também foram verificados. Depois do reboot, o catálogo, a
 correspondência local do APK, a escolha Manter e o job persistido foram preservados.
+O teste adicional fez GET real do GitHub e confirmou que dados sem a autoridade
+de assinatura de QA não substituem uma fixture válida. Assinaturas malformadas,
+assinaturas falsas com codificação válida, chave desconhecida e formato legado
+também foram rejeitados sem alterar cache ou Manter.
+
+Depois dessa execução, apenas o isolamento de Application/analytics no manifesto
+de QA foi reforçado: `processDebugMainManifest` e
+`processCatalogValidationMainManifest` passaram, e os manifestos mesclados
+confirmaram que as opções normais permanecem intactas. Os cenários de catálogo
+assinados aprovados não foram alterados. O bytecode de debug confirmou a URL
+original e o provedor de produção, sem âncoras de QA.
 
 Os handlers de instalação e varredura foram chamados no processo instrumentado.
 Não foi instalado malware real, ativada assinatura, feito teste de pagamento
@@ -121,6 +159,14 @@ A aprovação acima veio do emulador acelerado Android 36 no GitHub.
 As evidências estão no artefato `android-catalog-validation-evidence` dessa
 execução e, localmente, em
 `generated-artifacts/android-validation/github-passed`, ignorado pelo Git.
+As evidências da revalidação assinada ficam em
+`generated-artifacts/android-validation/github-signed-passed`.
 A branch principal permaneceu no commit
 `716a630ca78f483f00bf391b9c51ecc65aa58d98`.
 Não foi criada release nem alterada a versão: código 40, nome 1.6.2.
+
+Esta validação não provisiona a assinatura de produção. A política recebida
+estava sem âncoras de produção e sem bootstrap assinado: a instalação normal
+rejeita novos catálogos até o operador configurar sua chave pública e catálogo
+assinado pelo procedimento de provisionamento. A base embarcada permanece
+disponível. Chaves de QA não são uma solução para esse requisito de produção.

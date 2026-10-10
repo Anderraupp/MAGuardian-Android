@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <application android:networkSecurityConfig="@xml/catalog_validation_network"
-        tools:replace="android:networkSecurityConfig" />
+    <application android:name="android.app.Application"
+        android:networkSecurityConfig="@xml/catalog_validation_network"
+        tools:replace="android:name,android:networkSecurityConfig">
+        <!-- No business analytics from a disposable validation installation,
+             including cold starts outside the instrumentation runner. -->
+        <provider android:name="com.facebook.internal.FacebookInitProvider"
+            tools:node="remove" />
+        <meta-data android:name="com.facebook.sdk.AutoLogAppEventsEnabled"
+            android:value="false" tools:replace="android:value" />
+        <meta-data android:name="com.facebook.sdk.AdvertiserIDCollectionEnabled"
+            android:value="false" tools:replace="android:value" />
+    </application>
 </manifest>
