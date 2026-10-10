@@ -15,7 +15,7 @@ adb_cmd() { "$ADB" -s "$SERIAL" "$@"; }
   echo "Target is not an Android emulator." >&2; exit 1;
 }
 PKG=com.maguardian.security.catalogvalidation
-RUNNER="$PKG.test/com.maguardian.security.data.CatalogTestRunner"
+RUNNER="com.catalogvalidation.fixture/com.maguardian.security.data.CatalogTestRunner"
 OUT="${ANDROID_VALIDATION_OUTPUT:-$ROOT/../generated-artifacts/android-validation}"
 mkdir -p "$OUT"
 run_tests() {
@@ -36,7 +36,13 @@ restore_network() {
   adb_cmd shell svc wifi enable >/dev/null || true
   adb_cmd shell svc data enable >/dev/null || true
 }
-trap restore_network EXIT
+collect_evidence() {
+  adb_cmd logcat -d -s BootReceiver:I ThreatCatalogJobService:I AndroidRuntime:E > "$OUT/android-logcat.txt" || true
+  adb_cmd shell dumpsys jobscheduler > "$OUT/jobs-final.txt" || true
+  adb_cmd exec-out run-as "$PKG" cat cache/catalog-ui-failure.png > "$OUT/catalog-ui-failure.png" 2>/dev/null || rm -f "$OUT/catalog-ui-failure.png"
+  restore_network
+}
+trap collect_evidence EXIT
 wait_boot
 adb_cmd shell settings put global window_animation_scale 0
 adb_cmd shell settings put global transition_animation_scale 0
@@ -65,5 +71,4 @@ adb_cmd shell svc wifi disable
 adb_cmd shell svc data disable
 run_tests reboot-verify -e class com.maguardian.security.data.ThreatCatalogRebootTest -e rebootPhase verify
 adb_cmd shell dumpsys jobscheduler > "$OUT/jobs-after-reboot.txt"
-adb_cmd logcat -d -s BootReceiver:I ThreatCatalogJobService:I AndroidRuntime:E > "$OUT/android-logcat.txt"
 echo "Android catalog validation passed. Evidence: $OUT"

@@ -141,7 +141,11 @@ class ThreatCatalogStorageTest {
 
     @Test fun installationHandlerAndStartupScanUseLocalHashAndRespectKeep() {
         // The instrumentation APK itself is a harmless installed fixture; never fetch an APK.
-        val fixture = "$pkg.test"
+        val fixture = androidx.test.platform.app.InstrumentationRegistry
+            .getInstrumentation().context.packageName
+        assertEquals("com.catalogvalidation.fixture", fixture)
+        assertFalse(MalwareDatabase.isSystemPrefix(fixture))
+        assertFalse(MalwareDatabase.isTrustedApp(fixture))
         val apk = File(ctx.packageManager.getApplicationInfo(fixture, 0).sourceDir)
         val hash = CatalogTestEnvironment.sha(apk.readBytes())
         val receiver = com.maguardian.security.receiver.PackageInstallReceiver()
