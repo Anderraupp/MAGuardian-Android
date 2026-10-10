@@ -39,11 +39,23 @@ class PackageInstallReceiver : BroadcastReceiver() {
         // Ignorar atualização do próprio app
         if (packageName == context.packageName) return
         if (PrefsHelper.isThreatKept(context, packageName)) return
+        val pending = goAsync()
+        Thread {
+            try {
+                checkInstalled(context.applicationContext, packageName, isReplacing)
+            } catch (e: Exception) {
+                Log.e(TAG, "Não foi possível verificar a instalação", e)
+            } finally {
+                pending.finish()
+            }
+        }.start()
+    }
 
+    private fun checkInstalled(context: Context, packageName: String, isReplacing: Boolean) {
         Log.i(TAG, "App detectado: $packageName | substituindo=$isReplacing")
 
         // ── 1. Verificação no banco de malware conhecido ──
-        val malware = MalwareDatabase.isMalware(packageName)
+        val malware = MalwareDatabase.isMalware(packageName, context)
         if (malware != null) {
             Log.w(TAG, "MALWARE instalado: $packageName")
             PrefsHelper.saveThreat(context, malware)

@@ -193,7 +193,7 @@ class PopupDetectorService : Service() {
 
             Thread {
                 // 1. Banco de malware exato
-                val malware = MalwareDatabase.isMalware(pkgName)
+                val malware = MalwareDatabase.isMalware(pkgName, this@PopupDetectorService)
                 if (malware != null) {
                     Log.w(TAG, "🚨 MALWARE instalado: $pkgName")
                     notifiedPackages.add(pkgName)
@@ -316,7 +316,7 @@ class PopupDetectorService : Service() {
             val hasLauncherIcon = pkgName in packagesWithLauncher
 
             // 1. Banco de malware conhecido (detecção exata)
-            val malware = MalwareDatabase.isMalware(pkgName)
+            val malware = MalwareDatabase.isMalware(pkgName, this)
             if (malware != null) {
                 Log.w(TAG, "Varredura inicial — malware encontrado: $pkgName")
                 notifiedPackages.add(pkgName)
@@ -404,7 +404,7 @@ class PopupDetectorService : Service() {
                     Log.d(TAG, "Foreground: $pkg | tempo desde último: ${timeSinceLast}ms")
 
                     // ── 1. Verificação no banco de malware conhecido ──
-                    val malware = MalwareDatabase.isMalware(pkg)
+                    val malware = MalwareDatabase.isMalware(pkg, this)
                     if (malware != null && !notifiedPackages.contains(pkg)) {
                         Log.w(TAG, "MALWARE CONHECIDO: $pkg")
                         notifiedPackages.add(pkg)

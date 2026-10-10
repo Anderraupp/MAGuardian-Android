@@ -8,6 +8,9 @@ class MAGuardianApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.maguardian.security.data.ThreatCatalog.initialize(this)
+        com.maguardian.security.data.ThreatCatalogUpdater.schedule(this)
+        com.maguardian.security.data.ThreatCatalogUpdater.update(this)
         AppEventsLogger.activateApp(this)
 
         val tiktokConfig = TikTokBusinessSdk.TTConfig(applicationContext)

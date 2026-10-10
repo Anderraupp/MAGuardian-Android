@@ -1,0 +1,13 @@
+{
+  "name": "maguardian-catalog-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "catalog:publish": "tsx tools/publish-threat-catalog.ts threat-catalog/reviewed.json",
+    "catalog:test": "tsx --test shared/threat-catalog.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "4.20.5",
+    "zod": "3.24.2"
+  }
+}

@@ -777,6 +777,40 @@
                     android:paddingEnd="10dp" />
             </LinearLayout>
 
+            <!-- Atualização de metadados; independente da atualização do app -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/card_background">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Base de ameaças"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp" />
+                <TextView
+                    android:id="@+id/tvCatalogStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginTop="8dp" />
+                <Button
+                    android:id="@+id/btnUpdateCatalog"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Atualizar base de ameaças" />
+                <Button
+                    android:id="@+id/btnCatalogSources"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fontes e licenças" />
+            </LinearLayout>
+
             <!-- Estado vazio -->
             <LinearLayout
                 android:id="@+id/layoutEmpty"

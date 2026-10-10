@@ -30,6 +30,8 @@ import androidx.core.view.WindowCompat
 import com.maguardian.security.R
 import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.data.MalwareDatabase
+import com.maguardian.security.data.ThreatCatalog
+import com.maguardian.security.data.ThreatCatalogUpdater
 import com.maguardian.security.receiver.TrialAlertReceiver
 import com.maguardian.security.service.PopupDetectorService
 import com.maguardian.security.util.PermissionHelper
@@ -110,8 +112,9 @@ class MainActivity : AppCompatActivity() {
 
     private val threatReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == "com.maguardian.security.THREAT_DETECTED") {
+            if (intent.action == "com.maguardian.security.THREAT_DETECTED" || intent.action == ThreatCatalogUpdater.UPDATED) {
                 refreshUI()
+                showCatalogStatus()
             }
         }
     }
@@ -121,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
         setupUI()
+        setupCatalogUI()
         initBilling()
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()
@@ -139,6 +143,42 @@ class MainActivity : AppCompatActivity() {
                 showUpdateDialog(info)
             }
         }
+    }
+
+    private fun setupCatalogUI() {
+        showCatalogStatus()
+        findViewById<Button>(R.id.btnUpdateCatalog).setOnClickListener {
+            val button = findViewById<Button>(R.id.btnUpdateCatalog)
+            button.isEnabled = false
+            findViewById<TextView>(R.id.tvCatalogStatus).text = "Verificando atualização..."
+            ThreatCatalogUpdater.update(this, manual = true, done = { status ->
+                if (!isFinishing && !isDestroyed) {
+                    button.isEnabled = true
+                    showCatalogStatus()
+                    Toast.makeText(this, status, Toast.LENGTH_LONG).show()
+                }
+            })
+        }
+        findViewById<Button>(R.id.btnCatalogSources).setOnClickListener {
+            // License text is included in the app for offline access.
+            val notices = ThreatCatalog.snapshot()?.notices?.takeIf { it.isNotEmpty() }?.joinToString("\n\n-----\n\n")
+                ?: assets.open("threat-catalog-notices.txt").bufferedReader().use { it.readText() }
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Fontes e licenças dos indicadores")
+                .setMessage(notices)
+                .setPositiveButton("Fechar", null)
+                .show()
+        }
+    }
+
+    private fun showCatalogStatus() {
+        val base = ThreatCatalog.snapshot()
+        val last = PrefsHelper.getCatalogSuccess(this)
+        val date = if (last > 0) SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(last)) else "ainda não concluída"
+        findViewById<TextView>(R.id.tvCatalogStatus).text =
+            "Base embarcada disponível offline.\n" +
+            (base?.let { "Catálogo v${it.version}: ${it.indicators.size} indicadores revisados.\n" } ?: "") +
+            "Última verificação bem-sucedida: $date\n${PrefsHelper.getCatalogStatus(this)}"
     }
 
     private fun showUpdateDialog(info: AppUpdateInfo) {
@@ -222,6 +262,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        showCatalogStatus()
 
         // Verifica se uma atualização já foi baixada e aguarda instalação
         if (::appUpdateManager.isInitialized) {
@@ -266,7 +307,9 @@ class MainActivity : AppCompatActivity() {
         refreshUI()
         updateCallScannerButton()
         maybeShowTrialPopup()
-        val filter = IntentFilter("com.maguardian.security.THREAT_DETECTED")
+        val filter = IntentFilter("com.maguardian.security.THREAT_DETECTED").apply {
+            addAction(ThreatCatalogUpdater.UPDATED)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(threatReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
@@ -1073,7 +1116,7 @@ class MainActivity : AppCompatActivity() {
                          android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
                     val hasLauncher = pkgName in launcherPkgs
 
-                    MalwareDatabase.isMalware(pkgName)?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
+                    MalwareDatabase.isMalware(pkgName, this)?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                     MalwareDatabase.checkHiddenApp(pkgName, appLabel, pkg.requestedPermissions, hasLauncher, isSystemApp)
                         ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
                     MalwareDatabase.checkHeuristic(pkgName, appLabel, pkg.requestedPermissions)
@@ -1204,7 +1247,7 @@ class MainActivity : AppCompatActivity() {
                 val hasLauncherIcon = pkgName in packagesWithLauncher
 
                 // 1. Banco de dados de malware conhecido (detecção exata)
-                val malware = MalwareDatabase.isMalware(pkgName)
+                val malware = MalwareDatabase.isMalware(pkgName, this)
                 if (malware != null) {
                     PrefsHelper.saveThreat(this, malware)
                     sendScanThreatNotification(malware)

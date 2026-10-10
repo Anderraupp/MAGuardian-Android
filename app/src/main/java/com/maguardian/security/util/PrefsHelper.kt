@@ -8,6 +8,17 @@ import org.json.JSONObject
 object PrefsHelper {
 
     private const val PREFS_NAME = "maguardian_prefs"
+    // Catalog metadata is separate from threats, counters and the user's "Manter" list.
+    fun getCatalogAttempt(ctx: Context): Long = prefs(ctx).getLong("catalog_attempt", 0)
+    fun setCatalogAttempt(ctx: Context, time: Long) =
+        prefs(ctx).edit().putLong("catalog_attempt", time).apply()
+    fun getCatalogSuccess(ctx: Context): Long = prefs(ctx).getLong("catalog_success", 0)
+    fun setCatalogSuccess(ctx: Context, time: Long) =
+        prefs(ctx).edit().putLong("catalog_success", time).apply()
+    fun getCatalogStatus(ctx: Context): String =
+        prefs(ctx).getString("catalog_status", "Nenhuma atualização remota concluída.")!!
+    fun setCatalogStatus(ctx: Context, status: String) =
+        prefs(ctx).edit().putString("catalog_status", status).apply()
     private const val KEY_PROTECTION_ENABLED = "protection_enabled"
     private const val KEY_AUTO_REMOVE = "auto_remove"
     private const val KEY_NOTIFICATIONS = "notifications"
