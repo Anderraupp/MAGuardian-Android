@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
-import { validateCatalog } from "./threat-catalog";
+import { validateCatalog, trusted, privatePem } from "./test-signing";
 
 test("standalone Android publisher can generate newer metadata without touching app sources", () => {
   const root = fileURLToPath(new URL("../", import.meta.url));
@@ -14,11 +14,14 @@ test("standalone Android publisher can generate newer metadata without touching 
   const dir = mkdtempSync(path.join(tmpdir(), "maguardian-publish-"));
   const input = path.join(dir, "reviewed.json");
   const output = path.join(dir, "catalog.json");
+  const trustPath = path.join(dir, "trusted.json");
+  writeFileSync(trustPath, JSON.stringify(trusted));
   const buildPath = path.join(root, "app/build.gradle");
   const before = readFileSync(buildPath, "utf8");
   function run() {
-    return execFileSync(process.execPath, ["--import", "tsx", script, input, output],
-      { cwd: root, encoding: "utf8", stdio: "pipe" });
+    return execFileSync(process.execPath, ["--import", "tsx", script, input, output, `--trusted-keys=${trustPath}`],
+      { cwd: root, encoding: "utf8", stdio: "pipe",
+        env: { ...process.env, THREAT_CATALOG_SIGNING_KEY: privatePem } });
   }
   try {
     writeFileSync(input, JSON.stringify(fixture));

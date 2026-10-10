@@ -2,8 +2,9 @@
 
 ## Pré-requisitos
 
-1. **Android Studio** (versão Hedgehog ou mais recente) — baixe em: https://developer.android.com/studio
+1. **Android Studio** compatível com AGP 8.9.1 (Meerkat ou mais recente) — baixe em: https://developer.android.com/studio
 2. **JDK 17** ou superior (já vem com o Android Studio)
+3. **SDK Android 36** e **Build Tools 35.0.0**, instalados pelo SDK Manager
 
 ---
 
@@ -11,7 +12,9 @@
 
 1. Abra o Android Studio
 2. Clique em **"Open"**
-3. Navegue até a pasta **`android-native/`** deste projeto
+3. No ZIP do workspace, abra **`android-native/`**. No clone de
+   `MAGuardian-Android` do GitHub, abra a **raiz com `settings.gradle`**, não
+   a subpasta parcial antiga `android-native/`.
 4. Clique em **OK**
 5. Aguarde o Gradle sincronizar (pode demorar alguns minutos na primeira vez)
 

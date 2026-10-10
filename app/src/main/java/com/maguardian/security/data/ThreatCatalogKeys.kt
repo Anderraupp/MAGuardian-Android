@@ -1,12 +1,10 @@
 package com.maguardian.security.data
 
-/**
- * Public trust anchors embedded in the APK. Generated from trusted-keys.json
- * during operator provisioning, never obtained from the download server.
- * Empty until the operator provisions an independent production signing key.
- */
+/** Generated PUBLIC trust anchors, fixed in the APK. Never load keys from the server. */
 object ThreatCatalogKeys {
     data class Key(val spkiBase64: String, val minimumVersion: Int,
                    val maximumVersion: Int, val revoked: Boolean)
-    val trusted: Map<String, Key> = emptyMap()
+    val trusted: Map<String, Key> = mapOf(
+        "a35b863cee4255099652860c171e4388263baec831b656dddbf05ba0b17c0b9d" to Key("MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAq+abeb4pqJ+YBdatU9RM6JJg8m3usGHHdfzR89m1hTnTunw67pGL3yH8HTcYmGVSZ+v9niTaE3WE34mzlECjA/574cLOWqSrnEcAraaPNXOZBHXGuME3Am1s8/yCCUSvL0dSMc61U657YaxZ8koTAwItCTSZ28iZnhj68JRj1ItsnGXmKvd1Rn5oeKfrToxGawfpUwJKzzVB3dmGiNPrpWFeFsSpWFxKja1L1teyDMXDb9B4oJ6NeQTtjSbxfEwg3GiFxrndwvROe03jnsw5vD0cf48Jj4thcQ4BZ8SNOgRW7vGkjnQFAQTD0MKBar5YXy3SQsB6JhS5Ik27smZqyuN4tlaj04jjxUUd+d50qTn5T5DNdgqBa3kXwVEujgJojRr+oTFBdCZ5dEg7gA3vqv0MIm9egCa6nBlfyO9+PgKTt9Y54hpVJDHzKKsmmswegBSeSnB+hUXBOt7CF7vuNLX1meZlnyO0RtxYP/Lf/A0ggrg4pcb7GcqQdZdip6bnAgMBAAE=", 3, 2147483647, false)
+    )
 }

@@ -147,6 +147,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkUpdateNotification() {
+        if (!::appUpdateManager.isInitialized) return
+        appUpdateManager.appUpdateInfo
+            .addOnSuccessListener { info ->
+                com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
+            }
+            .addOnFailureListener { error ->
+                Log.w(TAG, "Google Play não informou atualização disponível", error)
+            }
+    }
+
     private fun setupCatalogUI() {
         showCatalogStatus()
         findViewById<Button>(R.id.btnUpdateCatalog).setOnClickListener {
@@ -181,17 +192,6 @@ class MainActivity : AppCompatActivity() {
             "Base embarcada disponível offline.\n" +
             (base?.let { "Catálogo v${it.version}: ${it.indicators.size} indicadores revisados.\n" } ?: "") +
             "Última verificação bem-sucedida: $date\n${PrefsHelper.getCatalogStatus(this)}"
-    }
-
-    private fun checkUpdateNotification() {
-        if (!::appUpdateManager.isInitialized) return
-        appUpdateManager.appUpdateInfo
-            .addOnSuccessListener { info ->
-                com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
-            }
-            .addOnFailureListener { error ->
-                Log.w(TAG, "Google Play não informou atualização disponível", error)
-            }
     }
 
     private fun showUpdateDialog(info: AppUpdateInfo) {

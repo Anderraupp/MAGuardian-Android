@@ -165,8 +165,14 @@ A branch principal permaneceu no commit
 `716a630ca78f483f00bf391b9c51ecc65aa58d98`.
 Não foi criada release nem alterada a versão: código 40, nome 1.6.2.
 
-Esta validação não provisiona a assinatura de produção. A política recebida
-estava sem âncoras de produção e sem bootstrap assinado: a instalação normal
-rejeita novos catálogos até o operador configurar sua chave pública e catálogo
-assinado pelo procedimento de provisionamento. A base embarcada permanece
-disponível. Chaves de QA não são uma solução para esse requisito de produção.
+A validação inicial não provisionou a assinatura de produção. Depois, a pedido
+do operador para deixar o clone pronto para `git pull`, ele gerou sua chave fora
+do Git e a cadastrou no fluxo de Secrets. O catálogo **v3** foi assinado com essa
+chave e os pinos públicos Android/web e bootstrap offline foram provisionados
+e conferidos por `catalog:check-trust`. Nenhuma chave de QA virou chave de
+produção. Compilação e uso do APK não precisam do Secret de assinatura.
+
+O conjunto de provisionamento é validado na branch descartável antes do envio
+atômico à `main`. A subpasta parcial antiga do repositório Android é preservada,
+mas o build usa a raiz com `settings.gradle` e `app/`. O ajuste externo do mínimo
+de denúncias comunitárias foi preservado, sem alterar as regras do catálogo.

@@ -29,13 +29,91 @@ de 15 minutos e HTTP 503 quando ainda não há uma base validada. Na falha,
 um espelho já carregado serve a versão anterior (`X-Catalog-Stale: true`).
 O Android usa o GitHub diretamente, sem depender da implantação do espelho.
 
-Autenticidade da origem: HTTPS com validação padrão de certificado e hostname,
-URL fixa, sem redirects nem configuração de URL remota. A confiança inclui
-GitHub e os mantenedores com acesso de escrita ao repositório. **Não há
-assinatura digital independente**: SHA-256 verifica integridade, não prova
-autoria. Uma invasão da conta/repositório pode publicar indicadores indevidos.
-Proteger as contas e revisar mudanças é parte dessa fronteira de confiança.
-O catálogo não carrega código e não altera a própria origem ou regras.
+HTTPS continua com validação padrão de certificado/hostname, URL fixa e sem
+redirects. Além disso, envelopes **formato 2** exigem assinatura **RSA-3072,
+SHA-256, PKCS#1 v1.5** (`SHA256withRSA` no Android), com domínio exclusivo:
+`maguardian/threat-catalog/v2\n<keyId>\n<sha256>\n<payload UTF-8 exato>`.
+SHA-256 continua verificando integridade; a assinatura prova a autorização.
+`keyId` é SHA-256 do SPKI DER da chave pública. A assinatura é base64 canônico,
+384 bytes. Não se reserializa o payload entre assinatura e verificação.
+
+As chaves públicas e limites de versão são **fixos no APK**; o download não pode
+adicionar chaves, revogá-las nem alterar essa política. Campos inesperados,
+envelopes sem assinatura, versão fora dos limites, chave desconhecida/revogada,
+assinatura inválida ou SHA recalculado por invasor são rejeitados **antes**
+de substituir o cache. O espelho web usa os mesmos pinos públicos gerados,
+não o arquivo remoto como fonte de confiança.
+
+A chave privada pertence ao operador e fica exclusivamente no Secret
+`THREAT_CATALOG_SIGNING_KEY`, ou em ambiente de assinatura isolado equivalente.
+Não é chave de assinatura do APK/AAB e nunca é incluída no Git, APK, assets,
+logs, argumentos de CLI ou resposta HTTP. Não reutilizar a chave da Play Store.
+Não colocá-la em workflows controlados por quem pode escrever no repositório.
+Não executar scripts alterados por um invasor no ambiente que contém a chave.
+
+**Limites:** isso protege APKs já instalados contra alteração do catálogo no
+repositório. Não evita indisponibilidade, replay de uma versão ainda aceitável
+após limpar dados, nem protege a compilação de fontes adulterados pelo invasor.
+O operador deve revisar mudanças de código e pinos antes de assinar um novo
+AAB. A conta Google Play e sua chave de upload devem continuar protegidas.
+
+## Provisionamento inicial (operador)
+
+**Já provisionado neste conjunto:** catálogo v3, pinos públicos Android/web e
+bootstrap offline assinados pela chave do operador. Para um `git pull` ou build,
+não gere outra chave nem repita `--initial`. Os passos abaixo documentam a
+configuração inicial e não são necessários em cada atualização.
+
+1. No workspace, `cd android-native` e `npm run catalog:key-create`.
+   No clone Android, executar o mesmo comando na raiz após `npm install`.
+   Essa ferramenta só é executada pelo operador: cria RSA-3072 PKCS#8 PEM em
+   `$HOME/.maguardian-signing/catalog-rsa3072.pem`, fora do Git, com permissão
+   0600, sem imprimir o material privado nem substituir arquivo existente.
+   Guardar backup cifrado fora do repositório e controlar acesso a ele.
+2. Inserir o conteúdo desse arquivo **somente no fluxo seguro de Secrets**,
+   com o nome `THREAT_CATALOG_SIGNING_KEY`. Nunca colar em chat ou commit.
+3. Revisar a base existente e incrementar `reviewed.json` para versão > 2,
+   com data UTC atual. A versão 2 era o formato legado sem assinatura.
+4. `npm run catalog:provision -- --initial` gera somente artefatos públicos:
+   `trusted-keys.json`, `shared/catalog-trust.ts`, `ThreatCatalogKeys.kt` e
+   `assets/threat-catalog-bootstrap.json`. O bootstrap assinado preserva a
+   base adicional revisada mesmo no primeiro início offline.
+5. `npm run catalog:check-trust` verifica os pinos Android/web e o bootstrap,
+   **sem acessar segredo**. Testar antes de compilar. O provisionamento não
+   altera versionCode, não gera AAB e não publica na Play Store.
+6. Para substituir uma única vez o arquivo legado local, executar
+   `npm run catalog:publish -- --migrate-unsigned`. Essa opção não existe no
+   Android: o APK nunca aceita o formato legado como atualização.
+7. Revisar/compilar/assinar o AAB e publicar manualmente. APKs antigos mantêm
+   sua base embarcada/cache, mas não aceitam formato 2. A instalação do novo
+   APK é necessária para fixar a chave; não há ativação retroativa silenciosa.
+
+O provisionamento não deve ser considerado concluído enquanto a chave do
+operador não estiver configurada e `catalog:check-trust` não passar. Uma lista
+de pinos vazia falha fechada: nunca é substituída por confiança em TLS somente.
+
+## Rotação e revogação
+
+- **Rotação planejada:** criar outra chave fora do Git, configurá-la no ambiente
+  seguro e usar `npm run catalog:provision -- --public` para obter somente SPKI
+  e ID públicos. Adicionar a sucessora ao `trusted-keys.json`, com intervalo
+  de versões explícito, mantendo a antiga ativa durante a transição. Regenerar
+  pinos/bootstrap com `npm run catalog:provision`, verificar e publicar um novo
+  APK manualmente. Só depois assinar catálogos com a sucessora. APKs que ainda
+  não a têm rejeitam sua assinatura e conservam a última base válida.
+- **Revogação:** marcar a chave comprometida `revoked` na política local,
+  assinar o bootstrap revisado com uma chave não comprometida e regenerar os
+  pinos. Distribuir um APK de recuperação manualmente. Cache assinado pela
+  chave revogada não é reutilizado: usa-se o bootstrap assinado válido ou a
+  base original embarcada; as preferências “Manter” não são apagadas.
+- **Catálogo remoto adulterado/revogado:** o publicador recusa sobrescrever
+  saída inválida. Recuperar um catálogo assinado válido de backup revisado, ou
+  gerar uma saída nova em caminho explícito, revisá-la e substituir o arquivo
+  remoto deliberadamente. Não confiar na versão anunciada pelo invasor para
+  definir o piso de recuperação; usar a última versão conhecida do operador.
+- APKs offline/antigos não recebem revogações de chave sem uma atualização de
+  APK. O repositório jamais controla o trust store do app. Não há promessa de
+  revogação instantânea ou bloqueio retroativo de chaves num APK antigo.
 
 ## Publicar indicadores (sem novo APK)
 
@@ -45,7 +123,8 @@ O catálogo não carrega código e não altera a própria origem ou regras.
    atualizar `publishedAt` e `review.reviewedAt` em UTC (`...Z` ou `...SSSZ`).
    Para corrigir/remover entradas adicionais, publicar uma **versão maior**
    com a lista completa desejada. A base embarcada é independente.
-3. No workspace: `cd android-native && npm run catalog:publish`.
+3. Com a chave privada já configurada no ambiente seguro, no workspace:
+   `cd android-native && npm run catalog:publish`.
    No repositório Android obtido com `git pull`, instalar as dependências de
    ferramentas com `npm install` e executar `npm run catalog:publish` na raiz.
    O diretório `android-native/` contém todos os arquivos necessários e mapeia
@@ -75,14 +154,17 @@ e removida pelo operador antes de nova tentativa.
 
 ## Recuperação e offline
 
-O Android valida limite, campos/tipos, schema, datas, hash do payload e versão
+O Android valida limite, campos/tipos, assinatura, política da chave, schema,
+datas, hash do payload e versão
 antes da escrita. `AtomicFile` preserva a versão anterior em falhas de escrita;
 o snapshot só muda depois da gravação. Cache na pasta **noBackupFilesDir**:
 não se restaura uma base antiga de backup. Falhas de rede, TLS, redirect,
-formato ou integridade deixam a última base válida ativa. Ela não expira offline.
-Sem cache válido, continua a base embarcada. Reinstalar/limpar os dados também
-remove o histórico de versão: a próxima conexão passa a confiar na origem
-HTTPS novamente. O checksum do cache é revalidado ao iniciar.
+formato, assinatura ou integridade deixam a última base válida ativa. Ela não
+expira offline. Sem cache assinado válido, usa o bootstrap assinado incluído
+no APK e a base original embarcada. O cache legado sem assinatura não é
+promovido a confiável. Reinstalar/limpar dados remove o histórico de versão,
+mas não os pinos e o piso de versões incluídos no APK. Assinatura e checksum
+do cache são revalidados ao iniciar; não há alteração em “Manter”.
 
 ## Fontes e custos
 

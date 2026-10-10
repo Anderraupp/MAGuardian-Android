@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { digest, makeEnvelope, validateCatalog, MAX_CATALOG_BYTES } from "./threat-catalog";
+import { digest, MAX_CATALOG_BYTES } from "./threat-catalog";
+import { makeEnvelope, validateCatalog } from "./test-signing";
 
 const initial = () => JSON.parse(readFileSync(new URL("../threat-catalog/reviewed.json", import.meta.url), "utf8"));
 const reject = (change: (p: any) => void) => {

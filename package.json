@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "catalog:key-create": "tsx tools/catalog-key-create.ts",
+    "catalog:provision": "tsx tools/provision-catalog-trust.ts",
+    "catalog:check-trust": "tsx tools/check-catalog-trust.ts",
     "catalog:publish": "tsx tools/publish-threat-catalog.ts threat-catalog/reviewed.json",
     "catalog:test": "tsx --test shared/*.test.ts"
   },

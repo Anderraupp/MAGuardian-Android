@@ -1,13 +1,23 @@
 # Como Compilar o M&A Guardian no Android Studio
 
 ## Pré-requisitos
-- Android Studio Hedgehog (2023.1) ou mais recente
-- Android SDK 34 instalado
+- Android Studio compatível com Android Gradle Plugin 8.9.1 (Meerkat ou mais recente)
+- Android SDK 36 e Build Tools 35.0.0 instalados pelo SDK Manager
 - JDK 17 (incluído no Android Studio moderno)
 
 ---
 
 ## Passo 1 — Baixar o projeto do Replit
+
+Se já usa o repositório `MAGuardian-Android` no GitHub, entre na pasta do clone e
+execute `git pull origin main` depois da confirmação do envio. Abra a **raiz que
+contém `settings.gradle` e `gradlew`** no Android Studio. Nesse repositório,
+o módulo atual é `app/`; a subpasta parcial antiga `android-native/` não é o projeto.
+
+O catálogo assinado e a chave pública vêm no Git. Compilar ou usar o APK não
+precisa de `GH_TOKEN` nem da chave privada de assinatura do catálogo.
+
+Se usar o ZIP do workspace Replit, siga o procedimento abaixo:
 
 No Replit, clique nos **3 pontos** (menu) → **Download as ZIP**.
 Extraia o arquivo e localize a pasta **`android-native/`**.
