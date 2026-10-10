@@ -54,6 +54,8 @@ function envelope(version, signingKey) {
 }
 const catalogs = {
   "old-bootstrap": envelope(10, old), "old-cache": envelope(11, old),
+  // Highest version accepted by the old APK, seeded without any transition APK.
+  "direct-old-cache": envelope(13, old),
   successor: envelope(12, successor), "revoked-cache": envelope(13, old),
   "recovery-bootstrap": envelope(14, successor), "revoked-update": envelope(15, old),
   "recovery-update": envelope(16, successor)

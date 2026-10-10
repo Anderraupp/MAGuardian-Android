@@ -4,6 +4,12 @@ on:
   push:
     branches: [qa/catalog-key-rotation]
   workflow_dispatch:
+    inputs:
+      route:
+        description: Disposable APK upgrade route
+        type: choice
+        options: [three-step, direct]
+        default: three-step
 
 permissions:
   contents: read
@@ -44,7 +50,7 @@ jobs:
           sudo chmod a+rw /dev/kvm
           test -r /dev/kvm
           test -w /dev/kvm
-      - name: Upgrade three QA APKs without clearing data
+      - name: Upgrade QA APKs without clearing data
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -53,7 +59,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-boot-anim -camera-back none
-          script: DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh --rotation
+          script: DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh ${{ inputs.route == 'direct' && '--rotation-direct' || '--rotation' }}
       - name: Confirm production sources and version were not modified
         if: always()
         run: git diff --exit-code -- app/src/main app/build.gradle build.gradle gradle.properties threat-catalog/trusted-keys.json shared/catalog-trust.ts

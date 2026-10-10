@@ -40,6 +40,9 @@ test("QA rotation fixtures are isolated, correctly signed and contain immutable 
       assert.equal(source.includes("10, 13, true"), stage === "recovery");
       const bootstrap = JSON.parse(fs.readFileSync(path.join(assets, "threat-catalog-bootstrap.json")));
       assert.equal(bootstrap.keyId, stage === "recovery" ? policy.successor : policy.old);
+      const directCache = JSON.parse(fs.readFileSync(path.join(assets, "rotation-direct-old-cache.json")));
+      assert.equal(directCache.keyId, policy.old);
+      assert.equal(JSON.parse(directCache.payload).version, 13);
       for (const file of fs.readdirSync(assets).filter(f => f.endsWith(".json") && f !== "rotation-policy.json")) {
         const envelope = JSON.parse(fs.readFileSync(path.join(assets, file)));
         const name = envelope.keyId === policy.old ? "old" : "successor";

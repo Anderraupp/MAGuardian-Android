@@ -56,7 +56,13 @@ adb_cmd shell settings put global window_animation_scale 0
 adb_cmd shell settings put global transition_animation_scale 0
 adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
-if [[ "${1:-}" == "--rotation" ]]; then
+if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" ]]; then
+  route=three-step
+  stages=(old transition recovery)
+  if [[ "$1" == "--rotation-direct" ]]; then
+    route=direct
+    stages=(old recovery)
+  fi
   # No clear/uninstall between stages: package-manager upgrade must retain data.
   [[ -z "$(adb_cmd shell pm path "$PKG" | tr -d '\r')" ]] || {
     echo "Rotation requires a fresh disposable package; existing installation refused." >&2; exit 1;
@@ -72,7 +78,9 @@ if [[ "${1:-}" == "--rotation" ]]; then
   # All downloads are local signed fixtures: the entire upgrade rehearsal is offline.
   adb_cmd shell svc wifi disable
   adb_cmd shell svc data disable
-  for stage in old transition recovery; do
+  : > "$OUT/apk-checksums.txt"
+  printf '%s\n' "$route" > "$OUT/rotation-route.txt"
+  for stage in "${stages[@]}"; do
     bash gradlew --no-daemon :app:assembleCatalogValidation \
       "-PcatalogRotationStage=$stage" | tee "$OUT/build-$stage.log"
     apk=app/build/outputs/apk/catalogValidation/app-catalogValidation.apk
@@ -80,14 +88,18 @@ if [[ "${1:-}" == "--rotation" ]]; then
     adb_cmd shell am force-stop "$PKG"
     adb_cmd install -r "$apk"
     run_tests "rotation-$stage" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
-      -e rotationPhase "$stage"
+      -e rotationPhase "$stage" -e rotationRoute "$route"
     adb_cmd shell am force-stop "$PKG"
     run_tests "rotation-$stage-restart" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
-      -e rotationPhase "$stage-restart"
+      -e rotationPhase "$stage-restart" -e rotationRoute "$route"
     adb_cmd shell dumpsys package "$PKG" | grep -E 'versionCode=|versionName=' \
       > "$OUT/package-$stage.txt"
   done
-  echo "Rotation passed: APKs 41/42/43; catalogs 11/12/13/14/16; Manter preserved."
+  if [[ "$route" == direct ]]; then
+    echo "Direct recovery passed: APKs 41/43 only; revoked cache 13 rejected; bootstrap 14; update 16; Manter preserved."
+  else
+    echo "Rotation passed: APKs 41/42/43; catalogs 11/12/13/14/16; Manter preserved."
+  fi
   exit 0
 elif [[ -n "${1:-}" ]]; then
   echo "Unknown validation mode: $1" >&2; exit 1
