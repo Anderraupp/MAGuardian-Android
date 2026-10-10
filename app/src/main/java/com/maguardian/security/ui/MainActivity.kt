@@ -107,6 +107,7 @@ class MainActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) {
             Toast.makeText(this, "✓ Notificações ativadas! Você será alertado sobre ameaças.", Toast.LENGTH_LONG).show()
+            checkUpdateNotification()
         }
     }
 
@@ -137,6 +138,7 @@ class MainActivity : AppCompatActivity() {
         appUpdateManager = AppUpdateManagerFactory.create(this)
         appUpdateManager.registerListener(installStateListener)
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
             if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
                 && info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
             ) {
@@ -179,6 +181,17 @@ class MainActivity : AppCompatActivity() {
             "Base embarcada disponível offline.\n" +
             (base?.let { "Catálogo v${it.version}: ${it.indicators.size} indicadores revisados.\n" } ?: "") +
             "Última verificação bem-sucedida: $date\n${PrefsHelper.getCatalogStatus(this)}"
+    }
+
+    private fun checkUpdateNotification() {
+        if (!::appUpdateManager.isInitialized) return
+        appUpdateManager.appUpdateInfo
+            .addOnSuccessListener { info ->
+                com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
+            }
+            .addOnFailureListener { error ->
+                Log.w(TAG, "Google Play não informou atualização disponível", error)
+            }
     }
 
     private fun showUpdateDialog(info: AppUpdateInfo) {
@@ -267,6 +280,7 @@ class MainActivity : AppCompatActivity() {
         // Verifica se uma atualização já foi baixada e aguarda instalação
         if (::appUpdateManager.isInitialized) {
             appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+                com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
                 if (info.installStatus() == InstallStatus.DOWNLOADED) {
                     showInstallSnackbar()
                 }

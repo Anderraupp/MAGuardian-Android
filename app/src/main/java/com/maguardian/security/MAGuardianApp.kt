@@ -8,6 +8,7 @@ class MAGuardianApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        com.maguardian.security.service.AppUpdateCheckJobService.schedule(this)
         com.maguardian.security.data.ThreatCatalog.initialize(this)
         com.maguardian.security.data.ThreatCatalogUpdater.schedule(this)
         com.maguardian.security.data.ThreatCatalogUpdater.update(this)

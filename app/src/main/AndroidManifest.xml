@@ -88,6 +88,12 @@
             android:exported="false"
             android:theme="@style/Theme.MAGuardian" />
 
+        <!-- Verificação periódica de novas versões no Google Play -->
+        <service
+            android:name=".service.AppUpdateCheckJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+
         <!-- Monitoramento de Ligações — funciona em TODAS as versões Android -->
         <service
             android:name=".service.CallMonitorService"
