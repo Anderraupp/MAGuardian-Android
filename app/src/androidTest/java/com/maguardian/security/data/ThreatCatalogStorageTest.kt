@@ -185,15 +185,22 @@ class ThreatCatalogStorageTest {
     @Test fun writeFailurePreservesThePreviousAtomicFile() {
         ThreatCatalog.install(ctx, CatalogTestEnvironment.catalog(1))
         val before = cache.readText()
-        // /dev/full throws ENOSPC on write, exercising install's failWrite path.
+        // /dev/full throws ENOSPC. On SELinux-restricted emulators, /dev/null
+        // accepts the bytes but fd.sync throws, exercising the same rollback path.
         val full = File("/dev/full")
-        org.junit.Assume.assumeTrue("Emulator must provide /dev/full", full.exists() && full.canWrite())
-        android.system.Os.symlink(full.path, cache.path + ".new")
+        val sink = if (full.exists() && full.canWrite()) full else File("/dev/null")
+        assertTrue("Need a writable failure-injection device", sink.exists() && sink.canWrite())
+        android.system.Os.symlink(sink.path, cache.path + ".new")
         try {
             try {
                 ThreatCatalog.install(ctx, CatalogTestEnvironment.catalog(2))
                 fail("Write should fail")
-            } catch (_: java.io.IOException) {}
+            } catch (failure: java.io.IOException) {
+                if (sink.path == "/dev/null") {
+                    assertTrue("Expected a real sync failure, not a skipped write",
+                        failure is java.io.SyncFailedException)
+                }
+            }
             assertEquals(1, ThreatCatalog.snapshot()!!.version)
             assertEquals(before, cache.readText())
         } finally { File(cache.path + ".new").delete() }
