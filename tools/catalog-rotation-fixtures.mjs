@@ -60,6 +60,16 @@ const catalogs = {
   "recovery-bootstrap": envelope(14, successor), "revoked-update": envelope(15, old),
   "recovery-update": envelope(16, successor)
 };
+// Negative persisted-cache fixtures, never publishable catalogs. Recomputing
+// the checksum cannot authorize removal of indicators without a new signature.
+const tampered = JSON.parse(catalogs["direct-old-cache"]);
+const tamperedPayload = JSON.parse(tampered.payload);
+tamperedPayload.indicators = [];
+tampered.payload = JSON.stringify(tamperedPayload);
+tampered.sha256 = crypto.createHash("sha256").update(tampered.payload).digest("hex");
+catalogs["corrupt-tampered-cache"] = JSON.stringify(tampered);
+catalogs["corrupt-truncated-cache"] = catalogs["direct-old-cache"].slice(
+  0, Math.floor(catalogs["direct-old-cache"].length / 2));
 for (const [name, raw] of Object.entries(catalogs)) {
   fs.writeFileSync(path.join(assets, `rotation-${name}.json`), raw);
 }

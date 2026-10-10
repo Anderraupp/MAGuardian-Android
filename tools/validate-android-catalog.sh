@@ -63,7 +63,8 @@ adb_cmd shell settings put global window_animation_scale 0
 adb_cmd shell settings put global transition_animation_scale 0
 adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
-if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" == "--rotation-interrupted" ]]; then
+if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" == "--rotation-interrupted" ||
+      "${1:-}" == "--rotation-corrupt-truncated" || "${1:-}" == "--rotation-corrupt-tampered" ]]; then
   route=three-step
   stages=(old transition recovery)
   if [[ "$1" == "--rotation-direct" || "$1" == "--rotation-interrupted" ]]; then
@@ -71,6 +72,10 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
     stages=(old recovery)
   fi
   [[ "$1" != "--rotation-interrupted" ]] || route=interrupted
+  if [[ "$1" == --rotation-corrupt-* ]]; then
+    route="${1#--rotation-}"
+    stages=(old recovery)
+  fi
   record_package() {
     local phase="$1" installed_apk
     adb_cmd shell dumpsys package "$PKG" | grep -E 'versionCode=|versionName=' \
@@ -105,6 +110,16 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
     apk=app/build/outputs/apk/catalogValidation/app-catalogValidation.apk
     sha256sum "$apk" | sed "s|$apk|$stage QA APK|" >> "$OUT/apk-checksums.txt"
     adb_cmd shell am force-stop "$PKG"
+    if [[ "$route" == corrupt-* && "$stage" == recovery ]]; then
+      run_tests corrupt-prepare -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+        -e rotationPhase corrupt-prepare -e rotationRoute "$route"
+      record_package corrupt-prepare
+      adb_cmd exec-out run-as "$PKG" cat no_backup/threat-catalog.json \
+        > "$OUT/cache-corrupt-prepare.json"
+      sha256sum "$OUT/cache-corrupt-prepare.json" > "$OUT/cache-corrupt-prepare.sha256"
+      cmp "$OUT/installed-old.sha256" "$OUT/installed-corrupt-prepare.sha256"
+      adb_cmd shell am force-stop "$PKG"
+    fi
     if [[ "$route" == interrupted && "$stage" == recovery ]]; then
       record_package before-session
       # Write the complete recovery APK into PackageInstaller, but NEVER commit
@@ -145,12 +160,14 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
     run_tests "rotation-$stage-restart" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
       -e rotationPhase "$stage-restart" -e rotationRoute "$route"
     record_package "$stage"
-    if [[ "$route" == interrupted ]]; then
+    if [[ "$route" == interrupted || "$route" == corrupt-* ]]; then
       sha256sum "$apk" | cut -d ' ' -f 1 > "$OUT/expected-$stage.sha256"
       cmp "$OUT/expected-$stage.sha256" "$OUT/installed-$stage.sha256"
     fi
   done
-  if [[ "$route" == interrupted ]]; then
+  if [[ "$route" == corrupt-* ]]; then
+    echo "Corrupt-cache recovery passed: $route cache rejected; direct APK 41 to 43; signed bootstrap 14 and update 16; local detection and Manter preserved without clearing data."
+  elif [[ "$route" == interrupted ]]; then
     echo "Interrupted recovery passed: staged/abandoned session kept APK 41 and catalog 13; real upgrade to 43 recovered via bootstrap 14 and update 16; Manter preserved."
   elif [[ "$route" == direct ]]; then
     echo "Direct recovery passed: APKs 41/43 only; revoked cache 13 rejected; bootstrap 14; update 16; Manter preserved."

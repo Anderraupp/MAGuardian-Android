@@ -2,13 +2,13 @@ name: Validate catalog key rotation safely
 
 on:
   push:
-    branches: [qa/catalog-key-rotation, qa/catalog-direct-recovery, qa/catalog-interrupted-recovery]
+    branches: [qa/catalog-key-rotation, qa/catalog-direct-recovery, qa/catalog-interrupted-recovery, qa/catalog-corrupt-cache]
   workflow_dispatch:
     inputs:
       route:
         description: Disposable APK upgrade route
         type: choice
-        options: [three-step, direct, interrupted]
+        options: [three-step, direct, interrupted, corrupt]
         default: three-step
 
 permissions:
@@ -22,6 +22,10 @@ jobs:
   disposable-upgrades:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        damage: ${{ (inputs.route == 'corrupt' || github.ref == 'refs/heads/qa/catalog-corrupt-cache') && fromJSON('["truncated","tampered"]') || fromJSON('["none"]') }}
     env:
       ANDROID_VALIDATION_OUTPUT: ${{ github.workspace }}/generated-artifacts/android-rotation
     steps:
@@ -59,7 +63,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-boot-anim -camera-back none
-          script: DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh ${{ (inputs.route == 'interrupted' || github.ref == 'refs/heads/qa/catalog-interrupted-recovery') && '--rotation-interrupted' || ((inputs.route == 'direct' || (github.event_name == 'push' && github.ref == 'refs/heads/qa/catalog-direct-recovery')) && '--rotation-direct' || '--rotation') }}
+          script: DISPOSABLE_ANDROID=true ANDROID_SERIAL=emulator-5554 bash tools/validate-android-catalog.sh ${{ matrix.damage != 'none' && format('--rotation-corrupt-{0}', matrix.damage) || ((inputs.route == 'interrupted' || github.ref == 'refs/heads/qa/catalog-interrupted-recovery') && '--rotation-interrupted' || ((inputs.route == 'direct' || (github.event_name == 'push' && github.ref == 'refs/heads/qa/catalog-direct-recovery')) && '--rotation-direct' || '--rotation')) }}
       - name: Confirm production sources and version were not modified
         if: always()
         run: git diff --exit-code -- app/src/main app/build.gradle build.gradle gradle.properties threat-catalog/trusted-keys.json shared/catalog-trust.ts
@@ -67,7 +71,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: android-catalog-rotation-evidence
+          name: ${{ matrix.damage == 'none' && 'android-catalog-rotation-evidence' || format('android-catalog-corrupt-{0}-evidence', matrix.damage) }}
           path: generated-artifacts/android-rotation/
           retention-days: 7
           if-no-files-found: warn

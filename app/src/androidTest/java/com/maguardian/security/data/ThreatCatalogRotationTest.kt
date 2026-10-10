@@ -6,6 +6,7 @@ import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
+import java.io.FileOutputStream
 
 /** Real package upgrades. No injected keys, reflection resets or isolated preferences. */
 class ThreatCatalogRotationTest {
@@ -16,12 +17,15 @@ class ThreatCatalogRotationTest {
         check(ctx.packageName == "com.maguardian.security.catalogvalidation")
         val phase = requireNotNull(args.getString("rotationPhase"))
         val route = args.getString("rotationRoute") ?: "three-step"
-        check(route in setOf("three-step", "direct", "interrupted"))
+        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered"))
         val direct = route != "three-step"
         val interrupted = route == "interrupted"
+        val corrupt = route.startsWith("corrupt-")
+        val damagedAsset = "$route-cache"
         val directPhases = setOf("old", "old-restart", "recovery", "recovery-restart")
         val interruptedPhases = setOf("interrupted-staged", "interrupted-abandoned")
-        check(!direct || phase in directPhases || (interrupted && phase in interruptedPhases))
+        check(!direct || phase in directPhases || (interrupted && phase in interruptedPhases) ||
+            (corrupt && phase == "corrupt-prepare"))
         val oldCache = if (direct) "direct-old-cache" else "old-cache"
         val oldVersion = if (direct) 13 else 11
         fun asset(name: String) = ctx.assets.open("rotation-$name.json").bufferedReader().use { it.readText() }
@@ -93,6 +97,36 @@ class ThreatCatalogRotationTest {
                     keptAndProtected(13)
                 }
             }
+            "corrupt-prepare" -> {
+                assertTrue(corrupt)
+                assertEquals("old", stage)
+                assertEquals("direct-old", checkpoint.readText())
+                assertEquals(asset(oldCache), cache.readText())
+                ThreatCatalog.initialize(ctx)
+                keptAndProtected(13)
+                val damaged = asset(damagedAsset)
+                // Prove corruption under the STILL ACTIVE old key, before the
+                // recovery APK revokes it. Tampered checksum alone is valid.
+                try {
+                    ThreatCatalog.parse(damaged)
+                    fail("Damaged cache fixture was accepted")
+                } catch (e: Exception) {
+                    if (route == "corrupt-truncated") {
+                        assertTrue("Truncated JSON must fail parsing", e is org.json.JSONException)
+                    } else {
+                        assertTrue(e is IllegalArgumentException)
+                        assertEquals("Assinatura do catálogo inválida", e.message)
+                    }
+                }
+                FileOutputStream(cache).use {
+                    it.write(damaged.toByteArray(Charsets.UTF_8))
+                    it.fd.sync()
+                }
+                assertEquals(damaged, cache.readText())
+                checkpoint.writeText("$route-ready")
+                // In-process protection remains based on the last good snapshot.
+                keptAndProtected(13)
+            }
             "transition" -> {
                 assertEquals("transition", stage)
                 assertEquals(setOf(oldId, nextId), ThreatCatalogKeys.trusted.keys)
@@ -120,14 +154,20 @@ class ThreatCatalogRotationTest {
                 assertEquals("recovery", stage)
                 assertTrue(ThreatCatalogKeys.trusted.getValue(oldId).revoked)
                 assertFalse(ThreatCatalogKeys.trusted.getValue(nextId).revoked)
-                assertEquals(if (direct) "direct-old" else "revocation-ready", checkpoint.readText())
-                val rejectedCache = asset(if (direct) "direct-old-cache" else "revoked-cache")
+                assertEquals(if (corrupt) "$route-ready" else if (direct) "direct-old" else "revocation-ready",
+                    checkpoint.readText())
+                val rejectedCache = asset(if (corrupt) damagedAsset else if (direct) "direct-old-cache" else "revoked-cache")
                 assertEquals(rejectedCache, cache.readText())
                 try {
                     ThreatCatalog.parse(cache.readText())
                     fail("Revoked persisted cache accepted")
-                } catch (e: IllegalArgumentException) {
-                    assertEquals("Chave de assinatura revogada", e.message)
+                } catch (e: Exception) {
+                    if (route == "corrupt-truncated") {
+                        assertTrue("Truncated JSON must not become a snapshot", e is org.json.JSONException)
+                    } else {
+                        assertTrue(e is IllegalArgumentException)
+                        assertEquals("Chave de assinatura revogada", e.message)
+                    }
                 }
                 ThreatCatalog.initialize(ctx)
                 // Cache bytes remain but are NOT used. Bootstrap is signed by B.

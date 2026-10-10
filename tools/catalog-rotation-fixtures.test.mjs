@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-test("QA rotation fixtures are isolated, correctly signed and contain immutable stage policies", () => {
+test("QA fixtures isolate immutable policies, valid signatures and deliberate cache corruption", () => {
   // Run a copied tool, so this smoke check cannot disturb a real emulator session.
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "catalog-rotation-"));
   try {
@@ -43,7 +43,19 @@ test("QA rotation fixtures are isolated, correctly signed and contain immutable 
       const directCache = JSON.parse(fs.readFileSync(path.join(assets, "rotation-direct-old-cache.json")));
       assert.equal(directCache.keyId, policy.old);
       assert.equal(JSON.parse(directCache.payload).version, 13);
-      for (const file of fs.readdirSync(assets).filter(f => f.endsWith(".json") && f !== "rotation-policy.json")) {
+      const truncated = fs.readFileSync(path.join(assets, "rotation-corrupt-truncated-cache.json"), "utf8");
+      assert.throws(() => JSON.parse(truncated), SyntaxError);
+      const tampered = JSON.parse(fs.readFileSync(path.join(assets, "rotation-corrupt-tampered-cache.json")));
+      assert.equal(tampered.keyId, policy.old);
+      assert.equal(tampered.signature, directCache.signature);
+      assert.deepEqual(JSON.parse(tampered.payload).indicators, []);
+      assert.equal(crypto.createHash("sha256").update(tampered.payload).digest("hex"), tampered.sha256);
+      const oldPublicKey = crypto.createPublicKey(fs.readFileSync(path.join(session, "old.pem")));
+      assert.equal(crypto.verify("sha256",
+        Buffer.from(`maguardian/threat-catalog/v2\n${tampered.keyId}\n${tampered.sha256}\n${tampered.payload}`),
+        oldPublicKey, Buffer.from(tampered.signature, "base64")), false);
+      for (const file of fs.readdirSync(assets).filter(f => f.endsWith(".json") &&
+          f !== "rotation-policy.json" && !f.startsWith("rotation-corrupt-"))) {
         const envelope = JSON.parse(fs.readFileSync(path.join(assets, file)));
         const name = envelope.keyId === policy.old ? "old" : "successor";
         const privateKey = crypto.createPrivateKey(fs.readFileSync(path.join(session, `${name}.pem`)));
