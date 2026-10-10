@@ -225,8 +225,12 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
     cmp "$OUT/base-concurrent-write.json" "$OUT/base-concurrent-restart.json"
     adb_cmd exec-out run-as "$PKG" cat no_backup/concurrent-evidence.json > "$OUT/concurrent-evidence.json"
     adb_cmd shell am force-stop "$PKG"
-    run_tests concurrent-orders -e class \
+    run_tests concurrent-orders -e rotationRoute concurrent -e class \
       'com.maguardian.security.data.ThreatCatalogStorageTest#concurrentLowerFirstKeepsTheHigherSignedCatalog,com.maguardian.security.data.ThreatCatalogStorageTest#concurrentHigherFirstRejectsTheOlderSignedCatalog,com.maguardian.security.data.ThreatCatalogStorageTest#simultaneousInstallKeepsTheHigherSignedCatalog'
+    grep -q 'OK (3 tests)' "$OUT/concurrent-orders.log"
+    for first in 12 13 null; do
+      grep -q "CONCURRENT_ORDER_OK first=$first " "$OUT/concurrent-orders.log"
+    done
     adb_cmd shell am force-stop "$PKG"
     echo "Concurrent install passed: both monitor orders and simultaneous start; exact newer signed bytes/hash, cold process detection and Manter preserved; no production synchronization change, preference rewrite, APK upgrade or reboot."
   elif [[ "$route" == atomic-pending || "$route" == atomic-committed ]]; then

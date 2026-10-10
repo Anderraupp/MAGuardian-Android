@@ -38,6 +38,8 @@ else if(cmd.startsWith("shell am instrument ")) {
   }
   if(phase?.startsWith("concurrent-") && process.env.QA_NO_STATUS!=="true")
     console.log("CONCURRENT_OK phase="+phase+" version=13");
+  if(!phase) for(const first of [12,13,"null"])
+    console.log("CONCURRENT_ORDER_OK first="+first+" version=13");
   console.log(phase ? "OK (1 test)" : "OK (3 tests)");
 }
 `, { mode: 0o700 });
