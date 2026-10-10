@@ -23,6 +23,34 @@ class ThreatCatalogStorageTest {
         CatalogTestEnvironment.resetMemory()
         if (::ctx.isInitialized) ctx.close()
     }
+    @Test fun concurrentLowerFirstKeepsTheHigherSignedCatalog() = concurrentInstall(22)
+    @Test fun concurrentHigherFirstRejectsTheOlderSignedCatalog() = concurrentInstall(23)
+    @Test fun simultaneousInstallKeepsTheHigherSignedCatalog() = concurrentInstall(null)
+
+    private fun concurrentInstall(first: Int?) {
+        val hash = CatalogTestEnvironment.sha(File(ctx.applicationInfo.sourceDir).readBytes())
+        val indicator = CatalogTestEnvironment.indicator(pkg, hash)
+        val lower = CatalogTestEnvironment.catalog(22, indicator)
+        val higher = CatalogTestEnvironment.catalog(23, indicator)
+        assertTrue(ThreatCatalog.install(ctx, CatalogTestEnvironment.catalog(21, indicator)))
+        PrefsHelper.markThreatKept(ctx, pkg)
+        // Drain apply() before taking evidence; no preference write during the race.
+        assertTrue(ctx.getSharedPreferences("maguardian_prefs", 0).edit().commit())
+        val kept = PrefsHelper.getThreats(ctx).toString()
+        val results = CatalogConcurrentInstall.race(ctx, lower, higher, first)
+        CatalogConcurrentInstall.assertResults(results, 22, 23, first)
+        assertEquals(ThreatCatalog.parse(higher), ThreatCatalog.snapshot())
+        assertArrayEquals(higher.toByteArray(Charsets.UTF_8), cache.readBytes())
+        assertEquals(CatalogTestEnvironment.sha(higher.toByteArray(Charsets.UTF_8)),
+            CatalogTestEnvironment.sha(cache.readBytes()))
+        assertFalse(File(cache.path + ".new").exists())
+        assertFalse(File(cache.path + ".bak").exists())
+        assertNotNull(ThreatCatalog.match(ctx, pkg))
+        assertTrue(PrefsHelper.isThreatKept(ctx, pkg))
+        assertNull(MalwareDatabase.isMalware(pkg, ctx))
+        assertEquals(kept, PrefsHelper.getThreats(ctx).toString())
+    }
+
     private fun rejected(raw: String) {
         try {
             ThreatCatalog.install(ctx, raw)

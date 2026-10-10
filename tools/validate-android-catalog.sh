@@ -71,10 +71,14 @@ adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
 if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" == "--rotation-interrupted" ||
       "${1:-}" == "--rotation-corrupt-truncated" || "${1:-}" == "--rotation-corrupt-tampered" ||
-      "${1:-}" == "--atomic-pending" || "${1:-}" == "--atomic-committed" || "${1:-}" == "--rotation-oversized" ]]; then
+      "${1:-}" == "--atomic-pending" || "${1:-}" == "--atomic-committed" || "${1:-}" == "--rotation-oversized" ||
+      "${1:-}" == "--concurrent-install" ]]; then
   route=three-step
   stages=(old transition recovery)
-  if [[ "$1" == "--rotation-direct" || "$1" == "--rotation-interrupted" ]]; then
+  if [[ "$1" == "--concurrent-install" ]]; then
+    route=concurrent
+    stages=(old)
+  elif [[ "$1" == "--rotation-direct" || "$1" == "--rotation-interrupted" ]]; then
     route=direct
     stages=(old recovery)
   elif [[ "$1" == "--rotation-oversized" ]]; then
@@ -199,7 +203,33 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" ==
       cmp "$OUT/expected-$stage.sha256" "$OUT/installed-$stage.sha256"
     fi
   done
-  if [[ "$route" == atomic-pending || "$route" == atomic-committed ]]; then
+  if [[ "$route" == concurrent ]]; then
+    capture_concurrent() {
+      local phase="$1"
+      adb_cmd exec-out run-as "$PKG" cat no_backup/threat-catalog.json > "$OUT/base-$phase.json"
+      adb_cmd exec-out run-as "$PKG" cat shared_prefs/maguardian_prefs.xml > "$OUT/prefs-$phase.xml"
+      sha256sum "$OUT/base-$phase.json" "$OUT/prefs-$phase.xml" > "$OUT/storage-$phase.sha256"
+    }
+    capture_concurrent before-race
+    for phase in concurrent-write concurrent-restart; do
+      adb_cmd shell am force-stop "$PKG"
+      run_tests "$phase" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+        -e rotationPhase "$phase" -e rotationRoute concurrent
+      grep -q "CONCURRENT_OK phase=$phase " "$OUT/$phase.log"
+      capture_concurrent "$phase"
+      cmp "$OUT/prefs-before-race.xml" "$OUT/prefs-$phase.xml"
+      record_package "$phase"
+      cmp "$OUT/installed-old.sha256" "$OUT/installed-$phase.sha256"
+    done
+    grep -q 'CONCURRENT_RESULTS lower=' "$OUT/concurrent-write.log"
+    cmp "$OUT/base-concurrent-write.json" "$OUT/base-concurrent-restart.json"
+    adb_cmd exec-out run-as "$PKG" cat no_backup/concurrent-evidence.json > "$OUT/concurrent-evidence.json"
+    adb_cmd shell am force-stop "$PKG"
+    run_tests concurrent-orders -e class \
+      'com.maguardian.security.data.ThreatCatalogStorageTest#concurrentLowerFirstKeepsTheHigherSignedCatalog,com.maguardian.security.data.ThreatCatalogStorageTest#concurrentHigherFirstRejectsTheOlderSignedCatalog,com.maguardian.security.data.ThreatCatalogStorageTest#simultaneousInstallKeepsTheHigherSignedCatalog'
+    adb_cmd shell am force-stop "$PKG"
+    echo "Concurrent install passed: both monitor orders and simultaneous start; exact newer signed bytes/hash, cold process detection and Manter preserved; no production synchronization change, preference rewrite, APK upgrade or reboot."
+  elif [[ "$route" == atomic-pending || "$route" == atomic-committed ]]; then
     write_phase=atomic-write
     marker=ATOMIC_PENDING
     evidence_file=atomic-pending-ready.json

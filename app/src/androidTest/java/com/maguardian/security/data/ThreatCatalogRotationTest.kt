@@ -19,7 +19,7 @@ class ThreatCatalogRotationTest {
         check(ctx.packageName == "com.maguardian.security.catalogvalidation")
         val phase = requireNotNull(args.getString("rotationPhase"))
         val route = args.getString("rotationRoute") ?: "three-step"
-        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "atomic-pending", "atomic-committed", "oversized"))
+        check(route in setOf("three-step", "direct", "interrupted", "corrupt-truncated", "corrupt-tampered", "atomic-pending", "atomic-committed", "oversized", "concurrent"))
         val atomicPending = route == "atomic-pending"
         val atomicCommitted = route == "atomic-committed"
         if (atomicPending) {
@@ -56,6 +56,7 @@ class ThreatCatalogRotationTest {
         val atomicCheckpoint = File(ctx.noBackupFilesDir, "atomic-pending-ready.json")
         val committedCheckpoint = File(ctx.noBackupFilesDir, "atomic-committed-ready.json")
         val preferences = File(ctx.applicationInfo.dataDir, "shared_prefs/maguardian_prefs.xml")
+        val concurrentCheckpoint = File(ctx.noBackupFilesDir, "concurrent-evidence.json")
         val oversizedCheckpoint = File(ctx.noBackupFilesDir, "oversized-evidence.json")
         val partial = "{\"format\":2,\"payload\":\"unfinished".toByteArray(Charsets.UTF_8)
         fun sha(bytes: ByteArray) = java.security.MessageDigest.getInstance("SHA-256")
@@ -95,6 +96,58 @@ class ThreatCatalogRotationTest {
             assertEquals(snapshot, ThreatCatalog.snapshot())
         }
         when (phase) {
+            "concurrent-write", "concurrent-restart" -> {
+                assertEquals("concurrent", route)
+                assertEquals("old", stage)
+                assertEquals("old", checkpoint.readText())
+                val higher = asset("direct-old-cache")
+                val expected = ThreatCatalog.parse(higher)
+                if (phase == "concurrent-write") {
+                    ThreatCatalog.initialize(ctx)
+                    keptAndProtected(11)
+                    val before = preferences.readBytes()
+                    val modified = preferences.lastModified()
+                    val results = CatalogConcurrentInstall.race(ctx, asset("concurrent-lower"), higher)
+                    CatalogConcurrentInstall.assertResults(results, 12, 13)
+                    assertEquals(expected, ThreatCatalog.snapshot())
+                    assertArrayEquals(higher.toByteArray(Charsets.UTF_8), cache.readBytes())
+                    assertArrayEquals(before, preferences.readBytes())
+                    assertEquals(modified, preferences.lastModified())
+                    val evidence = JSONObject().put("pid", Process.myPid())
+                        .put("diskSha256", sha(cache.readBytes())).put("snapshotHash", expected.hash)
+                        .put("prefsSha256", sha(before)).put("prefsModified", modified)
+                        .put("lower", results[0].toString()).put("higher", results[1].toString())
+                    FileOutputStream(concurrentCheckpoint).use {
+                        it.write(evidence.toString().toByteArray(Charsets.UTF_8)); it.fd.sync()
+                    }
+                    InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+                        putString("stream", "CONCURRENT_RESULTS lower=${results[0]} higher=${results[1]}\n")
+                    })
+                } else {
+                    val evidence = JSONObject(concurrentCheckpoint.readText())
+                    assertNotEquals("Must be a new Android process", evidence.getInt("pid"), Process.myPid())
+                    assertNull("No reflection reset or cached snapshot", ThreatCatalog.snapshot())
+                    assertEquals(evidence.getString("diskSha256"), sha(cache.readBytes()))
+                    assertEquals(evidence.getString("snapshotHash"), expected.hash)
+                    assertEquals(evidence.getString("prefsSha256"), sha(preferences.readBytes()))
+                    assertEquals(evidence.getLong("prefsModified"), preferences.lastModified())
+                    ThreatCatalog.initialize(ctx)
+                    assertEquals(expected, ThreatCatalog.snapshot())
+                    // Rejection in the cold reader must not rewrite either file.
+                    reject("concurrent-lower", "Versão antiga rejeitada")
+                }
+                keptAndProtected(13)
+                assertEquals(expected, ThreatCatalog.snapshot())
+                assertArrayEquals(higher.toByteArray(Charsets.UTF_8), cache.readBytes())
+                assertFalse(pending.exists())
+                assertFalse(File(cache.path + ".bak").exists())
+                val evidence = JSONObject(concurrentCheckpoint.readText())
+                assertEquals(evidence.getString("prefsSha256"), sha(preferences.readBytes()))
+                assertEquals(evidence.getLong("prefsModified"), preferences.lastModified())
+                InstrumentationRegistry.getInstrumentation().sendStatus(0, android.os.Bundle().apply {
+                    putString("stream", "CONCURRENT_OK phase=$phase pid=${Process.myPid()} version=13 diskSha256=${sha(cache.readBytes())} snapshotHash=${expected.hash} detection=true manter=true prefsUnchanged=true\n")
+                })
+            }
             "committed-write" -> {
                 assertTrue(atomicCommitted)
                 assertEquals("old", stage)
