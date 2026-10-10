@@ -26,6 +26,7 @@ jobs:
           npm install --ignore-scripts --no-audit --no-fund
           npm run catalog:check-trust
           node --test tools/catalog-rotation-fixtures.test.mjs
+          node --test tools/catalog-concurrent-driver.test.mjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

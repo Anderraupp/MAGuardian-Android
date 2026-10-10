@@ -49,6 +49,10 @@ class ThreatCatalogStorageTest {
         assertTrue(PrefsHelper.isThreatKept(ctx, pkg))
         assertNull(MalwareDatabase.isMalware(pkg, ctx))
         assertEquals(kept, PrefsHelper.getThreats(ctx).toString())
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().sendStatus(
+            0, android.os.Bundle().apply {
+                putString("stream", "CONCURRENT_ORDER_OK first=$first results=$results version=23 diskSha256=${CatalogTestEnvironment.sha(cache.readBytes())} snapshotHash=${ThreatCatalog.snapshot()!!.hash} detection=true manter=true\n")
+            })
     }
 
     private fun rejected(raw: String) {
