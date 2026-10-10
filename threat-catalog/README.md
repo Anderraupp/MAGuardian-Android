@@ -170,7 +170,7 @@ do cache são revalidados ao iniciar; não há alteração em “Manter”.
 
 A base inicial usa somente IOCs de Android GravityRAT publicados pela
 ESET, licença BSD-2-Clause, com atribuição integral no catálogo e no Android
-em **Fontes e licenças** (disponível offline). São os dois pacotes documentados
+em **Informações legais**, no rodapé da tela (disponível offline). São os dois pacotes documentados
 e os três hashes da mesma pesquisa; o detector exige a interseção pacote/hash.
 
 Não há scraper, crawler, API paga, VirusTotal nem promoção automática de

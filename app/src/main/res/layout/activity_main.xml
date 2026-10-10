@@ -804,11 +804,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Atualizar base de ameaças" />
-                <Button
-                    android:id="@+id/btnCatalogSources"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Fontes e licenças" />
             </LinearLayout>
 
             <!-- Estado vazio -->
@@ -904,6 +899,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
+
+            <Button
+                android:id="@+id/btnCatalogSources"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:minHeight="48dp"
+                android:text="Informações legais"
+                android:textAllCaps="false"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
 
         </LinearLayout>
 
