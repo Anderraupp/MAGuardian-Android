@@ -56,6 +56,42 @@ adb_cmd shell settings put global window_animation_scale 0
 adb_cmd shell settings put global transition_animation_scale 0
 adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
+if [[ "${1:-}" == "--rotation" ]]; then
+  # No clear/uninstall between stages: package-manager upgrade must retain data.
+  [[ -z "$(adb_cmd shell pm path "$PKG" | tr -d '\r')" ]] || {
+    echo "Rotation requires a fresh disposable package; existing installation refused." >&2; exit 1;
+  }
+  node tools/catalog-rotation-fixtures.mjs new-session
+  bash gradlew --no-daemon :app:assembleDebug :app:assembleCatalogValidation \
+    :app:assembleCatalogValidationAndroidTest -PcatalogRotationStage=old | tee "$OUT/build-old-fixture.log"
+  FIXTURE=app/build/catalogRotationSession/fixture.apk
+  cp app/build/outputs/apk/androidTest/catalogValidation/app-catalogValidation-androidTest.apk "$FIXTURE"
+  sha256sum "$FIXTURE" | cut -d ' ' -f 1 > app/build/catalogRotationSession/fixture-sha256.txt
+  adb_cmd install "$FIXTURE"
+  # Catalogs now refer to the exact, unchanged harmless instrumentation APK.
+  # All downloads are local signed fixtures: the entire upgrade rehearsal is offline.
+  adb_cmd shell svc wifi disable
+  adb_cmd shell svc data disable
+  for stage in old transition recovery; do
+    bash gradlew --no-daemon :app:assembleCatalogValidation \
+      "-PcatalogRotationStage=$stage" | tee "$OUT/build-$stage.log"
+    apk=app/build/outputs/apk/catalogValidation/app-catalogValidation.apk
+    sha256sum "$apk" | sed "s|$apk|$stage QA APK|" >> "$OUT/apk-checksums.txt"
+    adb_cmd shell am force-stop "$PKG"
+    adb_cmd install -r "$apk"
+    run_tests "rotation-$stage" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+      -e rotationPhase "$stage"
+    adb_cmd shell am force-stop "$PKG"
+    run_tests "rotation-$stage-restart" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+      -e rotationPhase "$stage-restart"
+    adb_cmd shell dumpsys package "$PKG" | grep -E 'versionCode=|versionName=' \
+      > "$OUT/package-$stage.txt"
+  done
+  echo "Rotation passed: APKs 41/42/43; catalogs 11/12/13/14/16; Manter preserved."
+  exit 0
+elif [[ -n "${1:-}" ]]; then
+  echo "Unknown validation mode: $1" >&2; exit 1
+fi
 node tools/catalog-validation-server.mjs > "$OUT/catalog-server.log" 2>&1 &
 SERVER_PID=$!
 for _ in $(seq 1 30); do
