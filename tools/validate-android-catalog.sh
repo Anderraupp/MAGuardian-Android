@@ -39,7 +39,11 @@ restore_network() {
 collect_evidence() {
   adb_cmd logcat -d -s BootReceiver:I ThreatCatalogJobService:I AndroidRuntime:E > "$OUT/android-logcat.txt" || true
   adb_cmd shell dumpsys jobscheduler > "$OUT/jobs-final.txt" || true
-  adb_cmd exec-out run-as "$PKG" cat cache/catalog-ui-failure.png > "$OUT/catalog-ui-failure.png" 2>/dev/null || rm -f "$OUT/catalog-ui-failure.png"
+  if adb_cmd shell run-as "$PKG" test -f cache/catalog-ui-failure.png >/dev/null 2>&1; then
+    adb_cmd exec-out run-as "$PKG" cat cache/catalog-ui-failure.png > "$OUT/catalog-ui-failure.png" 2>/dev/null || rm -f "$OUT/catalog-ui-failure.png"
+  else
+    rm -f "$OUT/catalog-ui-failure.png"
+  fi
   restore_network
 }
 trap collect_evidence EXIT

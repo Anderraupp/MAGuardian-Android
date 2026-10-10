@@ -40,14 +40,18 @@ instrumentada não tiver resultado `OK`.
 ## Isolamento e cenários
 
 - O runner recusa o pacote normal. Cada teste exige `-e disposable true`.
+- O APK instrumentado usa `com.catalogvalidation.fixture`, fora dos prefixos
+  confiáveis do aplicativo. O alvo continua sendo apenas o pacote de validação.
 - A Application de testes não inicia downloads, analytics ou faturamento.
 - Os testes de armazenamento usam diretórios e preferências aleatórios, com
   limpeza ao final e reinicialização da memória somente no código de testes.
 - Catálogo inválido, regressão de versão e reutilização de versão são rejeitados.
 - Correspondência exata lê o APK já instalado, localmente; nenhum APK é transferido.
 - Versões maiores podem alterar e remover indicadores.
-- Falha ao abrir a escrita, escrita parcial abortada, cache corrompido e, quando
-  disponível, `/dev/full` para simular erro de escrita.
+- Falha ao abrir a escrita, escrita parcial abortada e cache corrompido.
+  `/dev/full` simula erro de escrita quando acessível; em emuladores com SELinux
+  restritivo, `/dev/null` produz uma falha real de sincronização e verifica o
+  rollback do catálogo, sem pular esse teste.
 - Handler de instalação e varredura inicial do serviço respeitam o hash e Manter.
 - Listas confiáveis e isenção de varredura continuam protegidas.
 - Download manual real, cooldown automático, JobScheduler diário persistido,
@@ -64,28 +68,59 @@ instrumentado; ele não pretende simular um aplicativo malicioso real. A
 varredura inicial usa o PackageManager real e um APK de testes inofensivo.
 Nenhuma opção paga ou assinatura é ativada pelos testes.
 
-## Resultado da tentativa em 10/10/2026
+## Executar pelo GitHub sem alterar a branch principal
+
+O workflow `.github/workflows/validate-catalog.yml` roda na branch isolada
+`agent/catalog-validation`, ou por execução manual quando estiver disponível na
+branch selecionada. Usa Ubuntu 24.04, KVM, JDK 17 e um emulador Android 36 recém-criado.
+
+O token da execução tem somente leitura de conteúdo. O workflow não faz commit,
+não mescla branches, não publica catálogo e não publica APK ou release. As
+evidências são guardadas por sete dias. Uma atualização da branch de validação
+cancela somente as execuções antigas desse mesmo grupo de testes descartáveis.
+
+Uma integração posterior na branch principal exige decisão separada. O código
+do APK normal não precisa do token temporário usado para preparar a execução.
+
+## Resultado confirmado em 10/10/2026
+
+[Execução aprovada no GitHub](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38024274338)
+no commit `1e7fa9090fc83022eccbe9a3ecbea8d69f3c0edc`.
 
 - Compilação completa com JDK 17, Gradle 8.11.1, SDK Android 36 e Build Tools 35:
   `assembleDebug`, `assembleCatalogValidation` e
   `assembleCatalogValidationAndroidTest` concluídos com sucesso.
-- Os seis testes Node de formato/publicação passaram.
+- Os seis testes Node de formato/publicação já haviam passado; seus fontes não
+  foram alterados pelos ajustes da suíte Android.
 - Sintaxe do roteiro shell e consistência do diff verificadas.
-- **Testes instrumentados ainda não executados.** O workspace não oferece
-  `/dev/kvm`. A imagem Google APIs Android 36 apresentou ANRs do próprio SystemUI.
-  A imagem AOSP Android 11 iniciou, mas o watchdog encerrou o sistema durante a
-  instalação do APK de testes (`Broken pipe`, seguido de serviço PackageManager
-  indisponível). Não houve resultado JUnit de nenhuma fase.
-- A conexão GitHub aceitou os fontes, mas recusou criar um workflow. A alternativa
-  de execução acelerada no GitHub, portanto, não pôde ser usada.
 
-Consequentemente, atualização manual no aparelho, execução do job, modo offline,
-falhas de escrita no Android, integração dos detectores e reinício **continuam
-pendentes de confirmação em execução**, embora a suíte correspondente compile.
-Não usar esta tentativa como aprovação de release. Não foi criada release nem
-alterada a versão do aplicativo.
+| Fase Android | Resultado |
+| --- | --- |
+| Online | `OK (12 tests)`: 11 aprovados e o caso exclusivamente offline adiado para a fase seguinte |
+| Preparação do reinício | `OK (1 test)` |
+| Sem Wi-Fi/dados | `OK (2 tests)`, incluindo o caso offline adiado e a interface/licenças |
+| Após reinício real, ainda sem rede | `OK (1 test)` |
 
-Para finalizar, execute o roteiro em um emulador descartável com aceleração,
-ou conceda à integração GitHub permissão para criar workflows e execute a suíte
-em um runner com KVM. Os logs locais estão no diretório de evidências ignorado
-pelo Git.
+Não houve falha instrumentada na execução aprovada. A falha de sincronização
+verificou que o snapshot anterior e o arquivo anterior continuaram disponíveis.
+O job executou o atualizador real; o pedido de periodicidade diária e sua
+persistência também foram verificados. Depois do reboot, o catálogo, a
+correspondência local do APK, a escolha Manter e o job persistido foram preservados.
+
+Os handlers de instalação e varredura foram chamados no processo instrumentado.
+Não foi instalado malware real, ativada assinatura, feito teste de pagamento
+ou certificado o comportamento de todos os serviços em todos os modelos de celular.
+A entrega do broadcast de boot à instalação normal não é demonstrada pelo teste:
+o teste confirma o reinício real e a persistência do catálogo e do JobScheduler.
+Economia de bateria/OEMs e versões antigas do Android exigem verificações adicionais.
+
+As tentativas locais anteriores, sem `/dev/kvm`, não foram usadas como aprovação:
+o Android 36 apresentou ANRs e o Android 11 sofreu encerramento pelo watchdog.
+A aprovação acima veio do emulador acelerado Android 36 no GitHub.
+
+As evidências estão no artefato `android-catalog-validation-evidence` dessa
+execução e, localmente, em
+`generated-artifacts/android-validation/github-passed`, ignorado pelo Git.
+A branch principal permaneceu no commit
+`716a630ca78f483f00bf391b9c51ecc65aa58d98`.
+Não foi criada release nem alterada a versão: código 40, nome 1.6.2.
