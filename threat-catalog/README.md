@@ -248,6 +248,16 @@ manualmente. A rota padrão continua sendo `three-step`. As evidências incluem
 nenhum APK ou chave privada é publicado. As mesmas restrições de QA e de
 preservação dos pinos/bootstrap de produção se aplicam.
 
+**Resultado em 10/10/2026:** rota direta aprovada em emulador descartável Android
+36 (Google APIs, x86_64, KVM), com quatro invocações instrumentadas aprovadas:
+antigo, antigo em outro processo, recuperação e recuperação em outro processo.
+Os registros do gerenciador de pacotes e checksums mostram somente APKs 41 e 43.
+Confirmados rejeição do cache A v13 revogado, bootstrap B v14, atualização B v16,
+detecção local por hash exato, proteção embarcada e persistência/efeito de
+**Manter**, sem limpeza de dados. A verificação dos arquivos de produção passou;
+somente logs, versões e checksums públicos foram armazenados como evidência.
+[Execução direta e evidências](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38056401937).
+
 - Na raiz do repositório Android: `npm run catalog:test`.
 - Na raiz do workspace: `npx tsx --test shared/threat-catalog.test.ts server/threat-catalog.test.ts`.
 - No workspace: `npm run check`.
