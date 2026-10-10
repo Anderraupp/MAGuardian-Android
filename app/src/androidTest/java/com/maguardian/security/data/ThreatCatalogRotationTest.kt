@@ -16,9 +16,12 @@ class ThreatCatalogRotationTest {
         check(ctx.packageName == "com.maguardian.security.catalogvalidation")
         val phase = requireNotNull(args.getString("rotationPhase"))
         val route = args.getString("rotationRoute") ?: "three-step"
-        check(route in setOf("three-step", "direct"))
-        val direct = route == "direct"
-        check(!direct || phase in setOf("old", "old-restart", "recovery", "recovery-restart"))
+        check(route in setOf("three-step", "direct", "interrupted"))
+        val direct = route != "three-step"
+        val interrupted = route == "interrupted"
+        val directPhases = setOf("old", "old-restart", "recovery", "recovery-restart")
+        val interruptedPhases = setOf("interrupted-staged", "interrupted-abandoned")
+        check(!direct || phase in directPhases || (interrupted && phase in interruptedPhases))
         val oldCache = if (direct) "direct-old-cache" else "old-cache"
         val oldVersion = if (direct) 13 else 11
         fun asset(name: String) = ctx.assets.open("rotation-$name.json").bufferedReader().use { it.readText() }
@@ -71,12 +74,24 @@ class ThreatCatalogRotationTest {
                 checkpoint.writeText(if (direct) "direct-old" else "old")
                 keptAndProtected(oldVersion)
             }
-            "old-restart" -> {
+            "old-restart", "interrupted-staged", "interrupted-abandoned" -> {
                 assertEquals("old", stage)
+                if (phase in interruptedPhases) {
+                    assertTrue(interrupted)
+                    assertEquals(41, apkVersion)
+                    assertEquals(setOf(oldId), ThreatCatalogKeys.trusted.keys)
+                }
                 assertEquals(if (direct) "direct-old" else "old", checkpoint.readText())
                 ThreatCatalog.initialize(ctx)
                 assertEquals(asset(oldCache), cache.readText())
                 keptAndProtected(oldVersion)
+                if (phase in interruptedPhases) {
+                    // No re-seeding cache, checkpoints or preferences: checks
+                    // must observe what was persisted before installation.
+                    reject("successor", "Chave de assinatura desconhecida")
+                    assertEquals("direct-old", checkpoint.readText())
+                    keptAndProtected(13)
+                }
             }
             "transition" -> {
                 assertEquals("transition", stage)

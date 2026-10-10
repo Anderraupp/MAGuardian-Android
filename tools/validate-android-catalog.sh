@@ -37,6 +37,13 @@ restore_network() {
   adb_cmd shell svc data enable >/dev/null || true
 }
 collect_evidence() {
+  # Only a session created by this disposable rehearsal can be abandoned.
+  if [[ -n "${INSTALL_SESSION:-}" ]]; then
+    adb_cmd shell pm install-abandon "$INSTALL_SESSION" > "$OUT/session-cleanup.txt" 2>&1 || true
+  fi
+  if [[ -n "${STAGED_APK:-}" ]]; then
+    adb_cmd shell rm -f "$STAGED_APK" || true
+  fi
   adb_cmd logcat -d -s BootReceiver:I ThreatCatalogJobService:I AndroidRuntime:E > "$OUT/android-logcat.txt" || true
   adb_cmd shell dumpsys jobscheduler > "$OUT/jobs-final.txt" || true
   if adb_cmd shell run-as "$PKG" test -f cache/catalog-ui-failure.png >/dev/null 2>&1; then
@@ -56,13 +63,25 @@ adb_cmd shell settings put global window_animation_scale 0
 adb_cmd shell settings put global transition_animation_scale 0
 adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
-if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" ]]; then
+if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" || "${1:-}" == "--rotation-interrupted" ]]; then
   route=three-step
   stages=(old transition recovery)
-  if [[ "$1" == "--rotation-direct" ]]; then
+  if [[ "$1" == "--rotation-direct" || "$1" == "--rotation-interrupted" ]]; then
     route=direct
     stages=(old recovery)
   fi
+  [[ "$1" != "--rotation-interrupted" ]] || route=interrupted
+  record_package() {
+    local phase="$1" installed_apk
+    adb_cmd shell dumpsys package "$PKG" | grep -E 'versionCode=|versionName=' \
+      > "$OUT/package-$phase.txt"
+    installed_apk="$(adb_cmd shell pm path "$PKG" | tr -d '\r' | sed -n 's/^package://p' | head -1)"
+    [[ "$installed_apk" == /data/app/*/base.apk ]] || {
+      echo "Unexpected disposable APK path." >&2; return 1;
+    }
+    adb_cmd exec-out cat "$installed_apk" | sha256sum | cut -d ' ' -f 1 \
+      > "$OUT/installed-$phase.sha256"
+  }
   # No clear/uninstall between stages: package-manager upgrade must retain data.
   [[ -z "$(adb_cmd shell pm path "$PKG" | tr -d '\r')" ]] || {
     echo "Rotation requires a fresh disposable package; existing installation refused." >&2; exit 1;
@@ -86,16 +105,54 @@ if [[ "${1:-}" == "--rotation" || "${1:-}" == "--rotation-direct" ]]; then
     apk=app/build/outputs/apk/catalogValidation/app-catalogValidation.apk
     sha256sum "$apk" | sed "s|$apk|$stage QA APK|" >> "$OUT/apk-checksums.txt"
     adb_cmd shell am force-stop "$PKG"
+    if [[ "$route" == interrupted && "$stage" == recovery ]]; then
+      record_package before-session
+      # Write the complete recovery APK into PackageInstaller, but NEVER commit
+      # this first session. The old APK must remain runnable even while staged.
+      size="$(wc -c < "$apk" | tr -d '[:space:]')"
+      adb_cmd shell pm install-create -r -S "$size" | tee "$OUT/session-create.txt"
+      created="$(tr -d '\r' < "$OUT/session-create.txt")"
+      [[ "$created" =~ ^Success:\ created\ install\ session\ \[([0-9]+)\]$ ]] || {
+        echo "PackageInstaller did not create the expected session." >&2; exit 1;
+      }
+      INSTALL_SESSION="${BASH_REMATCH[1]}"
+      STAGED_APK="/data/local/tmp/maguardian-recovery-$INSTALL_SESSION.apk"
+      adb_cmd push "$apk" "$STAGED_APK" > "$OUT/session-push.txt"
+      adb_cmd shell pm install-write -S "$size" "$INSTALL_SESSION" base.apk "$STAGED_APK" \
+        | tee "$OUT/session-write.txt"
+      grep -q '^Success' "$OUT/session-write.txt"
+      run_tests interrupted-staged -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+        -e rotationPhase interrupted-staged -e rotationRoute "$route"
+      record_package interrupted-staged
+      cmp "$OUT/installed-before-session.sha256" "$OUT/installed-interrupted-staged.sha256"
+      adb_cmd shell pm install-abandon "$INSTALL_SESSION" | tee "$OUT/session-abandon.txt"
+      grep -q '^Success' "$OUT/session-abandon.txt"
+      INSTALL_SESSION=
+      adb_cmd shell rm -f "$STAGED_APK"
+      STAGED_APK=
+      adb_cmd shell am force-stop "$PKG"
+      run_tests interrupted-abandoned -e class com.maguardian.security.data.ThreatCatalogRotationTest \
+        -e rotationPhase interrupted-abandoned -e rotationRoute "$route"
+      record_package interrupted-abandoned
+      cmp "$OUT/installed-before-session.sha256" "$OUT/installed-interrupted-abandoned.sha256"
+      # Now perform the actual upgrade, with neither uninstall nor pm clear.
+      adb_cmd shell am force-stop "$PKG"
+    fi
     adb_cmd install -r "$apk"
     run_tests "rotation-$stage" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
       -e rotationPhase "$stage" -e rotationRoute "$route"
     adb_cmd shell am force-stop "$PKG"
     run_tests "rotation-$stage-restart" -e class com.maguardian.security.data.ThreatCatalogRotationTest \
       -e rotationPhase "$stage-restart" -e rotationRoute "$route"
-    adb_cmd shell dumpsys package "$PKG" | grep -E 'versionCode=|versionName=' \
-      > "$OUT/package-$stage.txt"
+    record_package "$stage"
+    if [[ "$route" == interrupted ]]; then
+      sha256sum "$apk" | cut -d ' ' -f 1 > "$OUT/expected-$stage.sha256"
+      cmp "$OUT/expected-$stage.sha256" "$OUT/installed-$stage.sha256"
+    fi
   done
-  if [[ "$route" == direct ]]; then
+  if [[ "$route" == interrupted ]]; then
+    echo "Interrupted recovery passed: staged/abandoned session kept APK 41 and catalog 13; real upgrade to 43 recovered via bootstrap 14 and update 16; Manter preserved."
+  elif [[ "$route" == direct ]]; then
     echo "Direct recovery passed: APKs 41/43 only; revoked cache 13 rejected; bootstrap 14; update 16; Manter preserved."
   else
     echo "Rotation passed: APKs 41/42/43; catalogs 11/12/13/14/16; Manter preserved."
