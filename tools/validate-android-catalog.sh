@@ -45,6 +45,10 @@ collect_evidence() {
     rm -f "$OUT/catalog-ui-failure.png"
   fi
   restore_network
+  if [[ -n "${SERVER_PID:-}" ]]; then
+    kill "$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
+  fi
 }
 trap collect_evidence EXIT
 wait_boot
@@ -52,6 +56,17 @@ adb_cmd shell settings put global window_animation_scale 0
 adb_cmd shell settings put global transition_animation_scale 0
 adb_cmd shell settings put global animator_duration_scale 0
 cd "$ROOT"
+node tools/catalog-validation-server.mjs > "$OUT/catalog-server.log" 2>&1 &
+SERVER_PID=$!
+for _ in $(seq 1 30); do
+  [[ -f app/build/catalogValidationFixtures/server-cert.pem ]] &&
+    curl --silent --fail --cacert app/build/catalogValidationFixtures/server-cert.pem \
+      https://localhost:8443/threat-catalog.json >/dev/null && break
+  kill -0 "$SERVER_PID" 2>/dev/null || { echo "QA HTTPS server failed to start." >&2; exit 1; }
+  sleep 1
+done
+curl --silent --fail --cacert app/build/catalogValidationFixtures/server-cert.pem \
+  https://localhost:8443/threat-catalog.json >/dev/null
 bash gradlew --no-daemon :app:assembleDebug :app:assembleCatalogValidation \
   :app:assembleCatalogValidationAndroidTest | tee "$OUT/build.log"
 adb_cmd install -r app/build/outputs/apk/catalogValidation/app-catalogValidation.apk

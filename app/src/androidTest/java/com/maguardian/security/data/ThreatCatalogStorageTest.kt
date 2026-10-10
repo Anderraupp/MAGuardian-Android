@@ -6,6 +6,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Assert.*
 import org.junit.Test
+import org.json.JSONObject
 import java.io.File
 
 /** Real Android AtomicFile, PackageManager and preferences; never production storage. */
@@ -29,6 +30,28 @@ class ThreatCatalogStorageTest {
         } catch (_: IllegalArgumentException) {
         } catch (_: org.json.JSONException) {
         }
+    }
+
+    @Test fun invalidSignaturesAndLegacyUpdatesPreserveCacheAndKeepChoice() {
+        val signed = CatalogTestEnvironment.catalog(2)
+        PrefsHelper.markThreatKept(ctx, pkg)
+        ThreatCatalog.install(ctx, signed)
+        val original = ThreatCatalog.snapshot()
+        val before = cache.readText()
+        rejected("{}")
+        rejected(JSONObject(signed).put("signature", "!".repeat(512)).toString())
+        rejected(JSONObject(signed).put("signature",
+            java.util.Base64.getEncoder().encodeToString(ByteArray(384))).toString())
+        rejected(JSONObject(signed).put("keyId", "0".repeat(64)).toString())
+        rejected(JSONObject(signed).put("format", 1).apply {
+            remove("signature"); remove("keyId")
+        }.toString())
+        assertEquals(original, ThreatCatalog.snapshot())
+        assertEquals(before, cache.readText())
+        assertFalse(ThreatCatalog.install(ctx, signed))
+        assertTrue(PrefsHelper.isThreatKept(ctx, pkg))
+        assertNull(MalwareDatabase.isMalware(pkg, ctx))
+        assertNull(MalwareDatabase.isMalware("com.google.example", ctx))
     }
 
     @Test fun invalidOldAndReusedVersionsPreserveDiskAndKeepChoice() {

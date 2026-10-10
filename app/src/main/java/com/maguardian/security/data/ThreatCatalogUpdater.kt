@@ -10,13 +10,14 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import com.maguardian.security.util.PrefsHelper
+import com.maguardian.security.BuildConfig
 import java.net.URL
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.HttpsURLConnection
 
 object ThreatCatalogUpdater {
-    const val URL_CATALOG = "https://raw.githubusercontent.com/Anderraupp/MAGuardian-Android/main/threat-catalog/catalog.json"
+    const val URL_CATALOG = BuildConfig.THREAT_CATALOG_URL
     const val UPDATED = "com.maguardian.security.CATALOG_UPDATED"
     private const val JOB_ID = 74021
     private val running = AtomicBoolean(false)
@@ -56,6 +57,12 @@ object ThreatCatalogUpdater {
         worker.execute {
             var connection: HttpsURLConnection? = null
             val status = try {
+                val connectivity = app.getSystemService(android.net.ConnectivityManager::class.java)
+                val network = connectivity?.activeNetwork
+                require(network != null && connectivity.getNetworkCapabilities(network)
+                    ?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true) {
+                    "Rede indisponível"
+                }
                 connection = URL(URL_CATALOG).openConnection() as HttpsURLConnection
                 connection!!.apply {
                     // Default Android TLS certificate + hostname verification; never bypass.
@@ -69,6 +76,8 @@ object ThreatCatalogUpdater {
                 require(connection!!.responseCode == 200) { "Resposta HTTP inválida" }
                 require(connection!!.contentLengthLong <= ThreatCatalog.MAX_BYTES)
                 val raw = connection!!.inputStream.use { ThreatCatalog.readBounded(it) }.toString(Charsets.UTF_8)
+                // install verifies the APK-pinned digital signature before any
+                // cache replacement. Repository write access is not signing authority.
                 val changed = ThreatCatalog.install(app, raw)
                 PrefsHelper.setCatalogSuccess(app, System.currentTimeMillis())
                 if (changed) {

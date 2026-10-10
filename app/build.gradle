@@ -16,6 +16,7 @@ android {
         testInstrumentationRunner "com.maguardian.security.data.CatalogTestRunner"
         // A harmless fixture outside the application's intentionally trusted prefix.
         testApplicationId "com.catalogvalidation.fixture"
+        buildConfigField "String", "THREAT_CATALOG_URL", '"https://raw.githubusercontent.com/Anderraupp/MAGuardian-Android/main/threat-catalog/catalog.json"'
     }
 
     buildTypes {
@@ -25,6 +26,7 @@ android {
             applicationIdSuffix ".catalogvalidation"
             signingConfig signingConfigs.debug
             matchingFallbacks = ['debug']
+            buildConfigField "String", "THREAT_CATALOG_URL", '"https://10.0.2.2:8443/threat-catalog.json"'
         }
         release {
             minifyEnabled false
@@ -44,6 +46,29 @@ android {
 
     buildFeatures {
         viewBinding true
+        buildConfig true
+    }
+
+    sourceSets {
+        catalogValidation {
+            java.srcDir "build/generated/catalogValidationKeys"
+            res.srcDir "build/generated/catalogValidationResources"
+        }
+    }
+}
+
+// Only the disposable variant has QA roots. Debug/release always compile the
+// operator's real immutable trust policy, never the generated QA provider.
+def prepareCatalogValidationTls = tasks.register("prepareCatalogValidationTls", Exec) {
+    workingDir rootProject.projectDir
+    commandLine "node", "tools/catalog-validation-server.mjs", "--prepare"
+}
+tasks.configureEach {
+    if (name == "preCatalogValidationBuild") dependsOn prepareCatalogValidationTls
+}
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    if (name == "compileCatalogValidationKotlin") {
+        exclude { it.file.canonicalFile == file("src/main/java/com/maguardian/security/data/ThreatCatalogKeys.kt").canonicalFile }
     }
 }
 

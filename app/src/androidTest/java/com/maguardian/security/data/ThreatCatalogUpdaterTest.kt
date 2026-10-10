@@ -32,6 +32,32 @@ class ThreatCatalogUpdaterTest {
         return result
     }
 
+    @Test fun liveGithubMetadataWithoutQaAuthorityCannotReplaceSignedFixture() {
+        val rawUrl = "https://raw.githubusercontent.com/Anderraupp/MAGuardian-Android/main/threat-catalog/catalog.json"
+        val connection = java.net.URL(rawUrl).openConnection() as javax.net.ssl.HttpsURLConnection
+        connection.connectTimeout = 15000
+        connection.readTimeout = 15000
+        connection.instanceFollowRedirects = false
+        connection.useCaches = false
+        val raw = try {
+            assertEquals(200, connection.responseCode)
+            connection.inputStream.use { ThreatCatalog.readBounded(it) }.toString(Charsets.UTF_8)
+        } finally {
+            connection.disconnect()
+        }
+        ThreatCatalog.install(ctx, CatalogTestEnvironment.catalog(2))
+        val before = File(ctx.noBackupFilesDir, "threat-catalog.json").readText()
+        val snapshot = ThreatCatalog.snapshot()
+        try {
+            ThreatCatalog.install(ctx, raw)
+            fail("Metadata without the embedded QA signing authority was accepted")
+        } catch (_: IllegalArgumentException) {
+        } catch (_: org.json.JSONException) {
+        }
+        assertEquals(snapshot, ThreatCatalog.snapshot())
+        assertEquals(before, File(ctx.noBackupFilesDir, "threat-catalog.json").readText())
+    }
+
     @Test fun manualUpdateDownloadsOnlyMetadataAndBypassesAutomaticCooldown() {
         assumeTrue(InstrumentationRegistry.getArguments().getString("network", "online") == "online")
         PrefsHelper.setCatalogAttempt(ctx, System.currentTimeMillis())

@@ -28,7 +28,43 @@ internal object CatalogTestEnvironment {
         }
         return InstrumentationRegistry.getInstrumentation().targetContext.also {
             check(it.packageName == "com.maguardian.security.catalogvalidation")
+            installFixtureKey(it)
         }
+    }
+
+    private var fixtureKey: java.security.KeyPair? = null
+
+    // Generated only on the disposable device; no production private key is
+    // needed or shipped. Persist so signatures remain verifiable across reboot.
+    private fun installFixtureKey(ctx: Context) {
+        if (fixtureKey == null) {
+            val file = File(ctx.noBackupFilesDir, "catalog-validation-fixture-key.json")
+            val factory = java.security.KeyFactory.getInstance("RSA")
+            fixtureKey = if (file.exists()) {
+                val saved = JSONObject(file.readText())
+                java.security.KeyPair(
+                    factory.generatePublic(java.security.spec.X509EncodedKeySpec(
+                        java.util.Base64.getDecoder().decode(saved.getString("public")))),
+                    factory.generatePrivate(java.security.spec.PKCS8EncodedKeySpec(
+                        java.util.Base64.getDecoder().decode(saved.getString("private"))))
+                )
+            } else {
+                java.security.KeyPairGenerator.getInstance("RSA").apply {
+                    initialize(3072)
+                }.generateKeyPair().also { pair ->
+                    file.writeText(JSONObject()
+                        .put("public", java.util.Base64.getEncoder().encodeToString(pair.public.encoded))
+                        .put("private", java.util.Base64.getEncoder().encodeToString(pair.private.encoded))
+                        .toString())
+                }
+            }
+        }
+        // The build-only QA provider is mutable; production policies are never
+        // replaced by reflection and never accept this generated fixture key.
+        val keys = ThreatCatalogKeys.trusted as MutableMap<String, ThreatCatalogKeys.Key>
+        val encoded = fixtureKey!!.public.encoded
+        keys[sha(encoded)] = ThreatCatalogKeys.Key(
+            java.util.Base64.getEncoder().encodeToString(encoded), 1, Int.MAX_VALUE, false)
     }
 
     // Test-only reflection: no reset/backdoor is included in the shipped APK.
@@ -81,7 +117,14 @@ internal object CatalogTestEnvironment {
         val payload = JSONObject().put("schemaVersion", 1).put("version", version)
             .put("publishedAt", "2026-01-01T00:00:00Z")
             .put("indicators", JSONArray(indicators.toList())).toString()
-        return JSONObject().put("format", 1).put("payload", payload)
-            .put("sha256", sha(payload.toByteArray(Charsets.UTF_8))).toString()
+        checkNotNull(fixtureKey) { "Call target() before creating signed fixtures." }
+        val hash = sha(payload.toByteArray(Charsets.UTF_8))
+        val keyId = sha(fixtureKey!!.public.encoded)
+        val signer = java.security.Signature.getInstance("SHA256withRSA")
+        signer.initSign(fixtureKey!!.private)
+        signer.update("maguardian/threat-catalog/v2\n$keyId\n$hash\n$payload".toByteArray(Charsets.UTF_8))
+        return JSONObject().put("format", 2).put("payload", payload)
+            .put("sha256", hash).put("keyId", keyId)
+            .put("signature", java.util.Base64.getEncoder().encodeToString(signer.sign())).toString()
     }
 }

@@ -5,14 +5,19 @@ import android.util.AtomicFile
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
+import java.security.KeyFactory
+import java.security.Signature
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.X509EncodedKeySpec
+import java.util.Base64
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
 /**
- * Only metadata. Origin authentication is TLS to the fixed GitHub HTTPS URL,
- * not a detached signature. GitHub repository maintainers are the trust boundary.
- * The checksum detects corruption; it is NOT an independent authenticity proof.
+ * Only metadata. Independent RSA-3072 signatures are verified against public
+ * keys embedded in the APK, in addition to HTTPS and the integrity checksum.
+ * Downloaded data cannot add keys or change the trust policy.
  */
 object ThreatCatalog {
     const val MAX_BYTES = 2 * 1024 * 1024
@@ -34,7 +39,14 @@ object ThreatCatalog {
             val raw = file(ctx).openRead().use { readBounded(it) }.toString(Charsets.UTF_8)
             current = parse(raw)
         } catch (_: Exception) {
-            // No cache or corrupt cache: the embedded database remains usable.
+            // Legacy unsigned/corrupt caches never become a trust anchor.
+            // The signed APK bootstrap retains the reviewed baseline offline.
+            try {
+                current = ctx.assets.open("threat-catalog-bootstrap.json")
+                    .use { parse(readBounded(it).toString(Charsets.UTF_8)) }
+            } catch (_: Exception) {
+                // The original embedded database remains usable regardless.
+            }
         }
         initialized = true
     }
@@ -106,15 +118,29 @@ object ThreatCatalog {
         return output.toByteArray()
     }
 
-    fun parse(raw: String): Snapshot {
+    fun parse(raw: String, trusted: Map<String, ThreatCatalogKeys.Key> = ThreatCatalogKeys.trusted): Snapshot {
         require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BYTES)
         val root = JSONObject(raw)
-        keys(root, setOf("format", "payload", "sha256"))
-        require(root.get("format") is Number && root.getDouble("format") == 1.0)
+        keys(root, setOf("format", "payload", "sha256", "keyId", "signature"))
+        require(root.get("format") is Number && root.getDouble("format") == 2.0)
         val payload = string(root, "payload", MAX_BYTES)
         val expected = string(root, "sha256", 64)
         require(expected.matches(Regex("[0-9a-f]{64}")))
         require(hex(MessageDigest.getInstance("SHA-256").digest(payload.toByteArray(Charsets.UTF_8))) == expected)
+        val keyId = string(root, "keyId", 64)
+        require(keyId.matches(Regex("[0-9a-f]{64}")))
+        val key = requireNotNull(trusted[keyId]) { "Chave de assinatura desconhecida" }
+        require(!key.revoked) { "Chave de assinatura revogada" }
+        val der = base64(key.spkiBase64)
+        require(hex(MessageDigest.getInstance("SHA-256").digest(der)) == keyId)
+        val publicKey = KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(der))
+        require(publicKey is RSAPublicKey && publicKey.modulus.bitLength() == 3072)
+        val signed = base64(string(root, "signature", 512))
+        require(signed.size == 384)
+        val verifier = Signature.getInstance("SHA256withRSA")
+        verifier.initVerify(publicKey)
+        verifier.update("maguardian/threat-catalog/v2\n$keyId\n$expected\n$payload".toByteArray(Charsets.UTF_8))
+        require(verifier.verify(signed)) { "Assinatura do catálogo inválida" }
         val data = JSONObject(payload)
         keys(data, setOf("schemaVersion", "version", "publishedAt", "indicators"))
         require(data.get("schemaVersion") is Number && data.getDouble("schemaVersion") == 1.0)
@@ -122,6 +148,9 @@ object ThreatCatalog {
         require(versionValue is Number)
         val version = data.getLong("version")
         require(version in 1..Int.MAX_VALUE.toLong() && data.getDouble("version") == version.toDouble())
+        require(version in key.minimumVersion.toLong()..key.maximumVersion.toLong()) {
+            "Versão fora da política da chave"
+        }
         val publishedAt = string(data, "publishedAt", 40)
         val published = instant(publishedAt)
         require(published <= System.currentTimeMillis() + 86400000)
@@ -190,4 +219,9 @@ object ThreatCatalog {
         return requireNotNull(fmt.parse(value)).time
     }
     private fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it) }
+    private fun base64(value: String): ByteArray {
+        val decoded = Base64.getDecoder().decode(value)
+        require(Base64.getEncoder().encodeToString(decoded) == value) { "Base64 inválido" }
+        return decoded
+    }
 }
