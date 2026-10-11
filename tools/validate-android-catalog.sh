@@ -57,6 +57,12 @@ collect_evidence() {
   else
     rm -f "$OUT/catalog-ui-failure.png"
   fi
+  for image in threat-card-admin.png threat-card-user.png; do
+    if adb_cmd shell run-as "$PKG" test -f "cache/$image" >/dev/null 2>&1; then
+      adb_cmd exec-out run-as "$PKG" cat "cache/$image" > "$OUT/$image" 2>/dev/null ||
+        rm -f "$OUT/$image"
+    fi
+  done
   restore_network
   if [[ -n "${SERVER_PID:-}" ]]; then
     kill "$SERVER_PID" 2>/dev/null || true
