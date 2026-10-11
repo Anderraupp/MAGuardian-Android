@@ -490,7 +490,8 @@ class PopupDetectorService : Service() {
 
     private fun onThreatDetected(malware: MalwareDatabase.MalwareEntry) {
         // Respeita a escolha "Manter": não salva, notifica ou alerta novamente.
-        if (PrefsHelper.isThreatKept(this, malware.packageName)) return
+        if (PrefsHelper.isThreatKept(this, malware.packageName) ||
+            MalwareDatabase.isTrustedApp(malware.packageName)) return
         PrefsHelper.saveThreat(this, malware)
 
         val isSubscribed = PrefsHelper.hasFullAccess(this)

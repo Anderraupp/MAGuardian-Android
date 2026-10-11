@@ -131,7 +131,8 @@ object PrefsHelper {
     fun saveThreat(ctx: Context, malware: MalwareDatabase.MalwareEntry) {
         val prefs = prefs(ctx)
         // O usuário reconheceu este app e escolheu mantê-lo.
-        if (isThreatKept(ctx, malware.packageName)) return
+        if (isThreatKept(ctx, malware.packageName) ||
+            MalwareDatabase.isTrustedApp(malware.packageName)) return
 
         val threatsJson = prefs.getString(KEY_THREATS, "[]") ?: "[]"
         val arr = JSONArray(threatsJson)
@@ -227,9 +228,24 @@ object PrefsHelper {
         prefs(ctx).getStringSet(KEY_KEPT_PACKAGES, emptySet())
             ?.contains(packageName) == true
 
+    @Synchronized
     fun getThreats(ctx: Context): JSONArray {
-        val json = prefs(ctx).getString(KEY_THREATS, "[]") ?: "[]"
-        return JSONArray(json)
+        val p = prefs(ctx)
+        val arr = JSONArray(p.getString(KEY_THREATS, "[]") ?: "[]")
+        var changed = false
+        for (i in 0 until arr.length()) {
+            val threat = arr.getJSONObject(i)
+            if (threat.optString("status", "detected") == "detected" &&
+                MalwareDatabase.isTrustedApp(threat.getString("packageName"))) {
+                // Corrige alertas antigos, preservando o histórico e as escolhas.
+                // Não equivale a desinstalar nem incrementa o contador Removidas.
+                threat.put("status", "dismissed")
+                threat.put("dismissedReason", "trusted_app")
+                changed = true
+            }
+        }
+        if (changed) p.edit().putString(KEY_THREATS, arr.toString()).apply()
+        return arr
     }
 
     fun clearThreats(ctx: Context) =
