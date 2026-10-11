@@ -1459,11 +1459,23 @@ class MainActivity : AppCompatActivity() {
     private fun refreshUI() {
         val permStatus = PermissionHelper.checkAll(this)
         val protectionEnabled = PrefsHelper.isProtectionEnabled(this)
-        val totalFound = PrefsHelper.getTotalThreatsFound(this)
-        val totalRemoved = PrefsHelper.getTotalThreatsRemoved(this)
         val totalScans = PrefsHelper.getScanCount(this)
         val lastScanMs = PrefsHelper.getLastScan(this)
         val threats = PrefsHelper.getThreats(this)
+
+        // Reconcile removals before rendering every count from the same active list.
+        val activeThreats = (0 until threats.length())
+            .map { threats.getJSONObject(it) }
+            .filter { it.optString("status", "detected") == "detected" }
+            .filter { threat ->
+                val pkg = threat.getString("packageName")
+                val installed = try { packageManager.getPackageInfo(pkg, 0); true }
+                                catch (e: Exception) { false }
+                if (!installed) PrefsHelper.markThreatRemoved(this, pkg)
+                installed
+            }
+        val totalFound = activeThreats.size
+        val totalRemoved = PrefsHelper.getTotalThreatsRemoved(this)
 
         val tvStatus = findViewById<TextView>(R.id.tvStatus)
         val tvStatusBadge = findViewById<TextView>(R.id.tvStatusBadge)
@@ -1588,19 +1600,7 @@ class MainActivity : AppCompatActivity() {
             "Nunca"
         }
 
-        // Badge + lista de ameaças — filtra apenas ativas e ainda instaladas
-        val activeThreats = (0 until threats.length())
-            .map { threats.getJSONObject(it) }
-            .filter { it.optString("status", "detected") == "detected" }
-            .filter { threat ->
-                // Verifica se o app ainda está instalado; se não, remove automaticamente
-                val pkg = threat.getString("packageName")
-                val installed = try { packageManager.getPackageInfo(pkg, 0); true }
-                                catch (e: Exception) { false }
-                if (!installed) PrefsHelper.markThreatRemoved(this, pkg)
-                installed
-            }
-
+        // Badge e lista usam a mesma contagem ativa do topo e das estatísticas.
         tvThreatCount.text = "${activeThreats.size} registros"
         llThreats.removeAllViews()
 

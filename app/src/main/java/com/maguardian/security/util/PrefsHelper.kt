@@ -133,21 +133,27 @@ object PrefsHelper {
             .apply()
     }
 
+    @Synchronized
     fun markThreatRemoved(ctx: Context, packageName: String) {
         val prefs = prefs(ctx)
         val threatsJson = prefs.getString(KEY_THREATS, "[]") ?: "[]"
         val arr = JSONArray(threatsJson)
         val updated = JSONArray()
+        var newlyRemoved = false
 
         for (i in 0 until arr.length()) {
             val obj = arr.getJSONObject(i)
-            if (obj.getString("packageName") == packageName) {
+            if (obj.getString("packageName") == packageName &&
+                obj.optString("status", "detected") == "detected") {
                 obj.put("status", "removed")
                 obj.put("removedAt", System.currentTimeMillis())
+                newlyRemoved = true
             }
             updated.put(obj)
         }
 
+        // Returning to the app and refreshing the list may report the same removal.
+        if (!newlyRemoved) return
         val totalRemoved = prefs.getInt(KEY_TOTAL_REMOVED, 0) + 1
         prefs.edit()
             .putString(KEY_THREATS, updated.toString())
