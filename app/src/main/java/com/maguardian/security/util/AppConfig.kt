@@ -13,6 +13,9 @@ object AppConfig {
      */
     const val API_BASE_URL = "https://antivirus-m-a.replit.app"
 
+    /** Administração separada da API colaborativa. Ativar o Worker antes de distribuir o APK. */
+    const val ADMIN_BASE_URL = "https://maguardian-admin.anderalves2180.workers.dev"
+
     /** Mínimo de denúncias para um número entrar na lista comunitária local. */
     const val COMMUNITY_BLOCK_MIN_REPORTS = 2
 

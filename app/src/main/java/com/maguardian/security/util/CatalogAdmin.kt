@@ -62,7 +62,7 @@ object CatalogAdmin {
     }
     private fun open(activity: Activity, fragment: String = "") {
         try {
-            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("${AppConfig.API_BASE_URL}/admin$fragment")))
+            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("${AppConfig.ADMIN_BASE_URL}/admin$fragment")))
         } catch (_: Exception) {
             Toast.makeText(activity, "Não foi possível abrir o navegador.", Toast.LENGTH_LONG).show()
         }
