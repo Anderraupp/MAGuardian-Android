@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": 6,
-  "publishedAt": "2026-10-11T21:59:18.906Z",
+  "version": 7,
+  "publishedAt": "2026-10-11T22:01:04.889Z",
   "indicators": [
     {
       "packageName": "eu.siacs.bingechat",
@@ -102,12 +102,12 @@
     {
       "packageName": "com.sxt.albumsweep.photocleaner",
       "appName": "AI Phone Cleaner",
-      "apkSha256": [
-        "14d6ea5fa4efb8114839808e2257f21993c136b84bf4bb0438d92979bdbafb9f"
-      ],
       "threatType": "popup",
       "severity": "medium",
       "description": "Muito pop-up",
+      "apkSha256": [
+        "14d6ea5fa4efb8114839808e2257f21993c136b84bf4bb0438d92979bdbafb9f"
+      ],
       "status": "confirmed",
       "source": {
         "name": "Análise manual do administrador do M&A Guardian",
@@ -120,6 +120,29 @@
         "reviewer": "Administrador do M&A Guardian",
         "reviewedAt": "2026-10-11T21:59:18.906Z",
         "evidence": "O app tem exibido muito anúncio"
+      }
+    },
+    {
+      "packageName": "com.clean.box.phone.storage.cleaner.android",
+      "appName": "#Clean Box :Phone Storage Cleaner",
+      "apkSha256": [
+        "dea4f92ad393004ca480fa929b01b8a6383500bdb0a07f0225c16bc8c6c45c81"
+      ],
+      "threatType": "popup",
+      "severity": "medium",
+      "description": "Pop-up",
+      "status": "confirmed",
+      "source": {
+        "name": "Análise manual do administrador do M&A Guardian",
+        "url": "https://github.com/Anderraupp/MAGuardian-Android",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attribution": "Indicadores e observação própria publicados pelo administrador do M&A Guardian sob CC0-1.0; não inclui o APK."
+      },
+      "review": {
+        "reviewer": "Administrador do M&A Guardian",
+        "reviewedAt": "2026-10-11T22:01:04.889Z",
+        "evidence": "Muito anuncio que enche o saco"
       }
     }
   ]
