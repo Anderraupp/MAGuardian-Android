@@ -101,6 +101,15 @@ object ThreatCatalogUpdater {
                 val changed = ThreatCatalog.install(app, raw)
                 PrefsHelper.setCatalogAvailableVersion(app, 0)
                 PrefsHelper.setCatalogSuccess(app, System.currentTimeMillis())
+                // Recheck on every successful consultation, including an unchanged
+                // catalog: this also catches up after process death or an APK update.
+                // Already recorded threats are not alerted again.
+                try {
+                    CatalogInstalledAppScanner.scan(app)
+                } catch (e: Exception) {
+                    android.util.Log.w("ThreatCatalogUpdater",
+                        "Falha ao verificar apps após atualizar a base", e)
+                }
                 if (changed) {
                     "Base atualizada. As próximas verificações usarão os novos indicadores."
                 } else "A base já está atualizada."
