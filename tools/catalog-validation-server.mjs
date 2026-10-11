@@ -51,6 +51,9 @@ const catalog = JSON.stringify({ format: 2, payload, sha256: hash,
 if (!process.argv.includes("--prepare")) {
   const maxBytes = 2 * 1024 * 1024;
   const chunkBytes = 8192;
+  // Pace the disposable fixture so emulator scheduling and close-time draining
+  // cannot turn server-side queued bytes into a false client-limit regression.
+  const chunkDelayMs = 25;
   const totalBytes = maxBytes * 8;
   const records = new Map();
   let armed = null;
@@ -76,9 +79,9 @@ if (!process.argv.includes("--prepare")) {
         record.endCalled = true;
         res.end();
       } else if (writable) {
-        timer = setTimeout(send, 10);
+        timer = setTimeout(send, chunkDelayMs);
       } else {
-        res.once("drain", () => { timer = setTimeout(send, 10); });
+        res.once("drain", () => { timer = setTimeout(send, chunkDelayMs); });
       }
     };
     res.on("error", () => {}); // A peer abort is the expected outcome.
@@ -89,7 +92,7 @@ if (!process.argv.includes("--prepare")) {
       fs.writeFileSync(path.join(dir, `download-${record.id}.json`), JSON.stringify(record, null, 2));
       console.log(`DOWNLOAD_BOUNDARY ${JSON.stringify(record)}`);
     });
-    timer = setTimeout(send, 10);
+    timer = setTimeout(send, chunkDelayMs);
   };
   const server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) },
     (req, res) => {
@@ -103,7 +106,7 @@ if (!process.argv.includes("--prepare")) {
           json(res, 409, { error: "Download already pending" }); return;
         }
         const id = crypto.randomUUID();
-        armed = { id, mode, maxBytes, chunkBytes, totalBytes,
+        armed = { id, mode, maxBytes, chunkBytes, chunkDelayMs, totalBytes,
           advertisedBytes: mode === "misleading-length" ? 1024 : null,
           bytesSent: 0, requests: 0, endCalled: false, closed: false, closedEarly: false };
         records.set(id, armed);

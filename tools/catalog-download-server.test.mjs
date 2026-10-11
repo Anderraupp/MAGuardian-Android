@@ -7,7 +7,7 @@ import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 
 // Server contract only. Android evidence must come from the instrumented tests.
-test("disposable HTTPS oversized fixtures report peer abort and stop writes", { timeout: 20000 }, async () => {
+test("disposable HTTPS oversized fixtures report peer abort and stop writes", { timeout: 30000 }, async () => {
   const server = spawn(process.execPath,
     [fileURLToPath(new URL("./catalog-validation-server.mjs", import.meta.url))],
     { stdio: ["ignore", "pipe", "pipe"] });
@@ -42,6 +42,7 @@ test("disposable HTTPS oversized fixtures report peer abort and stop writes", { 
     for (const mode of ["unknown-length", "misleading-length"]) {
       const armed = await control(`arm?mode=${mode}`, "POST");
       assert.equal(armed.totalBytes, 16 * 1024 * 1024);
+      assert.equal(armed.chunkDelayMs, 25);
       assert.equal(armed.advertisedBytes, mode === "unknown-length" ? null : 1024);
       assert.equal((await request(`/validation/download/arm?mode=${mode}`, "POST")).status, 409);
       let consumed = 0;

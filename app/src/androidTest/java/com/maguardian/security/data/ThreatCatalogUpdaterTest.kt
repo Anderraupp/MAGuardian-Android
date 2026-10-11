@@ -63,6 +63,7 @@ class ThreatCatalogUpdaterTest {
         try {
             assertEquals(ThreatCatalog.MAX_BYTES, armed.getInt("maxBytes"))
             assertEquals(8192, armed.getInt("chunkBytes"))
+            assertEquals(25, armed.getInt("chunkDelayMs"))
             if (mode == "unknown-length") assertTrue(armed.isNull("advertisedBytes"))
             else assertEquals(1024, armed.getInt("advertisedBytes"))
             // Call the exact HTTPS routine used by update(), not a mock stream or
