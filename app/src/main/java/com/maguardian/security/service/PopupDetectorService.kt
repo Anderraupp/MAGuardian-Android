@@ -17,6 +17,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.maguardian.security.R
 import com.maguardian.security.data.MalwareDatabase
+import com.maguardian.security.data.ThreatCatalogUpdater
 import com.maguardian.security.ui.MainActivity
 import com.maguardian.security.util.PrefsHelper
 
@@ -162,6 +163,15 @@ class PopupDetectorService : Service() {
     private var lastForegroundTime = 0L
     private val notifiedPackages = mutableSetOf<String>()
     private val heuristicCounter = mutableMapOf<String, Int>()
+    private var catalogChecksActive = false
+    private val catalogUpdateTask = object : Runnable {
+        override fun run() {
+            if (!catalogChecksActive) return
+            ThreatCatalogUpdater.update(this@PopupDetectorService)
+            handler.postDelayed(this,
+                ThreatCatalogUpdater.nextCheckDelay(this@PopupDetectorService))
+        }
+    }
 
     private val detectionRunnable = object : Runnable {
         override fun run() {
@@ -254,6 +264,8 @@ class PopupDetectorService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            catalogChecksActive = false
+            handler.removeCallbacks(catalogUpdateTask)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
             } else {
@@ -264,6 +276,9 @@ class PopupDetectorService : Service() {
             return START_NOT_STICKY
         }
         startForeground(NOTIF_ID_SERVICE, buildServiceNotification())
+        catalogChecksActive = true
+        handler.removeCallbacks(catalogUpdateTask)
+        handler.post(catalogUpdateTask)
         handler.post(detectionRunnable)
         Log.i(TAG, "Serviço iniciado — monitorando eventos de uso")
         // Varredura dos apps já instalados em background
@@ -363,6 +378,8 @@ class PopupDetectorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        catalogChecksActive = false
+        handler.removeCallbacks(catalogUpdateTask)
         super.onDestroy()
         handler.removeCallbacks(detectionRunnable)
         try {

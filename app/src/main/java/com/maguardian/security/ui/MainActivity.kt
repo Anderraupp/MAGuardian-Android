@@ -73,6 +73,15 @@ class MainActivity : AppCompatActivity() {
     private val removedCountHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val removedCountReset = Runnable { refreshUI() }
     private var screenResumed = false
+    private val catalogUpdateHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val catalogUpdateTask = object : Runnable {
+        override fun run() {
+            if (!screenResumed) return
+            ThreatCatalogUpdater.update(this@MainActivity)
+            catalogUpdateHandler.postDelayed(this,
+                ThreatCatalogUpdater.nextCheckDelay(this@MainActivity))
+        }
+    }
 
     // ── Assinatura ───────────────────────────────────────────────────────────
     private lateinit var billing: BillingManager
@@ -322,6 +331,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         removedCountHandler.removeCallbacks(removedCountReset)
+        catalogUpdateHandler.removeCallbacks(catalogUpdateTask)
         super.onDestroy()
         if (::billing.isInitialized) billing.destroy()
         if (::appUpdateManager.isInitialized) appUpdateManager.unregisterListener(installStateListener)
@@ -384,11 +394,14 @@ class MainActivity : AppCompatActivity() {
         } else {
             registerReceiver(threatReceiver, filter)
         }
+        catalogUpdateHandler.removeCallbacks(catalogUpdateTask)
+        catalogUpdateTask.run()
     }
 
     override fun onPause() {
         screenResumed = false
         removedCountHandler.removeCallbacks(removedCountReset)
+        catalogUpdateHandler.removeCallbacks(catalogUpdateTask)
         super.onPause()
         runCatching { unregisterReceiver(threatReceiver) }
         stopAllPulses()

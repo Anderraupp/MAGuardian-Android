@@ -19,12 +19,19 @@ import javax.net.ssl.HttpsURLConnection
 object ThreatCatalogUpdater {
     const val URL_CATALOG = BuildConfig.THREAT_CATALOG_URL
     const val UPDATED = "com.maguardian.security.CATALOG_UPDATED"
+    const val UPDATE_INTERVAL_MS = 5 * 60 * 1000L
     private const val JOB_ID = 74021
     private val running = AtomicBoolean(false)
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
 
     fun isUpdating(): Boolean = running.get()
+
+    fun nextCheckDelay(ctx: Context): Long {
+        val elapsed = System.currentTimeMillis() - PrefsHelper.getCatalogAttempt(ctx)
+        return if (elapsed in 0 until UPDATE_INTERVAL_MS) UPDATE_INTERVAL_MS - elapsed
+            else UPDATE_INTERVAL_MS
+    }
 
     fun hasPendingUpdate(ctx: Context): Boolean =
         PrefsHelper.getCatalogAvailableVersion(ctx) > (ThreatCatalog.snapshot()?.version ?: 0)
@@ -50,7 +57,7 @@ object ThreatCatalogUpdater {
         val app = ctx.applicationContext
         val now = System.currentTimeMillis()
         val elapsed = now - PrefsHelper.getCatalogAttempt(app)
-        if (!manual && elapsed in 0 until 5 * 60 * 1000L) {
+        if (!manual && elapsed in 0 until UPDATE_INTERVAL_MS) {
             main.post { done?.invoke(PrefsHelper.getCatalogStatus(app)) }
             return
         }
