@@ -7,6 +7,31 @@ import org.junit.Test
 
 class TrustedAppsTest {
     @Test
+    fun registeredBanksRemainExcludedAcrossDetectors() {
+        val permissions = arrayOf(
+            "android.permission.SYSTEM_ALERT_WINDOW",
+            "android.permission.RECEIVE_BOOT_COMPLETED",
+            "android.permission.INTERNET",
+            "android.permission.ACCESS_NETWORK_STATE"
+        )
+        for (pkg in listOf(
+            "com.santander.app", "br.com.santander.mobi", "br.com.santander.way",
+            "com.nu.production", "br.com.bb.android", "com.itau", "com.bradesco",
+            "br.gov.caixa", "br.com.intermedium", "com.c6bank.app",
+            "br.com.sicoob.sicredimobile", "br.com.neon.app", "br.com.sicredi"
+        )) {
+            assertTrue(pkg, MalwareDatabase.isTrustedApp(pkg))
+            assertNull(MalwareDatabase.isMalware(pkg))
+            assertNull(MalwareDatabase.checkHeuristic(pkg, "Cleaner", permissions))
+            assertNull(MalwareDatabase.checkAdwarePermissions(pkg, "App", permissions, false))
+            assertNull(MalwareDatabase.checkHiddenApp(pkg, "App", permissions, false, false))
+        }
+        // O nome do banco não basta para tornar um pacote desconhecido confiável.
+        assertFalse(MalwareDatabase.isTrustedApp("com.santander.appfake"))
+        assertFalse(MalwareDatabase.isTrustedApp("com.fake.santander"))
+    }
+
+    @Test
     fun ownerExceptionsAreExcludedFromAllDetectors() {
         for (pkg in listOf("io.metamask", "br.com.serasaexperian.consumidor", "br.com.livelo.app")) {
             assertTrue(pkg, MalwareDatabase.isTrustedApp(pkg))
@@ -58,23 +83,25 @@ class TrustedAppsTest {
             {"packageName":"br.com.livelo.app","status":"detected"},
             {"packageName":"com.rapid.filemanger","status":"detected"},
             {"packageName":"io.metamask","status":"removed","removedAt":123},
-            {"packageName":"br.com.livelo.app","status":"kept"}
+            {"packageName":"br.com.livelo.app","status":"kept"},
+            {"packageName":"com.santander.app","status":"detected"}
         ]""").commit()
         try {
             val threats = PrefsHelper.getThreats(ctx)
-            assertEquals(6, threats.length())
+            assertEquals(7, threats.length())
             for (i in 0..2) assertEquals("dismissed", threats.getJSONObject(i).getString("status"))
             assertEquals("detected", threats.getJSONObject(3).getString("status"))
             assertEquals("removed", threats.getJSONObject(4).getString("status"))
             assertEquals(123L, threats.getJSONObject(4).getLong("removedAt"))
             assertEquals("kept", threats.getJSONObject(5).getString("status"))
+            assertEquals("dismissed", threats.getJSONObject(6).getString("status"))
             assertEquals(removed, p.getInt("total_threats_removed", 0))
             assertEquals(found, p.getInt("total_threats_found", 0))
             assertEquals(kept, p.getStringSet("kept_threat_packages", emptySet()))
             PrefsHelper.saveThreat(ctx, MalwareDatabase.MalwareEntry(
                 "io.metamask", "MetaMask", "popup", "high", "old false positive"
             ))
-            assertEquals(6, PrefsHelper.getThreats(ctx).length())
+            assertEquals(7, PrefsHelper.getThreats(ctx).length())
         } finally {
             p.edit().putString("threats", original).commit()
         }
