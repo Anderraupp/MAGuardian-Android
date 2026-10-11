@@ -12,6 +12,9 @@ import org.junit.Test
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.HttpsURLConnection
+import org.json.JSONObject
+import android.os.Bundle
 
 class ThreatCatalogUpdaterTest {
     private lateinit var ctx: CatalogTestEnvironment.Sandbox
@@ -30,6 +33,81 @@ class ThreatCatalogUpdaterTest {
         ThreatCatalogUpdater.update(ctx, manual) { result = it; finished.countDown() }
         assertTrue("Bounded download did not finish", finished.await(60, TimeUnit.SECONDS))
         return result
+    }
+
+    private fun control(route: String, method: String = "GET"): JSONObject {
+        // Fail closed: no control request or oversized rehearsal may use production.
+        check(CatalogTestEnvironment.target().packageName == "com.maguardian.security.catalogvalidation")
+        check(ThreatCatalogUpdater.URL_CATALOG == "https://10.0.2.2:8443/threat-catalog.json")
+        val connection = java.net.URL("https://10.0.2.2:8443/validation/download/$route")
+            .openConnection() as HttpsURLConnection
+        try {
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+            connection.requestMethod = method
+            connection.instanceFollowRedirects = false
+            connection.useCaches = false
+            assertEquals(200, connection.responseCode)
+            return JSONObject(connection.inputStream.use {
+                ThreatCatalog.readBounded(it).toString(Charsets.UTF_8)
+            })
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun assertNetworkStopsAtLimit(mode: String) {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("network", "online") == "online")
+        val armed = control("arm?mode=$mode", "POST")
+        val id = armed.getString("id")
+        try {
+            assertEquals(ThreatCatalog.MAX_BYTES, armed.getInt("maxBytes"))
+            assertEquals(8192, armed.getInt("chunkBytes"))
+            if (mode == "unknown-length") assertTrue(armed.isNull("advertisedBytes"))
+            else assertEquals(1024, armed.getInt("advertisedBytes"))
+            // Call the exact HTTPS routine used by update(), not a mock stream or
+            // a parser rejection after downloading the whole response.
+            try {
+                ThreatCatalogUpdater.downloadCatalog()
+                fail("Oversized network body was accepted")
+            } catch (expected: IllegalArgumentException) {
+                assertEquals("Catálogo muito grande", expected.message)
+            }
+            val deadline = System.currentTimeMillis() + 5000
+            var stats = control("stats?id=$id")
+            while (!stats.getBoolean("closed") && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50)
+                stats = control("stats?id=$id")
+            }
+            assertEquals(1, stats.getInt("requests"))
+            assertTrue("Peer did not close: $stats", stats.getBoolean("closed"))
+            assertTrue("Entire response was sent: $stats", stats.getBoolean("closedEarly"))
+            assertFalse(stats.getBoolean("endCalled"))
+            val sent = stats.getLong("bytesSent")
+            // readBounded retains <= MAX_BYTES and reads at most one extra 8 KiB
+            // block. Server writes also include TLS buffering and Android's
+            // bounded close-time drain: allow 128 KiB, never the entire 16 MiB.
+            assertTrue("No actual over-limit read: $stats", sent > ThreatCatalog.MAX_BYTES)
+            assertTrue("Excessive read-ahead: $stats",
+                sent <= ThreatCatalog.MAX_BYTES.toLong() + 128 * 1024)
+            assertTrue(sent < stats.getLong("totalBytes"))
+            Thread.sleep(150)
+            assertEquals("Server kept writing after close", sent,
+                control("stats?id=$id").getLong("bytesSent"))
+            InstrumentationRegistry.getInstrumentation().sendStatus(0, Bundle().apply {
+                putString("stream", "DOWNLOAD_BOUNDARY_OK $stats\n")
+            })
+        } finally {
+            control("disarm?id=$id", "POST")
+        }
+    }
+
+    @Test fun oversizedChunkedDownloadWithoutLengthStopsNetworkReading() {
+        assertNetworkStopsAtLimit("unknown-length")
+    }
+
+    @Test fun oversizedChunkedDownloadWithMisleadingLengthStopsNetworkReading() {
+        assertNetworkStopsAtLimit("misleading-length")
     }
 
     @Test fun liveGithubMetadataWithoutQaAuthorityCannotReplaceSignedFixture() {

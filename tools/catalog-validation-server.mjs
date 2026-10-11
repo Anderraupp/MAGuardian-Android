@@ -49,10 +49,83 @@ const catalog = JSON.stringify({ format: 2, payload, sha256: hash,
   keyId, signature: signature.toString("base64") });
 
 if (!process.argv.includes("--prepare")) {
+  const maxBytes = 2 * 1024 * 1024;
+  const chunkBytes = 8192;
+  const totalBytes = maxBytes * 8;
+  const records = new Map();
+  let armed = null;
+  const json = (res, status, value) => {
+    res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    res.end(JSON.stringify(value));
+  };
+  const streamOversized = (res, record) => {
+    const headers = { "Content-Type": "application/json", "Cache-Control": "no-store",
+      "Transfer-Encoding": "chunked", "Connection": "close" };
+    // Deliberately contradictory framing from an untrusted server: the actual
+    // chunked body is 16 MiB, despite the claimed 1 KiB. Never used in production.
+    if (record.mode === "misleading-length") headers["Content-Length"] = record.advertisedBytes;
+    res.writeHead(200, headers);
+    res.flushHeaders();
+    const chunk = Buffer.alloc(chunkBytes, 0x20);
+    let timer;
+    const send = () => {
+      if (res.destroyed) return;
+      record.bytesSent += chunkBytes;
+      const writable = res.write(chunk);
+      if (record.bytesSent === record.totalBytes) {
+        record.endCalled = true;
+        res.end();
+      } else if (writable) {
+        timer = setTimeout(send, 10);
+      } else {
+        res.once("drain", () => { timer = setTimeout(send, 10); });
+      }
+    };
+    res.on("error", () => {}); // A peer abort is the expected outcome.
+    res.on("close", () => {
+      clearTimeout(timer);
+      record.closed = true;
+      record.closedEarly = !res.writableFinished && !record.endCalled;
+      fs.writeFileSync(path.join(dir, `download-${record.id}.json`), JSON.stringify(record, null, 2));
+      console.log(`DOWNLOAD_BOUNDARY ${JSON.stringify(record)}`);
+    });
+    timer = setTimeout(send, 10);
+  };
   const server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) },
     (req, res) => {
+      const url = new URL(req.url, "https://localhost");
+      if (url.pathname === "/validation/download/arm" && req.method === "POST") {
+        const mode = url.searchParams.get("mode");
+        if (!["unknown-length", "misleading-length"].includes(mode)) {
+          json(res, 400, { error: "Unknown disposable mode" }); return;
+        }
+        if (armed || [...records.values()].some(r => r.requests > 0 && !r.closed)) {
+          json(res, 409, { error: "Download already pending" }); return;
+        }
+        const id = crypto.randomUUID();
+        armed = { id, mode, maxBytes, chunkBytes, totalBytes,
+          advertisedBytes: mode === "misleading-length" ? 1024 : null,
+          bytesSent: 0, requests: 0, endCalled: false, closed: false, closedEarly: false };
+        records.set(id, armed);
+        json(res, 200, armed); return;
+      }
+      if (url.pathname === "/validation/download/stats" && req.method === "GET") {
+        const record = records.get(url.searchParams.get("id"));
+        json(res, record ? 200 : 404, record ?? { error: "Unknown download" }); return;
+      }
+      if (url.pathname === "/validation/download/disarm" && req.method === "POST") {
+        if (armed?.id === url.searchParams.get("id")) armed = null;
+        json(res, 200, { disarmed: true }); return;
+      }
       if (req.method !== "GET" || req.url !== "/threat-catalog.json") {
         res.writeHead(404); res.end(); return;
+      }
+      if (armed) {
+        const record = armed;
+        armed = null; // Only one updater request; controls never consume the body.
+        record.requests++;
+        streamOversized(res, record);
+        return;
       }
       res.writeHead(200, { "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(catalog), "Cache-Control": "no-store" });

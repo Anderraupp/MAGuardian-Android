@@ -1,0 +1,83 @@
+name: Validate bounded HTTPS catalog downloads safely
+on:
+  push:
+    branches: [qa/catalog-network-boundary]
+permissions:
+  contents: read
+concurrency:
+  group: catalog-network-boundary-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  network-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify disposable server contract
+        run: node --test tools/catalog-download-server.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Enable disposable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo udevadm settle
+          sudo chmod a+rw /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+      - name: Build disposable QA without changing production pins or permissions
+        run: |
+          bash gradlew :app:assembleDebug :app:assembleCatalogValidation :app:assembleCatalogValidationAndroidTest --no-daemon
+          mkdir -p generated-artifacts/android-download
+      - name: Start loopback HTTPS and measure early network closure
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          script: |
+            rm -f app/build/catalogValidationFixtures/download-*.json
+            node tools/catalog-validation-server.mjs > generated-artifacts/android-download/server.log 2>&1 & echo $! > generated-artifacts/android-download/server.pid
+            for attempt in $(seq 1 30); do curl --silent --fail --cacert app/build/catalogValidationFixtures/server-cert.pem https://localhost:8443/threat-catalog.json >/dev/null && break; sleep 1; done
+            curl --silent --fail --cacert app/build/catalogValidationFixtures/server-cert.pem https://localhost:8443/threat-catalog.json >/dev/null
+            test "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" = 1
+            test -z "$(adb shell pm path com.maguardian.security.catalogvalidation)"
+            adb install -r app/build/outputs/apk/catalogValidation/app-catalogValidation.apk
+            adb install -r app/build/outputs/apk/androidTest/catalogValidation/app-catalogValidation-androidTest.apk
+            adb shell am force-stop com.maguardian.security.catalogvalidation
+            adb shell dumpsys package com.maguardian.security.catalogvalidation | grep -E 'versionCode=|versionName=' > generated-artifacts/android-download/package.txt
+            adb shell getprop ro.build.version.sdk > generated-artifacts/android-download/api.txt
+            sha256sum app/build/outputs/apk/catalogValidation/app-catalogValidation.apk > generated-artifacts/android-download/apk.sha256
+            adb shell am instrument -w -r -e disposable true -e network online -e class 'com.maguardian.security.data.ThreatCatalogUpdaterTest#oversizedChunkedDownloadWithoutLengthStopsNetworkReading,com.maguardian.security.data.ThreatCatalogUpdaterTest#oversizedChunkedDownloadWithMisleadingLengthStopsNetworkReading' com.catalogvalidation.fixture/com.maguardian.security.data.CatalogTestRunner > generated-artifacts/android-download/instrumentation.log
+            cat generated-artifacts/android-download/instrumentation.log
+            cp app/build/catalogValidationFixtures/download-*.json generated-artifacts/android-download/
+            grep -F 'OK (2 tests)' generated-artifacts/android-download/instrumentation.log
+            test "$(grep -c DOWNLOAD_BOUNDARY_OK generated-artifacts/android-download/instrumentation.log)" = 2
+            ! grep -E 'FAILURES|INSTRUMENTATION_FAILED|Process crashed|shortMsg=' generated-artifacts/android-download/instrumentation.log
+      - name: Confirm no runtime modification to production source or trust
+        if: always()
+        run: git diff --exit-code -- app/src/main app/build.gradle build.gradle gradle.properties threat-catalog/trusted-keys.json shared/catalog-trust.ts
+      - name: Stop server and erase ephemeral keys
+        if: always()
+        run: |
+          if test -f generated-artifacts/android-download/server.pid; then kill "$(cat generated-artifacts/android-download/server.pid)" || true; fi
+          rm -rf app/build/catalogValidationFixtures
+      - name: Save only public counters and test evidence, never APKs or keys
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-catalog-download-evidence
+          path: generated-artifacts/android-download/
+          retention-days: 7

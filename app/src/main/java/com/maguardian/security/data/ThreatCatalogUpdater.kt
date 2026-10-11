@@ -29,6 +29,28 @@ object ThreatCatalogUpdater {
     fun hasPendingUpdate(ctx: Context): Boolean =
         PrefsHelper.getCatalogAvailableVersion(ctx) > (ThreatCatalog.snapshot()?.version ?: 0)
 
+    // Shared by the updater and the disposable HTTPS network-boundary tests.
+    // Content-Length is only an early rejection; the stream limit is authoritative.
+    internal fun downloadCatalog(): String {
+        val connection = URL(URL_CATALOG).openConnection() as HttpsURLConnection
+        try {
+            connection.apply {
+                // Default Android TLS certificate + hostname verification; never bypass.
+                instanceFollowRedirects = false
+                connectTimeout = 15000
+                readTimeout = 15000
+                requestMethod = "GET"
+                useCaches = false
+                setRequestProperty("Accept", "application/json")
+            }
+            require(connection.responseCode == 200) { "Resposta HTTP inválida" }
+            require(connection.contentLengthLong <= ThreatCatalog.MAX_BYTES)
+            return connection.inputStream.use { ThreatCatalog.readBounded(it) }.toString(Charsets.UTF_8)
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     fun schedule(ctx: Context) {
         val scheduler = ctx.getSystemService(JobScheduler::class.java) ?: run {
             PrefsHelper.setCatalogStatus(ctx, "Agendador de atualizações indisponível.")
@@ -60,7 +82,6 @@ object ThreatCatalogUpdater {
         }
         PrefsHelper.setCatalogAttempt(app, now)
         worker.execute {
-            var connection: HttpsURLConnection? = null
             val status = try {
                 val connectivity = app.getSystemService(android.net.ConnectivityManager::class.java)
                 val network = connectivity?.activeNetwork
@@ -68,19 +89,7 @@ object ThreatCatalogUpdater {
                     ?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true) {
                     "Rede indisponível"
                 }
-                connection = URL(URL_CATALOG).openConnection() as HttpsURLConnection
-                connection!!.apply {
-                    // Default Android TLS certificate + hostname verification; never bypass.
-                    instanceFollowRedirects = false
-                    connectTimeout = 15000
-                    readTimeout = 15000
-                    requestMethod = "GET"
-                    useCaches = false
-                    setRequestProperty("Accept", "application/json")
-                }
-                require(connection!!.responseCode == 200) { "Resposta HTTP inválida" }
-                require(connection!!.contentLengthLong <= ThreatCatalog.MAX_BYTES)
-                val raw = connection!!.inputStream.use { ThreatCatalog.readBounded(it) }.toString(Charsets.UTF_8)
+                val raw = downloadCatalog()
                 // Only a fully validated, APK-trusted catalog can advertise an update.
                 // Keep this metadata if installation fails, so the user can retry.
                 ThreatCatalog.initialize(app)
@@ -99,8 +108,6 @@ object ThreatCatalogUpdater {
                 } else "A base já está atualizada."
             } catch (_: Exception) {
                 "Falha na atualização. A última base válida e a base embarcada foram preservadas."
-            } finally {
-                connection?.disconnect()
             }
             PrefsHelper.setCatalogStatus(app, status)
             running.set(false)
