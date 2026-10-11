@@ -3,11 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:background="@drawable/card_background"
     android:padding="12dp"
     android:gravity="center_vertical"
     android:layout_marginBottom="8dp">
+
+    <!-- Ícone e identificação dividem somente a linha do cabeçalho. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="top">
 
     <!-- Ícone de ameaça -->
     <FrameLayout
@@ -45,7 +52,7 @@
                 android:textColor="@color/text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:ellipsize="end" />
 
             <TextView
@@ -69,7 +76,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/text_muted"
             android:textSize="10sp"
-            android:maxLines="1"
+            android:maxLines="2"
             android:ellipsize="end"
             android:layout_marginTop="2dp" />
 
@@ -85,27 +92,28 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:gravity="center_vertical"
             android:layout_marginTop="6dp">
 
             <TextView
                 android:id="@+id/tvThreatType"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
             <Button
                 android:id="@+id/btnKeep"
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:layout_marginEnd="6dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginTop="8dp"
                 android:text="Manter"
+                android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textStyle="bold"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:background="@drawable/btn_keep"
                 app:backgroundTint="@null"
                 android:paddingStart="10dp"
@@ -113,25 +121,36 @@
 
             <Button
                 android:id="@+id/btnUninstall"
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginTop="6dp"
                 android:text="Desinstalar"
+                android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textStyle="bold"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:background="@drawable/btn_primary"
                 app:backgroundTint="@null"
                 android:paddingStart="10dp"
                 android:paddingEnd="10dp" />
         </LinearLayout>
     </LinearLayout>
+    </LinearLayout>
 
+    <!-- Administração fica abaixo do cabeçalho, nunca disputa a largura
+         com a coluna de identificação e as ações do usuário. -->
     <Button
         android:id="@+id/btnAddToCatalog"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="48dp"
+        android:layout_marginTop="8dp"
         android:visibility="gone"
         android:text="Adicionar à base de ameaças"
-        android:textAllCaps="false" />
+        android:textAllCaps="false"
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        android:background="@drawable/btn_keep"
+        app:backgroundTint="@null" />
 </LinearLayout>
