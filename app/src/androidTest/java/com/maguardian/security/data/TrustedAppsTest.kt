@@ -33,7 +33,10 @@ class TrustedAppsTest {
 
     @Test
     fun ownerExceptionsAreExcludedFromAllDetectors() {
-        for (pkg in listOf("io.metamask", "br.com.serasaexperian.consumidor", "br.com.livelo.app")) {
+        for (pkg in listOf(
+            "io.metamask", "br.com.serasaexperian.consumidor", "br.com.livelo.app",
+            "br.com.timbrasil.meutim", "br.com.vivo"
+        )) {
             assertTrue(pkg, MalwareDatabase.isTrustedApp(pkg))
             assertNull(MalwareDatabase.isMalware(pkg))
             assertNull(MalwareDatabase.checkHeuristic(pkg, "Rapid Cleaner", arrayOf(
@@ -56,6 +59,8 @@ class TrustedAppsTest {
         assertFalse(MalwareDatabase.isScanExempt("io.metamaskfake"))
         assertFalse(MalwareDatabase.isTrustedApp("io.metamask.fake"))
         assertFalse(MalwareDatabase.isTrustedApp("com.itaufake"))
+        assertFalse(MalwareDatabase.isTrustedApp("br.com.timbrasil.meutimfake"))
+        assertFalse(MalwareDatabase.isTrustedApp("br.com.vivofake"))
         assertTrue(MalwareDatabase.isTrustedApp("com.nomadfintech"))
         assertTrue(MalwareDatabase.isTrustedApp("com.nomadfintech.app"))
         assertNotNull(MalwareDatabase.checkAdwarePermissions(
@@ -84,24 +89,28 @@ class TrustedAppsTest {
             {"packageName":"com.rapid.filemanger","status":"detected"},
             {"packageName":"io.metamask","status":"removed","removedAt":123},
             {"packageName":"br.com.livelo.app","status":"kept"},
-            {"packageName":"com.santander.app","status":"detected"}
+            {"packageName":"com.santander.app","status":"detected"},
+            {"packageName":"br.com.timbrasil.meutim","status":"detected"},
+            {"packageName":"br.com.vivo","status":"detected"}
         ]""").commit()
         try {
             val threats = PrefsHelper.getThreats(ctx)
-            assertEquals(7, threats.length())
+            assertEquals(9, threats.length())
             for (i in 0..2) assertEquals("dismissed", threats.getJSONObject(i).getString("status"))
             assertEquals("detected", threats.getJSONObject(3).getString("status"))
             assertEquals("removed", threats.getJSONObject(4).getString("status"))
             assertEquals(123L, threats.getJSONObject(4).getLong("removedAt"))
             assertEquals("kept", threats.getJSONObject(5).getString("status"))
             assertEquals("dismissed", threats.getJSONObject(6).getString("status"))
+            assertEquals("dismissed", threats.getJSONObject(7).getString("status"))
+            assertEquals("dismissed", threats.getJSONObject(8).getString("status"))
             assertEquals(removed, p.getInt("total_threats_removed", 0))
             assertEquals(found, p.getInt("total_threats_found", 0))
             assertEquals(kept, p.getStringSet("kept_threat_packages", emptySet()))
             PrefsHelper.saveThreat(ctx, MalwareDatabase.MalwareEntry(
                 "io.metamask", "MetaMask", "popup", "high", "old false positive"
             ))
-            assertEquals(7, PrefsHelper.getThreats(ctx).length())
+            assertEquals(9, PrefsHelper.getThreats(ctx).length())
         } finally {
             p.edit().putString("threats", original).commit()
         }
