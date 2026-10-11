@@ -138,19 +138,4 @@
     </LinearLayout>
     </LinearLayout>
 
-    <!-- Administração fica abaixo do cabeçalho, nunca disputa a largura
-         com a coluna de identificação e as ações do usuário. -->
-    <Button
-        android:id="@+id/btnAddToCatalog"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:layout_marginTop="8dp"
-        android:visibility="gone"
-        android:text="Adicionar à base de ameaças"
-        android:textAllCaps="false"
-        android:textSize="12sp"
-        android:textColor="@color/white"
-        android:background="@drawable/btn_keep"
-        app:backgroundTint="@null" />
 </LinearLayout>
