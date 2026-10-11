@@ -13,6 +13,7 @@ class ThreatStatsTest {
         val originalThreats = prefs.getString("threats", "[]")
         val originalFound = prefs.getInt("total_threats_found", 0)
         val originalRemoved = prefs.getInt("total_threats_removed", 0)
+        val originalRemovalTime = prefs.getLong("last_threat_removal", 0L)
         prefs.edit()
             .putString("threats", """[
                 {"packageName":"com.example.active","status":"detected"},
@@ -22,6 +23,7 @@ class ThreatStatsTest {
             ]""")
             .putInt("total_threats_found", 4)
             .putInt("total_threats_removed", 1)
+            .putLong("last_threat_removal", System.currentTimeMillis())
             .commit()
         try {
             block(ctx)
@@ -30,6 +32,7 @@ class ThreatStatsTest {
                 .putString("threats", originalThreats)
                 .putInt("total_threats_found", originalFound)
                 .putInt("total_threats_removed", originalRemoved)
+                .putLong("last_threat_removal", originalRemovalTime)
                 .commit()
         }
     }
@@ -55,5 +58,19 @@ class ThreatStatsTest {
         PrefsHelper.markThreatRemoved(ctx, "com.example.unknown")
         assertEquals(2, PrefsHelper.getTotalThreatsRemoved(ctx))
         assertEquals("kept", PrefsHelper.getThreats(ctx).getJSONObject(3).getString("status"))
+    }
+
+    @Test fun tenMinuteExpiryResetsOnlyRemovedCounter() = withThreats { ctx ->
+        val prefs = ctx.getSharedPreferences("maguardian_prefs", Context.MODE_PRIVATE)
+        val originalHistory = prefs.getString("threats", "[]")
+        prefs.edit().putLong("last_threat_removal",
+            System.currentTimeMillis() - 10 * 60 * 1000L).commit()
+        assertEquals(0, PrefsHelper.getTotalThreatsRemoved(ctx))
+        assertEquals(0L, PrefsHelper.getRemovedCountResetDelay(ctx))
+        assertEquals(originalHistory, prefs.getString("threats", "[]"))
+        assertEquals(4, PrefsHelper.getTotalThreatsFound(ctx))
+        PrefsHelper.markThreatRemoved(ctx, "com.example.active")
+        assertEquals(1, PrefsHelper.getTotalThreatsRemoved(ctx))
+        assertTrue(PrefsHelper.getRemovedCountResetDelay(ctx) > 0L)
     }
 }

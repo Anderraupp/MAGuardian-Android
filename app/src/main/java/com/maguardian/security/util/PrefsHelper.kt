@@ -29,6 +29,8 @@ object PrefsHelper {
     private const val KEY_KEPT_PACKAGES = "kept_threat_packages"
     private const val KEY_TOTAL_FOUND = "total_threats_found"
     private const val KEY_TOTAL_REMOVED = "total_threats_removed"
+    private const val KEY_LAST_THREAT_REMOVAL = "last_threat_removal"
+    private const val REMOVED_COUNT_RESET_MS = 10 * 60 * 1000L
     private const val KEY_LAST_SCAN = "last_scan"
     private const val KEY_SCAN_COUNT = "scan_count"
     private const val SCAN_COUNT_LIMIT = 10
@@ -74,8 +76,36 @@ object PrefsHelper {
     fun getTotalThreatsFound(ctx: Context): Int =
         prefs(ctx).getInt(KEY_TOTAL_FOUND, 0)
 
-    fun getTotalThreatsRemoved(ctx: Context): Int =
-        prefs(ctx).getInt(KEY_TOTAL_REMOVED, 0)
+    @Synchronized
+    fun getTotalThreatsRemoved(ctx: Context): Int {
+        val prefs = prefs(ctx)
+        val count = prefs.getInt(KEY_TOTAL_REMOVED, 0)
+        if (count <= 0) return 0
+        val now = System.currentTimeMillis()
+        var lastRemoval = prefs.getLong(KEY_LAST_THREAT_REMOVAL, 0L)
+        if (lastRemoval <= 0L) {
+            // Existing installations already store the removal date in their history.
+            val threats = getThreats(ctx)
+            lastRemoval = (0 until threats.length())
+                .map { threats.getJSONObject(it).optLong("removedAt", 0L) }
+                .maxOrNull()?.takeIf { it > 0L } ?: now
+            prefs.edit().putLong(KEY_LAST_THREAT_REMOVAL, lastRemoval).apply()
+        }
+        if (now - lastRemoval >= REMOVED_COUNT_RESET_MS) {
+            prefs.edit().putInt(KEY_TOTAL_REMOVED, 0)
+                .remove(KEY_LAST_THREAT_REMOVAL).apply()
+            return 0
+        }
+        return count
+    }
+
+    @Synchronized
+    fun getRemovedCountResetDelay(ctx: Context): Long {
+        if (getTotalThreatsRemoved(ctx) == 0) return 0L
+        val now = System.currentTimeMillis()
+        val age = (now - prefs(ctx).getLong(KEY_LAST_THREAT_REMOVAL, now)).coerceAtLeast(0L)
+        return (REMOVED_COUNT_RESET_MS - age).coerceAtLeast(0L)
+    }
 
     fun getLastScan(ctx: Context): Long =
         prefs(ctx).getLong(KEY_LAST_SCAN, 0L)
@@ -154,10 +184,11 @@ object PrefsHelper {
 
         // Returning to the app and refreshing the list may report the same removal.
         if (!newlyRemoved) return
-        val totalRemoved = prefs.getInt(KEY_TOTAL_REMOVED, 0) + 1
+        val totalRemoved = getTotalThreatsRemoved(ctx) + 1
         prefs.edit()
             .putString(KEY_THREATS, updated.toString())
             .putInt(KEY_TOTAL_REMOVED, totalRemoved)
+            .putLong(KEY_LAST_THREAT_REMOVAL, System.currentTimeMillis())
             .apply()
     }
 
@@ -217,6 +248,7 @@ object PrefsHelper {
         prefs(ctx).edit()
             .putInt(KEY_TOTAL_FOUND, 0)
             .putInt(KEY_TOTAL_REMOVED, 0)
+            .remove(KEY_LAST_THREAT_REMOVAL)
             .putInt(KEY_SCAN_COUNT, 0)
             .putLong(KEY_LAST_SCAN, 0L)
             .putString(KEY_THREATS, "[]")

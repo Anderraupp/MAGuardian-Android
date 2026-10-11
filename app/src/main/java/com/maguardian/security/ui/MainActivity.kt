@@ -70,6 +70,9 @@ class MainActivity : AppCompatActivity() {
 
     private val pendingUninstall = mutableSetOf<String>()
     private val pulseAnimators = mutableMapOf<Int, ValueAnimator>()
+    private val removedCountHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val removedCountReset = Runnable { refreshUI() }
+    private var screenResumed = false
 
     // ── Assinatura ───────────────────────────────────────────────────────────
     private lateinit var billing: BillingManager
@@ -318,6 +321,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        removedCountHandler.removeCallbacks(removedCountReset)
         super.onDestroy()
         if (::billing.isInitialized) billing.destroy()
         if (::appUpdateManager.isInitialized) appUpdateManager.unregisterListener(installStateListener)
@@ -325,6 +329,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        screenResumed = true
         showCatalogStatus()
 
         // Verifica se uma atualização já foi baixada e aguarda instalação
@@ -382,6 +387,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        screenResumed = false
+        removedCountHandler.removeCallbacks(removedCountReset)
         super.onPause()
         runCatching { unregisterReceiver(threatReceiver) }
         stopAllPulses()
@@ -1475,7 +1482,12 @@ class MainActivity : AppCompatActivity() {
                 installed
             }
         val totalFound = activeThreats.size
+        removedCountHandler.removeCallbacks(removedCountReset)
+        val removedCountDelay = PrefsHelper.getRemovedCountResetDelay(this)
         val totalRemoved = PrefsHelper.getTotalThreatsRemoved(this)
+        if (screenResumed && removedCountDelay > 0L) {
+            removedCountHandler.postDelayed(removedCountReset, removedCountDelay)
+        }
 
         val tvStatus = findViewById<TextView>(R.id.tvStatus)
         val tvStatusBadge = findViewById<TextView>(R.id.tvStatusBadge)
