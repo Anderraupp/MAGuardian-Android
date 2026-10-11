@@ -31,6 +31,7 @@ object PrefsHelper {
     private const val KEY_TOTAL_REMOVED = "total_threats_removed"
     private const val KEY_LAST_SCAN = "last_scan"
     private const val KEY_SCAN_COUNT = "scan_count"
+    private const val SCAN_COUNT_LIMIT = 10
     private const val KEY_NOTIF_ASKED = "notif_permission_asked"
     private const val KEY_LAST_STATS_RESET   = "last_stats_reset"
     private const val KEY_SUBSCRIPTION_ACTIVE = "subscription_active"
@@ -82,11 +83,18 @@ object PrefsHelper {
     fun setLastScan(ctx: Context, time: Long) =
         prefs(ctx).edit().putLong(KEY_LAST_SCAN, time).apply()
 
-    fun getScanCount(ctx: Context): Int =
-        prefs(ctx).getInt(KEY_SCAN_COUNT, 0)
+    @Synchronized
+    fun getScanCount(ctx: Context): Int {
+        val count = prefs(ctx).getInt(KEY_SCAN_COUNT, 0)
+        if (count in 0 until SCAN_COUNT_LIMIT) return count
+        // Reset counts saved before the ten-scan cycle was introduced.
+        prefs(ctx).edit().putInt(KEY_SCAN_COUNT, 0).apply()
+        return 0
+    }
 
+    @Synchronized
     fun incrementScanCount(ctx: Context) {
-        val count = prefs(ctx).getInt(KEY_SCAN_COUNT, 0) + 1
+        val count = (getScanCount(ctx) + 1) % SCAN_COUNT_LIMIT
         prefs(ctx).edit().putInt(KEY_SCAN_COUNT, count).apply()
     }
 
