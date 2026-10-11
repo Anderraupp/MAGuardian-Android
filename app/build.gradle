@@ -29,7 +29,8 @@ android {
             buildConfigField "String", "THREAT_CATALOG_URL", '"https://10.0.2.2:8443/threat-catalog.json"'
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

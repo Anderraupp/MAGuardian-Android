@@ -29,10 +29,9 @@ class LinkCheckerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
-        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        ScreenInsets.configure(window)
         setContentView(R.layout.activity_link_checker)
+        ScreenInsets.apply(this)
 
         etUrl         = findViewById(R.id.etUrl)
         btnCheck      = findViewById(R.id.btnCheck)

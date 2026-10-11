@@ -26,7 +26,6 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
 import com.maguardian.security.R
 import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.data.MalwareDatabase
@@ -122,8 +121,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ScreenInsets.configure(window)
         setContentView(R.layout.activity_main)
+        ScreenInsets.apply(this)
         setupUI()
         setupCatalogUI()
         com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent?.data)

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MAGuardian" parent="Theme.MAGuardian.Base">
+        <!-- ALWAYS is supported on API 30+ and remains valid on Android 15/16.
+             Content avoids the cutout through explicit WindowInsets padding. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+    </style>
+</resources>

@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
 import com.maguardian.security.R
 import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.util.PrefsHelper
@@ -24,8 +23,9 @@ class SubscriptionActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ScreenInsets.configure(window)
         setContentView(R.layout.activity_subscription)
+        ScreenInsets.apply(this)
 
         tvPrice       = findViewById(R.id.tvMonthlyPrice)
         btnSubscribe  = findViewById(R.id.btnSubscribe)
