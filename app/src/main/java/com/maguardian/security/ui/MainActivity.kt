@@ -1648,14 +1648,6 @@ class MainActivity : AppCompatActivity() {
             val btnUninstall = view.findViewById<Button>(R.id.btnUninstall)
             val btnKeep = view.findViewById<Button>(R.id.btnKeep)
             val pkg = threat.getString("packageName")
-            view.findViewById<Button>(R.id.btnAddToCatalog).apply {
-                visibility = if (com.maguardian.security.util.CatalogAdmin.isEnabled(this@MainActivity)) View.VISIBLE else View.GONE
-                setOnClickListener {
-                    com.maguardian.security.util.CatalogAdmin.prepare(
-                        this@MainActivity, pkg, threat.getString("appName"), threat.optString("description", "")
-                    )
-                }
-            }
             btnUninstall.setOnClickListener {
                 requireSubscriptionToUninstall(pkg)
             }

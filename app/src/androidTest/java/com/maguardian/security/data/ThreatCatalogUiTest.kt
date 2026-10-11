@@ -34,13 +34,12 @@ import java.io.File
 
 /** Actual button, status rendering and offline license dialog on the isolated APK. */
 class ThreatCatalogUiTest {
-    @Test fun threatCardKeepsDetailsAndActionsVisibleWithAdminAndLargeFonts() {
+    @Test fun threatCardKeepsDetailsAndActionsVisibleWithLargeFonts() {
         val ctx = CatalogTestEnvironment.target()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.runOnMainSync {
             for (widthDp in listOf(280, 360, 640)) {
                 for (fontScale in listOf(1f, 2f)) {
-                    for (admin in listOf(false, true)) {
                         val config = Configuration(ctx.resources.configuration).apply {
                             this.fontScale = fontScale
                         }
@@ -52,17 +51,14 @@ class ThreatCatalogUiTest {
                         root.findViewById<TextView>(R.id.tvThreatPackage).text = "com.example.layouttest"
                         root.findViewById<TextView>(R.id.tvThreatType).text = "Pop-up Invasivo"
                         root.findViewById<TextView>(R.id.tvThreatSeverity).text = "ALTO"
-                        root.findViewById<View>(R.id.btnAddToCatalog).visibility =
-                            if (admin) View.VISIBLE else View.GONE
                         val density = themed.resources.displayMetrics.density
                         val width = (widthDp * density).toInt()
                         root.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                         root.layout(0, 0, width, root.measuredHeight)
-                        val context = "width=$widthDp font=$fontScale admin=$admin"
+                        val context = "width=$widthDp font=$fontScale"
                         val ids = mutableListOf(R.id.tvThreatName, R.id.tvThreatPackage,
                             R.id.tvThreatType, R.id.tvThreatSeverity, R.id.btnKeep, R.id.btnUninstall)
-                        if (admin) ids.add(R.id.btnAddToCatalog)
                         val cardBounds = Rect(0, 0, root.width, root.height)
                         for (id in ids) {
                             val child = root.findViewById<View>(id)
@@ -84,11 +80,10 @@ class ThreatCatalogUiTest {
                         if (widthDp == 360 && fontScale == 1f) {
                             val bitmap = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
                             root.draw(Canvas(bitmap))
-                            File(ctx.cacheDir, if (admin) "threat-card-admin.png" else "threat-card-user.png")
+                            File(ctx.cacheDir, "threat-card-user.png")
                                 .outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
                             bitmap.recycle()
                         }
-                    }
                 }
             }
         }
