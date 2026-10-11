@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": 4,
-  "publishedAt": "2026-10-11T02:49:14.975Z",
+  "version": 5,
+  "publishedAt": "2026-10-11T20:54:45.204Z",
   "indicators": [
     {
       "packageName": "eu.siacs.bingechat",
@@ -56,12 +56,12 @@
     {
       "packageName": "com.rapid.filemanger",
       "appName": "Rapid Cleaner",
-      "apkSha256": [
-        "3be0b8d5eacb8c414aa9c5ee0cebf989b289296a20f407c740a0b4374a2d00ea"
-      ],
       "threatType": "popup",
       "severity": "medium",
       "description": "Muito pop-up",
+      "apkSha256": [
+        "3be0b8d5eacb8c414aa9c5ee0cebf989b289296a20f407c740a0b4374a2d00ea"
+      ],
       "status": "confirmed",
       "source": {
         "name": "Análise manual do administrador do M&A Guardian",
@@ -74,6 +74,29 @@
         "reviewer": "Administrador do M&A Guardian",
         "reviewedAt": "2026-10-11T02:49:14.975Z",
         "evidence": "O app esta apresentando muito pop-up."
+      }
+    },
+    {
+      "packageName": "com.storage.androidcleaner",
+      "appName": "Cleanup",
+      "apkSha256": [
+        "0f1d7a42a4a5f14e88211b4420370eaac755ea3d73b4e476001dc1878c243bcf"
+      ],
+      "threatType": "popup",
+      "severity": "medium",
+      "description": "O app tem muitas propagandas",
+      "status": "confirmed",
+      "source": {
+        "name": "Análise manual do administrador do M&A Guardian",
+        "url": "https://github.com/Anderraupp/MAGuardian-Android",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attribution": "Indicadores e observação própria publicados pelo administrador do M&A Guardian sob CC0-1.0; não inclui o APK."
+      },
+      "review": {
+        "reviewer": "Administrador do M&A Guardian",
+        "reviewedAt": "2026-10-11T20:54:45.204Z",
+        "evidence": "O app tem emitido muitos anúncios"
       }
     }
   ]
