@@ -50,7 +50,7 @@ object ThreatCatalogUpdater {
         val app = ctx.applicationContext
         val now = System.currentTimeMillis()
         val elapsed = now - PrefsHelper.getCatalogAttempt(app)
-        if (!manual && elapsed in 0 until 6 * 60 * 60 * 1000L) {
+        if (!manual && elapsed in 0 until 5 * 60 * 1000L) {
             main.post { done?.invoke(PrefsHelper.getCatalogStatus(app)) }
             return
         }
