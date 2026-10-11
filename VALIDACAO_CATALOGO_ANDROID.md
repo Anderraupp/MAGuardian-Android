@@ -1,5 +1,82 @@
 # Validação do catálogo em Android descartável
 
+## Interrupção de downloads sem tamanho confiável
+
+O workflow isolado `validate-catalog-download.yml`, na branch QA
+`qa/catalog-network-boundary`, executa somente os dois casos de rede de
+`ThreatCatalogUpdaterTest`. Não executa recuperação de cache, upgrades,
+reinício, ensaio genérico de atualização recusada nem consulta ao GitHub de
+produção. O emulador é novo e apenas o pacote `.catalogvalidation` é instalado.
+
+O servidor HTTPS de loopback usa as chaves RSA-3072/TLS efêmeras já exclusivas
+da variante QA. Nenhuma permissão, pin ou verificação TLS de produção muda.
+Os controles `/validation/download/arm`, `/stats` e `/disarm` existem somente
+nesse servidor descartável. Cada resposta é armada para um único download:
+
+- `unknown-length`: resposta `Transfer-Encoding: chunked`, sem
+  `Content-Length`, com corpo planejado de **16 MiB**.
+- `misleading-length`: também em chunks, com o mesmo corpo de **16 MiB**, mas
+  anunciando falsamente `Content-Length: 1024`. O conflito entre os headers é
+  intencional e malicioso: em uma resposta sem framing chunked, o leitor HTTP
+  poderia simplesmente terminar no tamanho anunciado, sem exercitar o limite
+  real do corpo. Não é um formato recomendado para servidores normais.
+
+O corpo é enviado em blocos de 8 KiB, espaçados em 25 ms, respeitando
+backpressure. Os testes chamam a própria rotina HTTPS do atualizador e exigem
+a exceção **“Catálogo muito grande”**, emitida pelo leitor limitado, não uma
+rejeição posterior de JSON/assinatura ou um erro genérico de HTTP.
+
+O limite de conteúdo retido continua **2 MiB**. O leitor pode consumir um
+bloco adicional de até 8 KiB para detectar o excesso. O contador do servidor
+é diferente: mede bytes entregues a `res.write`, incluindo buffering TLS e
+a drenagem limitada ao fechar o stream Android. Por isso, o teste permite
+no servidor no máximo **2 MiB + 128 KiB**, exige fechamento precoce, ausência
+de `res.end`, apenas um pedido e contador estável após fechar. Não afirma
+que bytes escritos no socket equivalem a bytes retidos pelo cliente.
+
+Evidências públicas: `instrumentation.log` com dois `DOWNLOAD_BOUNDARY_OK`,
+`server.log`, JSONs de contadores, API/versão e hash do APK QA.
+Não são enviados APKs, corpos de 16 MiB ou chaves privadas. O workflow apaga
+as chaves efêmeras ao sair e não modifica a branch `main`.
+
+Para verificar apenas o contrato do servidor, sem Android:
+
+```sh
+node --test tools/catalog-download-server.test.mjs
+```
+
+Esse teste Node não substitui a execução instrumentada. Ele usa um parser
+permissivo apenas para consumir a fixture deliberadamente contraditória;
+o Android usa seu cliente HTTPS padrão, sem relaxar TLS ou substituir HTTP.
+
+### Resultado confirmado em 11/10/2026
+
+[Execução Android 36 aprovada](https://github.com/Anderraupp/MAGuardian-Android/actions/runs/38107011024),
+com `OK (2 tests)` e dois registros `DOWNLOAD_BOUNDARY_OK`. O APK QA
+permaneceu na versão **44 / 1.6.6**, sem upgrade.
+
+| Resposta | Tamanho anunciado | Bytes escritos pelo servidor | Corpo planejado |
+| --- | ---: | ---: | ---: |
+| Chunks sem tamanho | ausente | 2.154.496 | 16.777.216 |
+| Chunks com tamanho enganoso | 1.024 | 2.138.112 | 16.777.216 |
+
+Ambas tiveram `closedEarly=true`, `endCalled=false`, apenas um pedido e
+contadores estáveis após fechar. Os bytes adicionais em trânsito foram
+**56 KiB** e **40 KiB**, dentro da margem remota de 128 KiB; não são
+conteúdo retido acima do limite de 2 MiB. Ambas exigiram a exceção específica
+do leitor limitado. Nenhuma resposta completa foi consumida.
+
+A primeira execução já demonstrou fechamento precoce, mas uma resposta
+acumulou 152 KiB adicionais no contador remoto, acima da margem do teste.
+O ajuste foi espaçar os chunks em 25 ms em vez de 10 ms, sem aumentar a
+margem, mudar `MAX_BYTES` ou alterar o comportamento de produção.
+O workflow aprovado também compilou debug/QA, confirmou fontes/pinos/
+permissões intactos durante o ensaio e apagou as chaves efêmeras.
+Evidências públicas locais ignoradas:
+`generated-artifacts/catalog-download/passed/`.
+O teste Node do contrato do servidor também passou. A branch `main` não
+foi alterada e nenhuma release foi publicada.
+
 Não executar os testes no aparelho de uso. Eles não usam o pacote normal:
 o build `catalogValidation` tem o identificador
 `com.maguardian.security.catalogvalidation`, mantém a versão do aplicativo e usa
