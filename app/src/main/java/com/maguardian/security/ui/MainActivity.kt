@@ -158,6 +158,21 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnRequestDataDeletion).setOnClickListener {
             com.maguardian.security.util.PrivacyRequests.show(this)
         }
+        findViewById<Button>(R.id.btnLearnAboutGuardian).setOnClickListener {
+            val website = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://guardian.meacelulareseacessorios.com.br/")
+            ).addCategory(Intent.CATEGORY_BROWSABLE)
+            try {
+                startActivity(website)
+            } catch (_: android.content.ActivityNotFoundException) {
+                Toast.makeText(
+                    this,
+                    "Nenhum navegador disponível para abrir o site.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
         initBilling()
         checkPermissionsAndStart()
         checkAndRequestNotifPermission()

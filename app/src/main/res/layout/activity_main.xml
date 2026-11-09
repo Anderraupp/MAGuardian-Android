@@ -940,6 +940,17 @@
                 android:textSize="12sp" />
 
             <Button
+                android:id="@+id/btnLearnAboutGuardian"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="Conheça o M&amp;A Guardian"
+                android:textAllCaps="false"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <Button
                 android:id="@+id/btnRequestDataDeletion"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="match_parent"
