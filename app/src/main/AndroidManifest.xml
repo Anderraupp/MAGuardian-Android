@@ -31,7 +31,7 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="M&amp;A Guardian"
+        android:label="@string/app_name"
         android:name=".MAGuardianApp"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -58,6 +58,7 @@
         <!-- Activity Principal -->
         <activity
             android:name=".ui.MainActivity"
+            android:theme="@style/Theme.MAGuardian.Preview"
             android:exported="true"
             android:launchMode="singleTop">
             <intent-filter>
@@ -86,17 +87,18 @@
         <activity
             android:name=".ui.SubscriptionActivity"
             android:exported="false"
-            android:theme="@style/Theme.MAGuardian" />
+            android:theme="@style/Theme.MAGuardian.Preview" />
 
         <!-- Verificador Manual de Links (Anti-Phishing) -->
         <activity
             android:name=".ui.AppCacheActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.MAGuardian.Preview" />
 
         <activity
             android:name=".ui.LinkCheckerActivity"
             android:exported="false"
-            android:theme="@style/Theme.MAGuardian" />
+            android:theme="@style/Theme.MAGuardian.Preview" />
 
         <!-- Verificação periódica de novas versões no Google Play -->
         <service
