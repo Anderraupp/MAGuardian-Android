@@ -6,6 +6,8 @@
     <TextView android:id="@+id/tvThreatPackage" style="@style/GuardianCaption" android:textIsSelectable="true" />
     <TextView android:id="@+id/tvThreatType" style="@style/GuardianText" android:layout_marginTop="14dp" />
     <TextView style="@style/GuardianText" android:text="Revise este aplicativo antes de decidir. Se você o reconhece e deseja continuar usando, escolha Manter. Para solicitar a remoção pelo Android, escolha Desinstalar." android:layout_marginTop="12dp" />
-    <Button android:id="@+id/btnKeep" style="@style/GuardianSecondary" android:text="Manter" android:layout_marginTop="16dp" />
-    <Button android:id="@+id/btnUninstall" style="@style/GuardianButton" android:text="Desinstalar" android:layout_marginTop="10dp" />
+    <Button android:id="@+id/btnKeep" style="@style/GuardianSecondary" android:text="Manter"
+        android:background="@drawable/guardian_keep_crystal" android:textColor="#0D5135" android:layout_marginTop="16dp" />
+    <Button android:id="@+id/btnUninstall" style="@style/GuardianButton" android:text="Desinstalar"
+        android:background="@drawable/guardian_uninstall_crystal" android:textColor="#5B1510" android:layout_marginTop="10dp" />
 </LinearLayout>
