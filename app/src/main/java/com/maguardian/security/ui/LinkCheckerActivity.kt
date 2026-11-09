@@ -2,7 +2,6 @@ package com.maguardian.security.ui
 
 import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -10,10 +9,22 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import com.maguardian.security.R
 import com.maguardian.security.util.LinkChecker
+import java.net.URI
+import java.net.URISyntaxException
 
 class LinkCheckerActivity : AppCompatActivity() {
+    override fun onPostCreate(savedInstanceState: Bundle?) {
+        super.onPostCreate(savedInstanceState)
+        // Register after Android restores the input, so rotation/theme changes
+        // keep their saved result but editing a different link never keeps green.
+        etUrl.doAfterTextChanged {
+            clearResult()
+            etUrl.error = null
+        }
+    }
     override fun onResume() {
         super.onResume()
         GuardianAppearance.refreshIfChanged(this)
@@ -77,8 +88,18 @@ class LinkCheckerActivity : AppCompatActivity() {
 
         btnCheck.setOnClickListener {
             val url = etUrl.text.toString().trim()
-            if (url.isEmpty()) { etUrl.error = "Cole ou digite um link"; return@setOnClickListener }
-            showResult(LinkChecker.check(url))
+            val normalized = normalizedHttpUrl(url)
+            if (normalized == null) {
+                clearResult()
+                etUrl.error = if (url.isEmpty()) "Cole ou digite um link"
+                    else "Endereço inválido ou não suportado. Use um link http:// ou https://."
+                return@setOnClickListener
+            }
+            try {
+                showResult(LinkChecker.check(normalized))
+            } catch (_: Exception) {
+                showAnalysisError()
+            }
         }
         savedInstanceState?.getBundle("guardian_link_result")?.let { saved ->
             val verdict = saved.getString("verdict") ?: return@let
@@ -88,11 +109,42 @@ class LinkCheckerActivity : AppCompatActivity() {
         }
     }
 
+    private fun normalizedHttpUrl(input: String): String? {
+        if (input.isEmpty() || input.any { it.isWhitespace() || it.isISOControl() }) return null
+        val protocol = Regex("^[A-Za-z][A-Za-z0-9+.-]*:").find(input)?.value?.dropLast(1)
+        if (protocol != null && !protocol.equals("http", true) &&
+            !protocol.equals("https", true) && !protocol.contains(".")) return null
+        val candidate = when {
+            input.startsWith("//") -> "https:$input"
+            Regex("^[A-Za-z][A-Za-z0-9+.-]*://").containsMatchIn(input) -> input
+            else -> "https://$input"
+        }
+        val parsed = try { URI(candidate) } catch (_: URISyntaxException) { return null }
+        if (!parsed.scheme.equals("http", true) && !parsed.scheme.equals("https", true)) return null
+        if (parsed.host.isNullOrBlank() || parsed.port < -1 || parsed.port > 65535) return null
+        return candidate
+    }
+
+    private fun clearResult() {
+        lastResult = null
+        cardResult.visibility = View.GONE
+    }
+
+    private fun showAnalysisError() {
+        clearResult()
+        etUrl.error = "Não foi possível concluir a verificação. Não considere este link seguro."
+    }
+
     private fun showResult(result: LinkChecker.Result) {
+        val verdict = result.verdict.uppercase()
+        if (verdict !in setOf("SEGURO", "SUSPEITO", "FRAUDULENTO")) {
+            showAnalysisError()
+            return
+        }
         lastResult = result
         cardResult.visibility = View.VISIBLE
 
-        val (icon, colorResource) = when (result.verdict) {
+        val (icon, colorResource) = when (verdict) {
             "FRAUDULENTO" -> "!" to R.color.guardian_danger
             "SUSPEITO"    -> "!" to R.color.guardian_warning
             else          -> "✓" to R.color.guardian_success
@@ -101,10 +153,10 @@ class LinkCheckerActivity : AppCompatActivity() {
 
         tvVerdictIcon.text = icon
         tvVerdictIcon.setTextColor(color)
-        val verdictLabel = when (result.verdict) {
-            "FRAUDULENTO" -> "Alto risco identificado"
-            "SUSPEITO" -> "Sinais de atenção"
-            else -> "Sem indicadores identificados"
+        val verdictLabel = when (verdict) {
+            "FRAUDULENTO" -> "Alto risco: não abra este link"
+            "SUSPEITO" -> "Suspeito: pode haver risco"
+            else -> "Seguro nesta análise"
         }
         tvVerdict.text = "$verdictLabel — ${result.category}"
         tvVerdict.setTextColor(color)

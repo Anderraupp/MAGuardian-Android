@@ -5,6 +5,8 @@ package com.maguardian.security.util
  * Cobre 20+ categorias de golpes comuns no Brasil.
  */
 object LinkChecker {
+    private fun belongsToDomain(host: String, domain: String): Boolean =
+        host == domain || host.endsWith(".$domain")
 
     data class Result(
         val score: Int,
@@ -290,8 +292,9 @@ object LinkChecker {
         val lower = url.lowercase().trim()
         val withScheme = if (!lower.startsWith("http")) "https://$lower" else lower
         val noScheme = withScheme.removePrefix("https://").removePrefix("http://")
-        val host     = noScheme.substringBefore("/").substringBefore("?")
-        val path     = noScheme.removePrefix(host).lowercase()
+        val authority = noScheme.substringBefore("/").substringBefore("?").substringBefore("#")
+        val host     = authority.replace(Regex(":\\d+$"), "")
+        val path     = noScheme.removePrefix(authority).lowercase()
         val hostNorm = deHomoglyph(host)     // versão com homóglifos resolvidos
 
         // ── Domínio oficial confirmado — retorno imediato seguro ────────────
@@ -311,8 +314,8 @@ object LinkChecker {
         // ── 0. ARQUIVO EXECUTÁVEL NA URL — risco máximo ──────────────────────
         // Detecta antes de qualquer outra coisa. .exe, .msi, .bat, .ps1, .vbs etc.
         // num link são quase sempre malware — nenhum serviço legítimo envia assim.
-        val urlNoQuery = lower.substringBefore("?").substringBefore("#")
-        val execExt = maliciousExtensions.firstOrNull { urlNoQuery.endsWith(it) }
+        val downloadPath = path.substringBefore("?").substringBefore("#")
+        val execExt = maliciousExtensions.firstOrNull { downloadPath.endsWith(it) }
         if (execExt != null) {
             score += 80
             reasons.add(
@@ -356,7 +359,7 @@ object LinkChecker {
         // ── 1b. Subdomínio "go." — redirect tracker de campanha ──────────────
         // go.nondi.info, go.anycrazysite.info etc. — padrão de rastreamento
         // de cliques usado em spam/golpes enviados por WhatsApp e SMS
-        if (host.startsWith("go.") && !host.endsWith("google.com") && !host.endsWith("go.com")) {
+        if (host.startsWith("go.") && !belongsToDomain(host, "google.com") && !belongsToDomain(host, "go.com")) {
             score += 35
             reasons.add("Subdomínio \"go.\" ($host) é padrão de link de rastreamento usado em golpes por WhatsApp e SMS — o destino real está oculto")
             if (topCategory == "Desconhecido" || topCategory == "Link Encurtado") topCategory = "Link Suspeito / Redirect"
@@ -386,7 +389,7 @@ object LinkChecker {
         // ── 5. Banco/Fintech no domínio NÃO-OFICIAL ────────────────────────
         val bankHit = bankBrands.firstOrNull { brand ->
             (host.contains(brand) || hostNorm.contains(brand)) &&
-            !host.endsWith("$brand.com.br") && !host.endsWith("$brand.com")
+            !belongsToDomain(host, "$brand.com.br") && !belongsToDomain(host, "$brand.com")
         }
         if (bankHit != null) {
             score += 55
@@ -397,8 +400,8 @@ object LinkChecker {
         // ── 6. Marca global em domínio não-oficial ──────────────────────────
         val brandHit = if (bankHit == null) globalBrands.firstOrNull { brand ->
             (host.contains(brand) || hostNorm.contains(brand)) &&
-            !host.endsWith("$brand.com") && !host.endsWith("$brand.com.br") &&
-            !host.endsWith("$brand.net")
+            !belongsToDomain(host, "$brand.com") && !belongsToDomain(host, "$brand.com.br") &&
+            !belongsToDomain(host, "$brand.net")
         } else null
         if (brandHit != null) {
             score += 45
