@@ -171,9 +171,14 @@ class AppCacheActivity : AppCompatActivity() {
             text = "Abrir"
             textSize = 13f
             isAllCaps = false
+            gravity = Gravity.CENTER
+            maxLines = 1
+            includeFontPadding = false
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(48))
+            minWidth = dp(76)
             minHeight = dp(48)
-            setPadding(dp(12), 0, dp(12), 0)
-            background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_secondary)
+            setPadding(dp(10), 0, dp(10), 0)
+            background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.app_cache_open)
             backgroundTintList = null
             setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_ink))
             contentDescription = "Abrir configurações de ${entry.label}"
