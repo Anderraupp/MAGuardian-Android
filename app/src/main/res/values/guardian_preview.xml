@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Test-only visual direction. Existing overlay/service palettes stay unchanged. -->
+    <color name="guardian_paper">#F3EFE9</color>
+    <color name="guardian_card">#FBF9F5</color>
+    <color name="guardian_ink">#272523</color>
+    <color name="guardian_muted">#68615B</color>
+    <color name="guardian_line">#DED6CD</color>
+    <color name="guardian_red">#B94235</color>
+    <color name="guardian_red_deep">#8F2F27</color>
+    <color name="guardian_wash">#F1DFD8</color>
+    <color name="guardian_success">#3F633F</color>
+    <style name="Theme.MAGuardian.Preview" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/guardian_red</item>
+        <item name="colorPrimaryVariant">@color/guardian_red_deep</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/guardian_red</item>
+        <item name="android:colorAccent">@color/guardian_red</item>
+        <item name="android:colorBackground">@color/guardian_paper</item>
+        <item name="android:windowBackground">@color/guardian_paper</item>
+        <item name="android:textColorPrimary">@color/guardian_ink</item>
+        <item name="android:textColorSecondary">@color/guardian_muted</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="materialButtonStyle">@style/Widget.AppCompat.Button</item>
+    </style>
+    <style name="GuardianText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/guardian_ink</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+    <style name="GuardianCaption" parent="GuardianText">
+        <item name="android:textColor">@color/guardian_muted</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    <style name="GuardianHeading" parent="GuardianText">
+        <item name="android:textSize">19sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_marginBottom">12dp</item>
+    </style>
+    <style name="GuardianCard">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/guardian_card</item>
+        <item name="android:padding">18dp</item>
+        <item name="android:layout_marginBottom">16dp</item>
+    </style>
+    <style name="GuardianButton" parent="Widget.AppCompat.Button">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">50dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:background">@drawable/guardian_primary</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:padding">12dp</item>
+    </style>
+    <style name="GuardianSecondary" parent="GuardianButton">
+        <item name="android:textColor">@color/guardian_ink</item>
+        <item name="android:background">@drawable/guardian_secondary</item>
+    </style>
+    <style name="GuardianTool" parent="GuardianSecondary">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:minHeight">110dp</item>
+        <item name="android:drawablePadding">12dp</item>
+        <item name="android:drawableTint">@color/guardian_red</item>
+        <item name="android:gravity">center</item>
+    </style>
+    <style name="GuardianMetric" parent="GuardianText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:fontFamily">monospace</item>
+    </style>
+    <style name="GuardianFooter" parent="GuardianSecondary">
+        <item name="android:textSize">12sp</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:textColor">@color/guardian_muted</item>
+    </style>
+</resources>

@@ -11,8 +11,8 @@ android {
         applicationId "com.maguardian.security"
         minSdk 26
         targetSdk 36
-        versionCode 56
-        versionName "1.6.18"
+        versionCode 57
+        versionName "1.6.19"
         testInstrumentationRunner "com.maguardian.security.data.CatalogTestRunner"
         // A harmless fixture outside the application's intentionally trusted prefix.
         testApplicationId "com.catalogvalidation.fixture"
@@ -20,6 +20,13 @@ android {
     }
 
     buildTypes {
+        // A visual-test APK must not replace the Play-installed app or its data.
+        // Play Billing remains untouched; purchases are not supported in this package.
+        debug {
+            applicationIdSuffix ".visualtest"
+            versionNameSuffix "-teste"
+            resValue "string", "app_name", "M&A Guardian Teste"
+        }
         // Never run mutating catalog tests against the user's installed application.
         catalogValidation {
             initWith debug

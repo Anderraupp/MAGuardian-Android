@@ -1,0 +1,3 @@
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#2277716B">
+    <item android:drawable="@drawable/guardian_card" />
+</ripple>

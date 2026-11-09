@@ -1,984 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/background_dark"
-    android:fillViewport="true"
-    android:fitsSystemWindows="false">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="24dp">
-
-        <!-- ═══════════════════════════════════════════════
-             HEADER: Título à esquerda, botões à direita
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tvAppTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="M&amp;A Guardian"
-                    android:textColor="@color/text_primary"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="-0.02" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Monitoramento em tempo real"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/guardian_paper" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="24dp">
+            <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/ic_shield"
+                android:tint="@color/guardian_red" android:contentDescription="@null" android:layout_marginEnd="12dp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/tvAppTitle" style="@style/GuardianHeading" android:text="M&amp;A Guardian"
+                    android:layout_marginBottom="0dp" android:minHeight="48dp" android:gravity="center_vertical" />
+                <TextView style="@style/GuardianCaption" android:text="Proteção e ferramentas" />
             </LinearLayout>
+        </LinearLayout>
+        <TextView style="@style/GuardianCaption" android:text="VISÃO GERAL" android:textColor="@color/guardian_red_deep" android:letterSpacing="0.12" />
+        <TextView style="@style/GuardianHeading" android:text="Seu Android, sob controle." android:textSize="26sp" android:layout_marginTop="8dp" android:layout_marginBottom="20dp" />
 
-            <TextView
-                android:id="@+id/btnToggle"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Desativar"
-                android:textColor="@color/text_secondary"
-                android:textStyle="bold"
-                android:textSize="11sp"
-                android:background="@drawable/btn_secondary"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_marginStart="6dp" />
+        <LinearLayout android:id="@+id/layoutPermWarning" style="@style/GuardianCard" android:visibility="gone" android:background="@drawable/guardian_status">
+            <TextView android:id="@+id/tvPermWarning" style="@style/GuardianText" />
+            <Button android:id="@+id/btnPermissions" style="@style/GuardianButton" android:text="Revisar permissões" android:layout_marginTop="10dp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/layoutNotifWarning" style="@style/GuardianCard" android:visibility="gone" android:background="@drawable/guardian_status">
+            <TextView style="@style/GuardianText" android:text="Ative as notificações para receber os alertas do M&amp;A Guardian." />
+            <Button android:id="@+id/btnNotifPermission" style="@style/GuardianButton" android:text="Ativar notificações" android:layout_marginTop="10dp" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════
-             AVISO DE PERMISSÕES (oculto quando OK)
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:id="@+id/layoutPermWarning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/card_status_inactive"
-            android:padding="12dp"
-            android:layout_marginBottom="12dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:visibility="gone">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_shield_alert"
-                android:layout_marginEnd="10dp"
-                android:contentDescription="Aviso" />
-
-            <TextView
-                android:id="@+id/tvPermWarning"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/white"
-                android:textSize="11sp"
-                android:lineSpacingMultiplier="1.3" />
-
-            <Button
-                android:id="@+id/btnPermissions"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="Corrigir"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="10sp"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
-
-        <!-- ═══════════════════════════════════════════════
-             AVISO DE NOTIFICAÇÕES (oculto quando concedido)
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:id="@+id/layoutNotifWarning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/card_status_inactive"
-            android:padding="12dp"
-            android:layout_marginBottom="12dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:visibility="gone">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_shield_alert"
-                android:layout_marginEnd="10dp"
-                android:contentDescription="Notificações" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Ative as notificações para receber alertas de ameaças em tempo real"
-                android:textColor="@color/white"
-                android:textSize="11sp"
-                android:lineSpacingMultiplier="1.3" />
-
-            <Button
-                android:id="@+id/btnNotifPermission"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="Ativar"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="10sp"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
-
-        <!-- ═══════════════════════════════════════════════
-             CARD DE STATUS PRINCIPAL
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:id="@+id/cardStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/card_status_active"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
-
-            <FrameLayout
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:background="@drawable/shield_bg_circle"
-                android:layout_marginEnd="14dp">
-
-                <ImageView
-                    android:id="@+id/ivShield"
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_shield_check"
-                    android:contentDescription="Status" />
-            </FrameLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="4dp">
-
-                    <TextView
-                        android:id="@+id/tvStatus"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Proteção Ativa"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:layout_marginEnd="8dp" />
-
-                    <TextView
-                        android:id="@+id/tvStatusBadge"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Seguro"
-                        android:textColor="@color/success"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:singleLine="true"
-                        android:background="@drawable/badge_success"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:paddingTop="2dp"
-                        android:paddingBottom="2dp" />
+        <LinearLayout android:id="@+id/cardStatus" style="@style/GuardianCard" android:background="@drawable/guardian_status" android:padding="20dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <ImageView android:id="@+id/ivShield" android:layout_width="40dp" android:layout_height="48dp"
+                    android:src="@drawable/ic_shield_check" android:tint="@color/guardian_red_deep" android:contentDescription="Estado da proteção" android:layout_marginEnd="16dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView style="@style/GuardianCaption" android:text="PROTEÇÃO DO APARELHO" />
+                    <TextView android:id="@+id/tvStatus" style="@style/GuardianHeading" android:text="Verificando estado" android:textSize="21sp" android:layout_marginTop="6dp" android:layout_marginBottom="6dp" />
+                    <TextView android:id="@+id/tvStatusBadge" style="@style/GuardianCaption" android:text="" android:visibility="gone" />
                 </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvStatusDesc"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Seu dispositivo está protegido."
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp" />
+                <TextView android:id="@+id/btnToggle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:minHeight="48dp" android:maxWidth="100dp" android:gravity="center" android:padding="10dp"
+                    android:text="Ativar" android:textSize="13sp" android:textStyle="bold" android:textColor="@color/guardian_ink"
+                    android:background="@drawable/guardian_secondary" android:clickable="true" android:focusable="true" />
             </LinearLayout>
-
-            <!-- Taxa de segurança (direita) — largura fixa para não comprimir o texto central -->
-            <LinearLayout
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="end"
-                android:layout_marginStart="10dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Taxa de segurança"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="9sp"
-                    android:gravity="end" />
-
-                <TextView
-                    android:id="@+id/tvSecurityRate"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="100%"
-                    android:textColor="@color/primary"
-                    android:textSize="24sp"
-                    android:textStyle="bold"
-                    android:gravity="end" />
-
-                <TextView
-                    android:id="@+id/tvScansClean"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Ativa"
-                    android:textColor="@color/text_muted"
-                    android:textSize="9sp"
-                    android:gravity="end"
-                    android:maxLines="2" />
+            <TextView android:id="@+id/tvStatusDesc" style="@style/GuardianText" android:text="Consultando o estado da proteção." android:layout_marginTop="12dp" />
+            <!-- Kept for the existing state binding, not presented as a security guarantee. -->
+            <TextView android:id="@+id/tvSecurityRate" style="@style/GuardianCaption" android:visibility="gone" />
+            <TextView android:id="@+id/tvScansClean" style="@style/GuardianCaption" android:visibility="gone" />
+        </LinearLayout>
+        <Button android:id="@+id/btnScan" style="@style/GuardianButton" android:text="Analisar apps instalados"
+            android:drawableStart="@drawable/ic_shield" android:drawableTint="@android:color/white" android:drawablePadding="12dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="20dp" android:layout_marginBottom="24dp">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/tvTotalFound" style="@style/GuardianMetric" android:text="0" />
+                <TextView style="@style/GuardianCaption" android:text="Ameaças\nativas" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/tvTotalRemoved" style="@style/GuardianMetric" android:text="0" />
+                <TextView style="@style/GuardianCaption" android:text="Removidas" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/tvTotalScans" style="@style/GuardianMetric" android:text="0" />
+                <TextView style="@style/GuardianCaption" android:text="Análises" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1.2" android:orientation="vertical">
+                <TextView android:id="@+id/tvLastScan" style="@style/GuardianText" android:text="Nunca" android:textSize="13sp" android:layout_marginBottom="6dp" />
+                <TextView style="@style/GuardianCaption" android:text="Última análise" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════
-             STATS: 4 CARDS EM LINHA HORIZONTAL
-             ═══════════════════════════════════════════════ -->
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <!-- Encontradas -->
-                <LinearLayout
-                    android:layout_width="88dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/card_background"
-                    android:padding="12dp"
-                    android:layout_marginEnd="8dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_shield_alert"
-                        android:layout_marginBottom="6dp"
-                        android:contentDescription="Encontradas" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Encontradas"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="9sp" />
-
-                    <TextView
-                        android:id="@+id/tvTotalFound"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textColor="@color/text_primary"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Removidas -->
-                <LinearLayout
-                    android:layout_width="88dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/card_background"
-                    android:padding="12dp"
-                    android:layout_marginEnd="8dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_shield_check"
-                        android:layout_marginBottom="6dp"
-                        android:contentDescription="Removidas" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Removidas"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="9sp" />
-
-                    <TextView
-                        android:id="@+id/tvTotalRemoved"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textColor="@color/success"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Escaneamentos -->
-                <LinearLayout
-                    android:layout_width="88dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/card_background"
-                    android:padding="12dp"
-                    android:layout_marginEnd="8dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_shield"
-                        android:layout_marginBottom="6dp"
-                        android:contentDescription="Escaneamentos" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Escaneamentos"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="9sp" />
-
-                    <TextView
-                        android:id="@+id/tvTotalScans"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textColor="@color/text_primary"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Último Scan -->
-                <LinearLayout
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/card_background"
-                    android:padding="12dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_shield"
-                        android:layout_marginBottom="6dp"
-                        android:contentDescription="Último scan" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Último Scan"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="9sp" />
-
-                    <TextView
-                        android:id="@+id/tvLastScan"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Nunca"
-                        android:textColor="@color/text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
+        <TextView style="@style/GuardianHeading" android:text="Ferramentas" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="10dp">
+            <Button android:id="@+id/btnCleanCache" style="@style/GuardianTool" android:text="Limpar cache" android:drawableTop="@drawable/guardian_ic_cache" android:layout_marginEnd="5dp" />
+            <Button android:id="@+id/btnAppCache" style="@style/GuardianTool" android:text="Cache por app" android:drawableTop="@drawable/guardian_ic_app" android:layout_marginStart="5dp" />
+        </LinearLayout>
+        <TextView android:id="@+id/tvCacheSize" style="@style/GuardianCaption" android:text="Consultando cache…" android:layout_marginBottom="14dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="20dp">
+            <Button android:id="@+id/btnLinkChecker" style="@style/GuardianTool" android:text="Conferir um link" android:drawableTop="@drawable/guardian_ic_link" android:layout_marginEnd="5dp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="5dp">
+                <Button android:id="@+id/btnCallScanner" style="@style/GuardianSecondary" android:minHeight="82dp" android:text="Ativar" android:drawableTop="@drawable/guardian_ic_phone" android:drawablePadding="8dp" />
+                <TextView style="@style/GuardianCaption" android:text="Proteção de ligações" android:gravity="center" android:layout_marginTop="6dp" />
             </LinearLayout>
-        </HorizontalScrollView>
-
-        <!-- ═══════════════════════════════════════════════
-             ESCANEAR DISPOSITIVO
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/card_background"
-            android:padding="14dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔍 Escanear Dispositivo"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Verifica apps instalados em busca de ameaças"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnScan"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Escanear"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="11sp"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════
-             LIMPEZA DE CACHE
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/card_background"
-            android:padding="14dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Limpeza de Cache"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvCacheSize"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Calculando..."
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnAppCache"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Ver por App"
-                android:textColor="@color/text_secondary"
-                android:textStyle="bold"
-                android:textSize="10sp"
-                android:background="@drawable/btn_secondary"
-                app:backgroundTint="@null"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp" />
-
-            <Button
-                android:id="@+id/btnCleanCache"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Limpar Cache"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="11sp"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp" />
+        <LinearLayout android:id="@+id/cardBlockTelemarketing" style="@style/GuardianCard">
+            <TextView style="@style/GuardianHeading" android:text="Chamadas e bloqueios" />
+            <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchBlockTelemarketing"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+                android:text="Bloquear telemarketing" android:textColor="@color/guardian_ink" android:textSize="14sp"
+                app:thumbTint="@color/guardian_red" />
+            <TextView android:id="@+id/tvBlockTelemarketingStatus" style="@style/GuardianCaption" android:layout_marginTop="8dp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/cardReportNumber" style="@style/GuardianCard">
+            <TextView style="@style/GuardianText" android:text="Reportar ou bloquear número" android:textStyle="bold" />
+            <TextView style="@style/GuardianCaption" android:text="Informe um número que você não quer receber." android:layout_marginTop="4dp" android:layout_marginBottom="12dp" />
+            <Button android:id="@+id/btnReportNumber" style="@style/GuardianSecondary" android:text="Informar número" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════
-             VERIFICADOR MANUAL DE LINKS
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/card_background"
-            android:padding="14dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔗 Verificar Link Suspeito"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Detecta phishing, golpes PIX e fraudes"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
+        <LinearLayout style="@style/GuardianCard">
+            <TextView style="@style/GuardianHeading" android:text="Atividade recente" />
+            <TextView android:id="@+id/tvThreatCount" style="@style/GuardianCaption" android:text="0 registros" />
+            <Button android:id="@+id/btnClearThreats" style="@style/GuardianSecondary" android:text="Limpar histórico" android:layout_marginTop="12dp" />
+            <LinearLayout android:id="@+id/layoutEmpty" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingTop="16dp" android:paddingBottom="8dp">
+                <TextView style="@style/GuardianText" android:text="Nenhuma ameaça ativa" android:textStyle="bold" />
+                <TextView style="@style/GuardianCaption" android:text="Faça uma análise para verificar os aplicativos instalados." android:layout_marginTop="6dp" />
             </LinearLayout>
-
-            <Button
-                android:id="@+id/btnLinkChecker"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Verificar"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="11sp"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp" />
+            <LinearLayout android:id="@+id/layoutThreatsLocked" style="@style/GuardianCard" android:visibility="gone" android:layout_marginTop="14dp" android:background="@drawable/guardian_status">
+                <TextView android:id="@+id/tvThreatsLockedCount" style="@style/GuardianText" android:textStyle="bold" />
+                <TextView style="@style/GuardianCaption" android:text="A assinatura libera os detalhes dos alertas e as ações disponíveis." android:layout_marginTop="8dp" />
+                <Button android:id="@+id/btnUnlockThreats" style="@style/GuardianButton" android:text="Conhecer o Premium" android:layout_marginTop="12dp" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/llThreats" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════
-             PROTEÇÃO DE LIGAÇÕES (CallScreeningService)
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/card_background"
-            android:padding="14dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📞 Proteção de Ligações"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Alerta em tempo real sobre golpes por ligação"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
+        <LinearLayout style="@style/GuardianCard">
+            <TextView style="@style/GuardianHeading" android:text="Base de ameaças" />
+            <TextView android:id="@+id/tvCatalogSummary" style="@style/GuardianCaption" />
+            <Button android:id="@+id/btnCatalogDetails" style="@style/GuardianSecondary" android:text="Ver detalhes" android:layout_marginTop="12dp" />
+            <Button android:id="@+id/btnUpdateCatalog" style="@style/GuardianButton" android:text="Atualizar base de ameaças" android:layout_marginTop="10dp" />
+            <LinearLayout android:id="@+id/layoutCatalogDetails" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:paddingTop="12dp">
+                <TextView android:id="@+id/tvCatalogStatus" style="@style/GuardianCaption" android:textIsSelectable="true" />
             </LinearLayout>
-
-            <Button
-                android:id="@+id/btnCallScanner"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Ativar"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="11sp"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp" />
         </LinearLayout>
-
-        <!-- Toggle: bloquear telemarketing/cobrança -->
-        <LinearLayout
-            android:id="@+id/cardBlockTelemarketing"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/card_background"
-            android:padding="14dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🚫 Bloquear Telemarketing"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvBlockTelemarketingStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Desativado — ligações de cobrança passam normalmente"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
-            </LinearLayout>
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switchBlockTelemarketing"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="false"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
-
-        <!-- Card: Denunciar / Bloquear número manualmente -->
-        <LinearLayout
-            android:id="@+id/cardReportNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/card_background"
-            android:padding="14dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📋 Denunciar Número"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cole ou digite um número para bloquear e reportar"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:layout_marginTop="2dp" />
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnReportNumber"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="BLOQUEAR"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:background="@drawable/btn_primary"
-                app:backgroundTint="@null"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
-
-        <!-- ═══════════════════════════════════════════════
-             AMEAÇAS RECENTES
-             ═══════════════════════════════════════════════ -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/card_background"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="14dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Ameaças Recentes"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvThreatCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0 registros"
-                    android:textColor="@color/gold"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/badge_danger"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:paddingTop="3dp"
-                    android:paddingBottom="3dp"
-                    android:layout_marginEnd="8dp" />
-
-                <Button
-                    android:id="@+id/btnClearThreats"
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text="Limpar"
-                    android:textColor="@color/text_muted"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/btn_secondary"
-                    app:backgroundTint="@null"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp" />
-            </LinearLayout>
-
-            <!-- Atualização de metadados; independente da atualização do app -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/card_background">
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Base de ameaças"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
-                <TextView
-                    android:id="@+id/tvCatalogSummary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:layout_marginTop="8dp" />
-                <Button
-                    android:id="@+id/btnCatalogDetails"
-                    style="?android:attr/borderlessButtonStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:text="Ver detalhes"
-                    android:textAllCaps="false"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
-                <Button
-                    android:id="@+id/btnUpdateCatalog"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Atualizar base de ameaças"
-                    android:textAllCaps="false"
-                    android:visibility="gone" />
-                <LinearLayout
-                    android:id="@+id/layoutCatalogDetails"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-                    <TextView
-                        android:id="@+id/tvCatalogStatus"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Estado vazio -->
-            <LinearLayout
-                android:id="@+id/layoutEmpty"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:paddingTop="24dp"
-                android:paddingBottom="24dp"
-                android:visibility="visible">
-
-                <ImageView
-                    android:layout_width="52dp"
-                    android:layout_height="52dp"
-                    android:src="@drawable/ic_shield_check"
-                    android:alpha="0.35"
-                    android:layout_marginBottom="12dp"
-                    android:contentDescription="Sem ameaças" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Nenhuma ameaça detectada"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Execute um escaneamento para verificar seu dispositivo"
-                    android:textColor="@color/text_muted"
-                    android:textSize="11sp"
-                    android:gravity="center"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
-
-            <!-- Card bloqueado: mostrado para usuários sem assinatura quando há ameaças -->
-            <LinearLayout
-                android:id="@+id/layoutThreatsLocked"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:background="#1A1A1A"
-                android:padding="20dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔒"
-                    android:textSize="36sp"
-                    android:layout_marginBottom="10dp" />
-
-                <TextView
-                    android:id="@+id/tvThreatsLockedCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="1 ameaça detectada no seu dispositivo"
-                    android:textColor="#dc2626"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:gravity="center" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Assine para ver quais apps estão infectados e removê-los"
-                    android:textColor="@color/text_muted"
-                    android:textSize="12sp"
-                    android:gravity="center"
-                    android:layout_marginTop="6dp"
-                    android:layout_marginBottom="16dp" />
-
-                <Button
-                    android:id="@+id/btnUnlockThreats"
-                    android:layout_width="match_parent"
-                    android:layout_height="46dp"
-                    android:text="VER AMEAÇAS — ASSINAR R$ 9,99/MÊS"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:backgroundTint="#dc2626" />
-
-            </LinearLayout>
-
-            <!-- Lista de ameaças (apenas assinantes) -->
-            <LinearLayout
-                android:id="@+id/llThreats"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <Button
-                android:id="@+id/btnCatalogAdmin"
-                style="?android:attr/borderlessButtonStyle"
-                android:visibility="gone"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:minHeight="48dp"
-                android:text="Área do administrador"
-                android:textAllCaps="false"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-
-            <Button
-                android:id="@+id/btnLearnAboutGuardian"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:text="Conheça o M&amp;A Guardian"
-                android:textAllCaps="false"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-            <Button
-                android:id="@+id/btnRequestDataDeletion"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:text="Solicitar exclusão de conta e dados"
-                android:textAllCaps="false"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/btnCatalogSources"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp"
-            android:minHeight="48dp"
-            android:gravity="center"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:background="?android:attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="Informações legais"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-
+        <Button android:id="@+id/btnCatalogAdmin" style="@style/GuardianFooter" android:text="Área do administrador" android:visibility="gone" />
+        <Button android:id="@+id/btnLearnAboutGuardian" style="@style/GuardianFooter" android:text="Conheça o M&amp;A Guardian" />
+        <Button android:id="@+id/btnRequestDataDeletion" style="@style/GuardianFooter" android:text="Solicitar exclusão de conta e dados" />
+        <TextView android:id="@+id/btnCatalogSources" style="@style/GuardianCaption" android:text="Informações legais"
+            android:minHeight="48dp" android:gravity="center" android:background="?android:attr/selectableItemBackground" android:clickable="true" android:focusable="true" />
     </LinearLayout>
 </ScrollView>

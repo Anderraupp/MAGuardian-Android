@@ -132,10 +132,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_MAGuardian_Preview)
         super.onCreate(savedInstanceState)
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_main)
-        ScreenInsets.apply(this)
+        ScreenInsets.apply(this, light = true)
         setupUI()
         setupCatalogUI()
         com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent?.data)
@@ -400,6 +401,7 @@ class MainActivity : AppCompatActivity() {
 
         refreshUI()
         updateCallScannerButton()
+        refreshCacheInfo()
         maybeShowTrialPopup()
         val filter = IntentFilter("com.maguardian.security.THREAT_DETECTED").apply {
             addAction(ThreatCatalogUpdater.UPDATED)
@@ -884,10 +886,10 @@ class MainActivity : AppCompatActivity() {
     private fun updateBlockTelemarketingStatus(tv: TextView, enabled: Boolean) {
         if (enabled) {
             tv.text = "Ativado — telemarketing e cobrança bloqueados automaticamente"
-            tv.setTextColor(android.graphics.Color.parseColor("#22C55E"))
+            tv.setTextColor(ContextCompat.getColor(this, R.color.guardian_success))
         } else {
             tv.text = "Desativado — ligações de cobrança passam normalmente"
-            tv.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+            tv.setTextColor(ContextCompat.getColor(this, R.color.guardian_muted))
         }
     }
 
@@ -898,12 +900,12 @@ class MainActivity : AppCompatActivity() {
             val isActive = roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)
             if (isActive) {
                 btn.text = "Desativar"
-                btn.setTextColor(android.graphics.Color.parseColor("#111111"))
-                btn.setBackgroundColor(android.graphics.Color.parseColor("#9CA3AF"))
+                btn.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+                btn.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
             } else {
                 btn.text = "Ativar"
-                btn.setTextColor(android.graphics.Color.WHITE)
-                btn.setBackgroundColor(android.graphics.Color.parseColor("#DC2626"))
+                btn.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+                btn.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
             }
         }
     }
@@ -928,148 +930,7 @@ class MainActivity : AppCompatActivity() {
      * Cada item tem botão "Abrir" que abre as configurações do app para limpeza manual.
      */
     private fun showAppCacheDialog() {
-        val loadingDialog = android.app.AlertDialog.Builder(this)
-            .setTitle("Cache por App")
-            .setMessage("Calculando cache dos apps...")
-            .setCancelable(false)
-            .show()
-
-        Thread {
-            data class AppCacheInfo(val pkgName: String, val label: String, val cacheBytes: Long)
-
-            val apps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-            val results = mutableListOf<AppCacheInfo>()
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val statsManager = getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
-                val myUser = android.os.Process.myUserHandle()
-                for (app in apps) {
-                    if (app.packageName == packageName) continue
-                    try {
-                        val cacheBytes = statsManager.queryStatsForPackage(
-                            StorageManager.UUID_DEFAULT, app.packageName, myUser
-                        ).cacheBytes
-                        if (cacheBytes > 0L) {
-                            val label = try {
-                                packageManager.getApplicationLabel(app).toString()
-                            } catch (e: Exception) { app.packageName }
-                            results.add(AppCacheInfo(app.packageName, label, cacheBytes))
-                        }
-                    } catch (e: Exception) { /* sem permissão para este app */ }
-                }
-            }
-
-            results.sortByDescending { it.cacheBytes }
-
-            runOnUiThread {
-                loadingDialog.dismiss()
-
-                if (results.isEmpty()) {
-                    android.app.AlertDialog.Builder(this)
-                        .setTitle("Cache por App")
-                        .setMessage("Nenhum app com cache encontrado.\n\nNo Android 8 ou inferior esta função não está disponível.")
-                        .setPositiveButton("OK", null)
-                        .show()
-                    return@runOnUiThread
-                }
-
-                // Monta a view da lista de apps
-                val scrollView = android.widget.ScrollView(this)
-                val container = android.widget.LinearLayout(this).apply {
-                    orientation = android.widget.LinearLayout.VERTICAL
-                    setPadding(0, 8, 0, 8)
-                }
-                scrollView.addView(container)
-
-                val limitedList = if (results.size > 50) results.take(50) else results
-
-                for (info in limitedList) {
-                    val row = android.widget.LinearLayout(this).apply {
-                        orientation = android.widget.LinearLayout.HORIZONTAL
-                        gravity = android.view.Gravity.CENTER_VERTICAL
-                        setPadding(24, 14, 24, 14)
-                    }
-
-                    val nameView = android.widget.TextView(this).apply {
-                        text = info.label
-                        textSize = 13f
-                        setTextColor(resources.getColor(R.color.text_primary, theme))
-                        layoutParams = android.widget.LinearLayout.LayoutParams(
-                            0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f
-                        )
-                        maxLines = 1
-                        ellipsize = android.text.TextUtils.TruncateAt.END
-                    }
-
-                    val sizeView = android.widget.TextView(this).apply {
-                        text = formatBytes(info.cacheBytes)
-                        textSize = 11f
-                        setTextColor(resources.getColor(R.color.text_secondary, theme))
-                        setPadding(0, 0, 12, 0)
-                    }
-
-                    val openBtn = android.widget.Button(this).apply {
-                        text = "Abrir"
-                        textSize = 10f
-                        setTextColor(resources.getColor(android.R.color.white, theme))
-                        background = resources.getDrawable(R.drawable.btn_primary, theme)
-                        layoutParams = android.widget.LinearLayout.LayoutParams(
-                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                            72
-                        )
-                        setPadding(20, 0, 20, 0)
-                        setOnClickListener {
-                            try {
-                                startActivity(
-                                    Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                        data = Uri.parse("package:${info.pkgName}")
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    }
-                                )
-                            } catch (e: Exception) {
-                                Toast.makeText(this@MainActivity, "Não foi possível abrir as configurações.", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-
-                    row.addView(nameView)
-                    row.addView(sizeView)
-                    row.addView(openBtn)
-
-                    // Divisor
-                    val divider = android.view.View(this).apply {
-                        setBackgroundColor(resources.getColor(R.color.surface_dark, theme))
-                        layoutParams = android.widget.LinearLayout.LayoutParams(
-                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1
-                        )
-                    }
-
-                    container.addView(row)
-                    container.addView(divider)
-                }
-
-                val totalCacheShown = results.sumOf { it.cacheBytes }
-                val subtitle = "${results.size} apps • ${formatBytes(totalCacheShown)} total em cache"
-
-                android.app.AlertDialog.Builder(this)
-                    .setTitle("Cache por App")
-                    .setMessage(subtitle)
-                    .setView(scrollView)
-                    .setNegativeButton("Fechar", null)
-                    .setPositiveButton("Limpar Tudo") { _, _ ->
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            try {
-                                startActivity(Intent(StorageManager.ACTION_CLEAR_APP_CACHE))
-                            } catch (e: Exception) {
-                                startActivity(Intent(android.provider.Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
-                            }
-                        } else {
-                            runCacheClean()
-                        }
-                    }
-                    .show()
-            }
-        }.start()
+        startActivity(Intent(this, AppCacheActivity::class.java))
     }
 
     /**
@@ -1155,7 +1016,7 @@ class MainActivity : AppCompatActivity() {
         val tvStep = android.widget.TextView(this).apply {
             text = scanSteps[0]
             textSize = 13f
-            setTextColor(0xFFCCCCCC.toInt())
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.guardian_muted))
             gravity = android.view.Gravity.CENTER
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1247,7 +1108,7 @@ class MainActivity : AppCompatActivity() {
                     dialog.dismiss()
                     isScanning = false
                     btnScan.isEnabled = true
-                    btnScan.text = "Escanear"
+                    btnScan.text = "Analisar apps instalados"
                     refreshUI()
 
                     val count = freeThreatsFound.get()
@@ -1307,7 +1168,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     isScanning = false
                     btnScan.isEnabled = true
-                    btnScan.text = "Escanear"
+                    btnScan.text = "Analisar apps instalados"
                 }
                 return@Thread
             }
@@ -1385,7 +1246,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 isScanning = false
                 btnScan.isEnabled = true
-                btnScan.text = "Escanear"
+                btnScan.text = "Analisar apps instalados"
                 refreshUI()
                 val msg = when {
                     threatsFound > 0 -> "⚠️ $threatsFound ameaça(s) encontrada(s)! Veja abaixo."
@@ -1594,28 +1455,28 @@ class MainActivity : AppCompatActivity() {
         // Status card — não-assinantes sempre veem "Risco"
         val isFullyActive = isSubscribed && protectionEnabled && permStatus.allGranted
         if (isFullyActive) {
-            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.card_status_active)
-            tvStatus.text = "Proteção Ativa"
-            tvStatus.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
-            tvStatusBadge.text = "Seguro"
+            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_status)
+            tvStatus.text = "Ativa"
+            tvStatus.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+            tvStatusBadge.text = "Ativa"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.success))
             tvStatusBadge.background = ContextCompat.getDrawable(this, R.drawable.badge_success)
             tvStatusDesc.text = if (totalFound > 0)
                 "$totalFound ameaça(s) detectada(s)."
             else
-                "Seu dispositivo está protegido. Nenhuma ameaça ativa no momento."
+                "Monitoramento em tempo real. Nenhuma ameaça ativa registrada."
             ivShield.setImageResource(R.drawable.ic_shield_check)
             btnToggle.text = "Desativar"
-            btnToggle.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
-            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.btn_secondary)
+            btnToggle.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
         } else {
-            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.card_status_inactive)
+            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_status)
             tvStatus.text = when {
-                !isSubscribed -> "Proteção Inativa"
-                !permStatus.allGranted -> "Permissões Necessárias"
-                else -> "Proteção Inativa"
+                !isSubscribed -> "Inativa"
+                !permStatus.allGranted -> "Revisar permissões"
+                else -> "Pausada"
             }
-            tvStatus.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
+            tvStatus.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
             tvStatusBadge.text = "Risco"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.danger))
             tvStatusBadge.background = ContextCompat.getDrawable(this, R.drawable.badge_danger)
@@ -1625,9 +1486,9 @@ class MainActivity : AppCompatActivity() {
                 else -> "Ative a proteção para monitorar ameaças automaticamente."
             }
             ivShield.setImageResource(R.drawable.ic_shield_alert)
-            btnToggle.text = "Ativar Proteção"
+            btnToggle.text = "Ativar"
             btnToggle.setTextColor(android.graphics.Color.WHITE)
-            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.btn_blue)
+            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_primary)
         }
 
         // Estatísticas
@@ -1635,7 +1496,7 @@ class MainActivity : AppCompatActivity() {
         tvTotalRemoved.text = totalRemoved.toString()
         tvTotalScans.text = totalScans.toString()
         tvLastScan.text = if (lastScanMs > 0) {
-            SimpleDateFormat("dd/MM/yyyy, HH:mm", Locale("pt", "BR")).format(Date(lastScanMs))
+            SimpleDateFormat("dd/MM\nHH:mm", Locale("pt", "BR")).format(Date(lastScanMs))
         } else {
             "Nunca"
         }
@@ -1668,7 +1529,7 @@ class MainActivity : AppCompatActivity() {
         if (!isSubscribed) return  // Não renderiza a lista de ameaças para usuários grátis
 
         for (threat in activeThreats.take(10)) {
-            val view = layoutInflater.inflate(R.layout.item_threat, llThreats, false)
+            val view = layoutInflater.inflate(R.layout.item_threat_preview, llThreats, false)
             view.findViewById<TextView>(R.id.tvThreatName).text = threat.getString("appName")
             view.findViewById<TextView>(R.id.tvThreatPackage).text = threat.getString("packageName")
             view.findViewById<TextView>(R.id.tvThreatType).text = when (threat.getString("threatType")) {

@@ -90,6 +90,10 @@
 
         <!-- Verificador Manual de Links (Anti-Phishing) -->
         <activity
+            android:name=".ui.AppCacheActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.LinkCheckerActivity"
             android:exported="false"
             android:theme="@style/Theme.MAGuardian" />

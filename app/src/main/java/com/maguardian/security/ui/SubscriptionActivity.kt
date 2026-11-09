@@ -22,10 +22,11 @@ class SubscriptionActivity : AppCompatActivity() {
     private lateinit var layoutContent: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_MAGuardian_Preview)
         super.onCreate(savedInstanceState)
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_subscription)
-        ScreenInsets.apply(this)
+        ScreenInsets.apply(this, light = true)
 
         tvPrice       = findViewById(R.id.tvMonthlyPrice)
         btnSubscribe  = findViewById(R.id.btnSubscribe)
@@ -57,6 +58,7 @@ class SubscriptionActivity : AppCompatActivity() {
     // ── Listeners ─────────────────────────────────────────────────────────────
 
     private fun setupListeners() {
+        findViewById<Button>(R.id.btnSubscriptionBack).setOnClickListener { finish() }
         btnSubscribe.setOnClickListener {
             when {
                 billing.monthlyDetails != null -> {

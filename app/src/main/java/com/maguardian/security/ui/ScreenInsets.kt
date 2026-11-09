@@ -22,12 +22,12 @@ internal object ScreenInsets {
         // Bar transparency is supplied by the theme, not deprecated color APIs.
     }
 
-    fun apply(activity: AppCompatActivity) {
+    fun apply(activity: AppCompatActivity, light: Boolean = false) {
         val root = activity.findViewById<ViewGroup>(android.R.id.content).getChildAt(0) ?: return
         val original = ContentPadding(root.paddingLeft, root.paddingTop, root.paddingRight, root.paddingBottom)
         WindowCompat.getInsetsController(activity.window, root).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
+            isAppearanceLightStatusBars = light
+            isAppearanceLightNavigationBars = light
         }
         ViewCompat.setOnApplyWindowInsetsListener(root) { view: View, insets ->
             // Union selects the maximum on each edge, not bars + keyboard added twice.

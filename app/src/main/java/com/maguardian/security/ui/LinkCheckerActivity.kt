@@ -28,10 +28,11 @@ class LinkCheckerActivity : AppCompatActivity() {
     private lateinit var llReasons: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_MAGuardian_Preview)
         super.onCreate(savedInstanceState)
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_link_checker)
-        ScreenInsets.apply(this)
+        ScreenInsets.apply(this, light = true)
 
         etUrl         = findViewById(R.id.etUrl)
         btnCheck      = findViewById(R.id.btnCheck)
@@ -66,21 +67,27 @@ class LinkCheckerActivity : AppCompatActivity() {
         cardResult.visibility = View.VISIBLE
 
         val (icon, colorHex) = when (result.verdict) {
-            "FRAUDULENTO" -> "🚨" to "#DC2626"
-            "SUSPEITO"    -> "⚠️" to "#F59E0B"
-            else          -> "✅" to "#22C55E"
+            "FRAUDULENTO" -> "!" to "#A62D25"
+            "SUSPEITO"    -> "!" to "#89591D"
+            else          -> "✓" to "#3F633F"
         }
 
         tvVerdictIcon.text = icon
-        tvVerdict.text = "${result.verdict} — ${result.category}"
+        val verdictLabel = when (result.verdict) {
+            "FRAUDULENTO" -> "Alto risco identificado"
+            "SUSPEITO" -> "Sinais de atenção"
+            else -> "Sem indicadores identificados"
+        }
+        tvVerdict.text = "$verdictLabel — ${result.category}"
         tvVerdict.setTextColor(Color.parseColor(colorHex))
-        tvScore.text = "Risco: ${result.score}%"
+        tvScore.text = "Pontuação de atenção: ${result.score}/100"
 
-        val params = viewScoreBar.layoutParams as FrameLayout.LayoutParams
-        val barMaxPx = (resources.displayMetrics.widthPixels
-                - (64 * resources.displayMetrics.density).toInt())
-        params.width = ((barMaxPx * result.score) / 100).coerceAtLeast(4)
-        viewScoreBar.layoutParams = params
+        viewScoreBar.post {
+            val params = viewScoreBar.layoutParams as FrameLayout.LayoutParams
+            val maxWidth = (viewScoreBar.parent as View).width
+            params.width = ((maxWidth * result.score.coerceIn(0, 100)) / 100).coerceAtLeast(4)
+            viewScoreBar.layoutParams = params
+        }
         viewScoreBar.setBackgroundColor(Color.parseColor(colorHex))
 
         llReasons.removeAllViews()
@@ -90,11 +97,11 @@ class LinkCheckerActivity : AppCompatActivity() {
             val dp10 = (10 * resources.displayMetrics.density).toInt()
             result.reasons.forEach { reason ->
                 val tv = TextView(this).apply {
-                    text = "⚡ $reason"
-                    textSize = 12f
-                    setTextColor(Color.parseColor("#9CA3AF"))
+                    text = "• $reason"
+                    textSize = 14f
+                    setTextColor(Color.parseColor("#68615B"))
                     setPadding(dp10, dp6, dp10, dp6)
-                    setBackgroundColor(Color.parseColor("#1A1010"))
+                    setBackgroundColor(Color.parseColor("#F1DFD8"))
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
