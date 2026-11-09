@@ -1,12 +1,15 @@
 package com.maguardian.security.ui
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.util.TypedValue
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.maguardian.security.R
 import java.util.WeakHashMap
 
@@ -74,7 +77,18 @@ internal object GuardianAppearance {
         }
         val current = selected(activity)
         val options = GuardianPaletteChoice.entries
-        AlertDialog.Builder(activity)
+        val density = activity.resources.displayMetrics.density
+        val surface = MaterialShapeDrawable(
+            ShapeAppearanceModel.builder()
+                .setAllCornerSizes(24f * density)
+                .build()
+        ).apply {
+            fillColor = ColorStateList.valueOf(color(activity, R.color.guardian_card))
+            setStroke(1f * density, color(activity, R.color.guardian_line))
+            elevation = 12f * density
+        }
+        val dialog = MaterialAlertDialogBuilder(activity)
+            .setBackground(surface)
             .setTitle("Designer")
             .setSingleChoiceItems(options.map { it.label }.toTypedArray(), options.indexOf(current)) { dialog, which ->
                 val chosen = options[which]
@@ -84,6 +98,8 @@ internal object GuardianAppearance {
                 if (chosen != current) activity.recreate()
             }
             .setNegativeButton("Voltar", null)
-            .show()
+            .create()
+
+        dialog.show()
     }
 }

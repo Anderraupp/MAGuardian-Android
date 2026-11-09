@@ -4,6 +4,10 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GuardianPaletteChoiceTest {
+    @Test fun displayedNamesAreShortWithoutChangingSavedIds() {
+        assertEquals(listOf("Original", "Claro", "Grafite"), GuardianPaletteChoice.entries.map { it.label })
+        assertEquals(listOf("original", "petroleo", "gold"), GuardianPaletteChoice.entries.map { it.id })
+    }
     @Test fun allThreeChoicesHaveDistinctPersistentIds() {
         assertEquals(3, GuardianPaletteChoice.entries.size)
         assertEquals(3, GuardianPaletteChoice.entries.map { it.id }.toSet().size)

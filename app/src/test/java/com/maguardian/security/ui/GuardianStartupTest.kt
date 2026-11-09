@@ -2,11 +2,14 @@ package com.maguardian.security.ui
 
 import android.app.Application
 import android.content.DialogInterface
+import android.graphics.RectF
+import android.graphics.drawable.InsetDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.shape.MaterialShapeDrawable
 import com.maguardian.security.R
 import com.maguardian.security.data.ManualScanReport
 import org.junit.Assert.assertEquals
@@ -57,6 +60,28 @@ class GuardianStartupTest {
     @Test fun opensOriginalPalette() = inflate("original")
     @Test fun opensPetroleoPalette() = inflate("petroleo")
     @Test fun opensGoldPalette() = inflate("gold")
+
+    @Test fun designerShowsNamesAndKeepsTheSavedChoice() {
+        val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("guardian_appearance", 0)
+        prefs.edit().putString("palette", "petroleo").commit()
+        val controller = Robolectric.buildActivity(PaletteActivity::class.java).setup()
+        val activity = controller.get()
+        activity.findViewById<BottomNavigationView>(R.id.guardianBottomNav).menu
+            .performIdentifierAction(R.id.navGuardianDesigner, 0)
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val list = dialog.listView
+        val background = dialog.window!!.decorView.background as InsetDrawable
+        val surface = background.drawable as MaterialShapeDrawable
+        assertEquals(24f * activity.resources.displayMetrics.density,
+            surface.shapeAppearanceModel.topLeftCornerSize.getCornerSize(RectF(0f, 0f, 400f, 400f)), 0.1f)
+        assertEquals(listOf("Original", "Claro", "Grafite"), (0 until list.adapter.count).map {
+            list.adapter.getItem(it).toString()
+        })
+        assertEquals(1, list.checkedItemPosition)
+        list.performItemClick(list.adapter.getView(2, null, list), 2, list.adapter.getItemId(2))
+        assertEquals("gold", prefs.getString("palette", null))
+        controller.pause().stop().destroy()
+    }
 
     @Test fun opensActualMainActivity() {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
