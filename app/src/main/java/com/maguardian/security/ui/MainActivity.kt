@@ -1135,8 +1135,7 @@ class MainActivity : AppCompatActivity() {
             "${report.alertCount} app(s) sinalizado(s) para revisão nesta análise.\n\n" +
                 "Indícios não confirmam, por si só, que um aplicativo está infectado."
         } else {
-            "Nenhuma ameaça identificada nesta verificação. " +
-                "Isso não garante ausência de ameaças no aparelho."
+            "Nenhuma ameaça identificada nesta verificação."
         }
         val testReport = BuildConfig.DEBUG && packageName.endsWith(".visualtest")
         val result = android.app.AlertDialog.Builder(this)

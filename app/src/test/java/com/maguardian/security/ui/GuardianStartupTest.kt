@@ -154,6 +154,7 @@ class GuardianStartupTest {
             .apply { isAccessible = true }.invoke(controller.get(), report)
         val dialog = ShadowAlertDialog.getLatestAlertDialog()
         val message = shadowOf(dialog).message.toString()
+        assertEquals("Nenhuma ameaça identificada nesta verificação.", message)
         assertFalse(message.contains("permissões", ignoreCase = true))
         assertFalse(message.contains("Relatório local"))
         assertEquals(View.GONE, dialog.getButton(DialogInterface.BUTTON_POSITIVE).visibility)
