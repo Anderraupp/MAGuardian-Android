@@ -85,7 +85,15 @@ class AppCacheActivity : AppCompatActivity() {
         pending = worker.submit {
             try {
                 val stats = getSystemService(STORAGE_STATS_SERVICE) as StorageStatsManager
+                // This is a user-facing cache list, not the threat scanner.
+                // Android also lists providers, overlays and internal services
+                // as installed packages; only show apps with a launcher icon here.
+                val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+                val launchablePackages = packageManager.queryIntentActivities(launcherIntent, 0)
+                    .mapNotNull { it.activityInfo?.packageName }.toSet()
                 val installed = packageManager.getInstalledApplications(0)
+                    .filter { it.enabled && it.packageName in launchablePackages }
+                    .distinctBy { it.packageName }
                 val entries = ArrayList<CacheEntry>()
                 for (app in installed) {
                     if (Thread.currentThread().isInterrupted) return@submit
@@ -115,7 +123,7 @@ class AppCacheActivity : AppCompatActivity() {
                     summary.text = if (!allowed) {
                         "Acesso de uso não autorizado. Somente o próprio app pôde ser consultado. Autorize para consultar os demais."
                     } else {
-                        "${measured.size} apps consultados · atualizado às $time" +
+                        "${sorted.size} apps com ícone · atualizado às $time" +
                             if (unavailable > 0) "\n$unavailable apps sem tamanho disponível; não incluídos no total." else ""
                     }
                     if (sorted.isEmpty()) addMessage("Nenhum aplicativo disponível para consulta.")

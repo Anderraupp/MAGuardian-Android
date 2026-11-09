@@ -9,7 +9,7 @@
         <TextView style="@style/GuardianHeading" android:text="Cache por aplicativo" android:textSize="28sp" android:layout_marginTop="24dp" />
         <TextView style="@style/GuardianText" android:text="Consulte o espaço ocupado por cada aplicativo. Para liberar espaço, acesse Armazenamento nas configurações do app e toque em Limpar cache." android:layout_marginBottom="24dp" />
         <LinearLayout style="@style/GuardianCard">
-            <TextView style="@style/GuardianCaption" android:text="TOTAL CONSULTADO" android:textColor="?attr/guardian_button_bg" android:letterSpacing="0.1" />
+            <TextView style="@style/GuardianCaption" android:text="CACHE DOS APPS" android:textColor="?attr/guardian_button_bg" android:letterSpacing="0.1" />
             <TextView android:id="@+id/tvAppCacheTotal" style="@style/GuardianHeading" android:text="Consultando…" android:textSize="30sp" android:layout_marginTop="12dp" />
             <TextView android:id="@+id/tvAppCacheSummary" style="@style/GuardianCaption" android:text="Os tamanhos dependem das informações disponibilizadas pelo Android." android:accessibilityLiveRegion="polite" />
             <ProgressBar android:id="@+id/progressAppCache" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:layout_marginTop="12dp" />
