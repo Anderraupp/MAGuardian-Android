@@ -71,6 +71,10 @@ class CallProtectionCardTest {
                         }
                     }
                     call.draw(android.graphics.Canvas())
+                    assertEquals("Cartões devem começar na mesma altura em $palette/$screenDp", link.top, call.top)
+                    assertEquals("Cartões devem terminar na mesma altura em $palette/$screenDp", link.bottom, call.bottom)
+                    assertTrue("Cartão inteiro deve ficar dentro da linha, sem recorte",
+                        call.top >= 0 && call.bottom <= (call.parent as View).height)
                     for (other in listOf(link, cache, perApp)) {
                         assertEquals("Largura igual em $palette/$screenDp", other.measuredWidth, call.measuredWidth)
                         assertEquals("Altura igual em $palette/$screenDp", other.measuredHeight, call.measuredHeight)

@@ -79,7 +79,7 @@
         </LinearLayout>
 
         <TextView style="@style/GuardianHeading" android:text="Ferramentas" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="14dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:gravity="top" android:layout_marginBottom="14dp">
             <Button android:id="@+id/btnLinkChecker" style="@style/GuardianTool" android:text="Conferir um link" android:drawableTop="@drawable/guardian_ic_link" android:layout_marginEnd="5dp" />
             <Button android:id="@+id/btnCallScanner" style="@style/GuardianTool" android:text="Proteção de ligações\nAtivar"
                 android:layout_height="110dp" android:maxLines="4" android:includeFontPadding="false"
@@ -88,7 +88,7 @@
                 app:autoSizeMaxTextSize="14sp" app:autoSizeStepGranularity="1sp" android:drawablePadding="8dp"
                 android:drawableTop="@drawable/guardian_ic_phone" android:layout_marginStart="5dp" />
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="10dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:gravity="top" android:layout_marginBottom="10dp">
             <Button android:id="@+id/btnCleanCache" style="@style/GuardianTool" android:text="Limpar cache" android:drawableTop="@drawable/guardian_ic_cache" android:layout_marginEnd="5dp" />
             <Button android:id="@+id/btnAppCache" style="@style/GuardianTool" android:text="Cache por app" android:drawableTop="@drawable/guardian_ic_app" android:layout_marginStart="5dp" />
         </LinearLayout>
