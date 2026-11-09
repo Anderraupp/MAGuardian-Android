@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/guardian_paper" android:fillViewport="true">
+    android:orientation="vertical" android:background="@color/guardian_paper">
+    <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
         <Button android:id="@+id/btnCacheBack" style="@style/GuardianSecondary" android:text="← Voltar para a tela principal" />
         <TextView style="@style/GuardianHeading" android:text="Cache por aplicativo" android:textSize="28sp" android:layout_marginTop="24dp" />
@@ -23,4 +25,6 @@
         <Button android:id="@+id/btnCacheCleanAll" style="@style/GuardianButton" android:text="Limpar tudo pelo Android" android:layout_marginBottom="12dp" />
         <TextView style="@style/GuardianCaption" android:text="Arquivos pessoais não são removidos por esta tela. A limpeza e os números apresentados dependem do sistema." />
     </LinearLayout>
-</ScrollView>
+    </ScrollView>
+    <include layout="@layout/guardian_bottom_nav" />
+</LinearLayout>

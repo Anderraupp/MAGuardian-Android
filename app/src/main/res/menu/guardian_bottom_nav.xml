@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/navGuardianHome" android:title="Início" android:icon="@drawable/guardian_ic_home" android:contentDescription="Voltar para a tela de início" />
+    <item android:id="@+id/navGuardianAbout" android:title="Conheça" android:icon="@drawable/guardian_ic_about" android:contentDescription="Conheça o M&amp;A Guardian" />
+    <item android:id="@+id/navGuardianContact" android:title="Contato" android:icon="@drawable/guardian_ic_contact" android:contentDescription="Falar com o atendimento" />
+    <item android:id="@+id/navGuardianSubscription" android:title="Assinatura" android:icon="@drawable/guardian_ic_subscription" android:contentDescription="Ver assinatura Premium" />
+</menu>

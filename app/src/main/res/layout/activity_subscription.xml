@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/guardian_paper" android:fillViewport="true">
+    android:orientation="vertical" android:background="@color/guardian_paper">
+    <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp">
         <Button android:id="@+id/btnSubscriptionBack" style="@style/GuardianSecondary" android:text="← Voltar" />
-        <ImageView android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_shield_check"
-            android:tint="@color/guardian_red" android:contentDescription="@null" android:layout_marginTop="24dp" android:layout_marginBottom="16dp" />
+        <ImageView android:layout_width="80dp" android:layout_height="80dp" android:src="@drawable/logo"
+            android:scaleType="fitCenter" android:contentDescription="Logo M&amp;A Guardian" android:layout_marginTop="24dp" android:layout_marginBottom="16dp" />
         <TextView style="@style/GuardianHeading" android:text="M&amp;A Guardian Premium" android:textSize="28sp" />
         <TextView style="@style/GuardianText" android:text="Conheça a assinatura mensal e escolha como cuidar do seu Android." android:layout_marginBottom="24dp" />
         <ProgressBar android:id="@+id/progressBilling" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
@@ -36,4 +38,6 @@
                 android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground" />
         </LinearLayout>
     </LinearLayout>
-</ScrollView>
+    </ScrollView>
+    <include layout="@layout/guardian_bottom_nav" />
+</LinearLayout>

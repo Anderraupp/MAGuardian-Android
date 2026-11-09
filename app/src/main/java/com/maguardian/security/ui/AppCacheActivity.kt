@@ -37,11 +37,12 @@ class AppCacheActivity : AppCompatActivity() {
     private lateinit var permission: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.Theme_MAGuardian_Preview)
+        GuardianAppearance.apply(this)
         super.onCreate(savedInstanceState)
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_app_cache)
-        ScreenInsets.apply(this, light = true)
+        ScreenInsets.apply(this, light = GuardianAppearance.isLight(this))
+        GuardianNavigation.bind(this)
         rows = findViewById(R.id.llAppCaches)
         total = findViewById(R.id.tvAppCacheTotal)
         summary = findViewById(R.id.tvAppCacheSummary)

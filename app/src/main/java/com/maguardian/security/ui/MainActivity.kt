@@ -132,11 +132,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.Theme_MAGuardian_Preview)
+        GuardianAppearance.apply(this)
         super.onCreate(savedInstanceState)
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_main)
-        ScreenInsets.apply(this, light = true)
+        ScreenInsets.apply(this, light = GuardianAppearance.isLight(this))
+        GuardianNavigation.bind(this) {
+            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+        }
+        GuardianAppearance.bind(this) { !isScanning }
         setupUI()
         setupCatalogUI()
         com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent?.data)
@@ -1487,7 +1491,7 @@ class MainActivity : AppCompatActivity() {
             }
             ivShield.setImageResource(R.drawable.ic_shield_alert)
             btnToggle.text = "Ativar"
-            btnToggle.setTextColor(android.graphics.Color.WHITE)
+            btnToggle.setTextColor(ContextCompat.getColor(this, R.color.guardian_button_text))
             btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_primary)
         }
 

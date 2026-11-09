@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Only the new native screens use this palette; call overlays retain theirs. -->
+    <color name="guardian_paper">#171513</color>
+    <color name="guardian_card">#211E1B</color>
+    <color name="guardian_ink">#F4EBDF</color>
+    <color name="guardian_muted">#C3B6A8</color>
+    <color name="guardian_line">#4A4039</color>
+    <color name="guardian_red">#E49B8B</color>
+    <color name="guardian_red_deep">#F3B0A6</color>
+    <color name="guardian_wash">#302320</color>
+    <color name="guardian_success">#97C49B</color>
+    <color name="guardian_button_bg">#E7DED3</color>
+    <color name="guardian_button_text">#272523</color>
+    <color name="guardian_danger">#FFB3A5</color>
+    <color name="guardian_warning">#EDC28C</color>
+    <bool name="guardian_light_bars">false</bool>
+</resources>

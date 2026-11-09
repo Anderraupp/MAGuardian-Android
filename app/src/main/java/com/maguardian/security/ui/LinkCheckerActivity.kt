@@ -28,11 +28,12 @@ class LinkCheckerActivity : AppCompatActivity() {
     private lateinit var llReasons: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.Theme_MAGuardian_Preview)
+        GuardianAppearance.apply(this)
         super.onCreate(savedInstanceState)
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_link_checker)
-        ScreenInsets.apply(this, light = true)
+        ScreenInsets.apply(this, light = GuardianAppearance.isLight(this))
+        GuardianNavigation.bind(this)
 
         etUrl         = findViewById(R.id.etUrl)
         btnCheck      = findViewById(R.id.btnCheck)
@@ -66,20 +67,22 @@ class LinkCheckerActivity : AppCompatActivity() {
     private fun showResult(result: LinkChecker.Result) {
         cardResult.visibility = View.VISIBLE
 
-        val (icon, colorHex) = when (result.verdict) {
-            "FRAUDULENTO" -> "!" to "#A62D25"
-            "SUSPEITO"    -> "!" to "#89591D"
-            else          -> "✓" to "#3F633F"
+        val (icon, colorResource) = when (result.verdict) {
+            "FRAUDULENTO" -> "!" to R.color.guardian_danger
+            "SUSPEITO"    -> "!" to R.color.guardian_warning
+            else          -> "✓" to R.color.guardian_success
         }
+        val color = resources.getColor(colorResource, theme)
 
         tvVerdictIcon.text = icon
+        tvVerdictIcon.setTextColor(color)
         val verdictLabel = when (result.verdict) {
             "FRAUDULENTO" -> "Alto risco identificado"
             "SUSPEITO" -> "Sinais de atenção"
             else -> "Sem indicadores identificados"
         }
         tvVerdict.text = "$verdictLabel — ${result.category}"
-        tvVerdict.setTextColor(Color.parseColor(colorHex))
+        tvVerdict.setTextColor(color)
         tvScore.text = "Pontuação de atenção: ${result.score}/100"
 
         viewScoreBar.post {
@@ -88,7 +91,7 @@ class LinkCheckerActivity : AppCompatActivity() {
             params.width = ((maxWidth * result.score.coerceIn(0, 100)) / 100).coerceAtLeast(4)
             viewScoreBar.layoutParams = params
         }
-        viewScoreBar.setBackgroundColor(Color.parseColor(colorHex))
+        viewScoreBar.setBackgroundColor(color)
 
         llReasons.removeAllViews()
         if (result.reasons.isNotEmpty()) {
@@ -99,9 +102,9 @@ class LinkCheckerActivity : AppCompatActivity() {
                 val tv = TextView(this).apply {
                     text = "• $reason"
                     textSize = 14f
-                    setTextColor(Color.parseColor("#68615B"))
+                    setTextColor(resources.getColor(R.color.guardian_muted, theme))
                     setPadding(dp10, dp6, dp10, dp6)
-                    setBackgroundColor(Color.parseColor("#F1DFD8"))
+                    setBackgroundColor(resources.getColor(R.color.guardian_wash, theme))
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT

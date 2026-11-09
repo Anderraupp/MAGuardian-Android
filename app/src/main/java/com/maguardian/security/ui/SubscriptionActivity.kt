@@ -22,11 +22,12 @@ class SubscriptionActivity : AppCompatActivity() {
     private lateinit var layoutContent: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.Theme_MAGuardian_Preview)
+        GuardianAppearance.apply(this)
         super.onCreate(savedInstanceState)
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_subscription)
-        ScreenInsets.apply(this, light = true)
+        ScreenInsets.apply(this, light = GuardianAppearance.isLight(this))
+        GuardianNavigation.bind(this)
 
         tvPrice       = findViewById(R.id.tvMonthlyPrice)
         btnSubscribe  = findViewById(R.id.btnSubscribe)
