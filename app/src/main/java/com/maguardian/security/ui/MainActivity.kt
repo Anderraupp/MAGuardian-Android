@@ -904,11 +904,11 @@ class MainActivity : AppCompatActivity() {
             val roleManager = getSystemService(android.app.role.RoleManager::class.java)
             val isActive = roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)
             if (isActive) {
-                btn.text = "Desativar"
+                btn.text = "Proteção de ligações\nDesativar"
                 btn.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
                 btn.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
             } else {
-                btn.text = "Ativar"
+                btn.text = "Proteção de ligações\nAtivar"
                 btn.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
                 btn.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
             }
