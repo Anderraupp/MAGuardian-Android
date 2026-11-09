@@ -102,6 +102,26 @@ class GuardianStartupTest {
         controller.pause().stop().destroy()
     }
 
+    @Test fun introDescriptionFitsOnOneLineOnSmallScreens() {
+        val controller = Robolectric.buildActivity(PaletteActivity::class.java).setup()
+        val activity = controller.get()
+        val description = activity.findViewById<TextView>(R.id.tvIntroDescription)
+        assertEquals("Mais controle sobre aplicativos, links e ligações no seu dia a dia.",
+            description.text.toString())
+        assertEquals(1, description.maxLines)
+        assertEquals(TextView.AUTO_SIZE_TEXT_TYPE_UNIFORM, description.autoSizeTextType)
+        for (screenDp in listOf(320, 360, 402)) {
+            val width = ((screenDp - 40) * activity.resources.displayMetrics.density).toInt()
+            description.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+            description.layout(0, 0, width, description.measuredHeight)
+            assertEquals(1, description.lineCount)
+            assertEquals(0, description.layout.getEllipsisCount(0))
+            assertTrue(description.paint.measureText(description.text.toString()) <= width + 1)
+        }
+        controller.pause().stop().destroy()
+    }
+
     @Test fun opensActualMainActivity() {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
         assertEquals(5, controller.get().findViewById<BottomNavigationView>(R.id.guardianBottomNav).menu.size())

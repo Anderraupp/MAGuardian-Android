@@ -22,7 +22,12 @@
             </LinearLayout>
         </LinearLayout>
         <TextView style="@style/GuardianCaption" android:text="VISÃO GERAL" android:textColor="?attr/guardian_button_bg" android:letterSpacing="0.12" />
-        <TextView style="@style/GuardianHeading" android:text="Seu Android, sob controle." android:textSize="26sp" android:layout_marginTop="8dp" android:layout_marginBottom="20dp" />
+        <TextView style="@style/GuardianHeading" android:text="Seu Android, sob controle." android:textSize="26sp" android:layout_marginTop="8dp" android:layout_marginBottom="8dp" />
+        <TextView android:id="@+id/tvIntroDescription" style="@style/GuardianCaption"
+            android:text="Mais controle sobre aplicativos, links e ligações no seu dia a dia."
+            android:maxLines="1" android:scrollHorizontally="false" android:layout_marginBottom="20dp"
+            app:autoSizeTextType="uniform" app:autoSizeMinTextSize="8sp"
+            app:autoSizeMaxTextSize="14sp" app:autoSizeStepGranularity="1sp" />
 
         <LinearLayout android:id="@+id/layoutPermWarning" style="@style/GuardianCard" android:visibility="gone" android:background="@drawable/guardian_status">
             <TextView android:id="@+id/tvPermWarning" style="@style/GuardianText" />
