@@ -27,7 +27,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.maguardian.security.R
-import com.maguardian.security.BuildConfig
 import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.data.MalwareDatabase
 import com.maguardian.security.data.ManualScanReport
@@ -1137,13 +1136,12 @@ class MainActivity : AppCompatActivity() {
         } else {
             "Nenhuma ameaça identificada nesta verificação."
         }
-        val testReport = BuildConfig.DEBUG && packageName.endsWith(".visualtest")
         val result = android.app.AlertDialog.Builder(this)
             .setTitle("Análise concluída")
             .setMessage(summary)
             .setNegativeButton("Fechar", null)
-        if (!testReport) {
-            result.setPositiveButton("Conhecer assinatura") { _, _ ->
+        if (!PrefsHelper.isSubscriptionActive(this)) {
+            result.setPositiveButton("Seja Premium") { _, _ ->
                 subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
             }
         }
