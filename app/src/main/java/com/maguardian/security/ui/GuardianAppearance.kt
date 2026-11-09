@@ -2,7 +2,6 @@ package com.maguardian.security.ui
 
 import android.content.Context
 import android.util.TypedValue
-import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -66,12 +65,6 @@ internal object GuardianAppearance {
             "Guardian palette attribute is missing"
         }
         return if (value.resourceId != 0) ContextCompat.getColor(context, value.resourceId) else value.data
-    }
-
-    fun bind(activity: AppCompatActivity, canChange: () -> Boolean = { true }) {
-        activity.findViewById<ImageButton>(R.id.btnAppearance).setOnClickListener {
-            showDesigner(activity, canChange)
-        }
     }
 
     fun showDesigner(activity: AppCompatActivity, canChange: () -> Boolean = { true }) {

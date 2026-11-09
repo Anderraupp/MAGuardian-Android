@@ -164,14 +164,14 @@
         <item name="guardian_ink">#E8E7DF</item>
         <item name="guardian_muted">#B7BCB6</item>
         <item name="guardian_line">#454B47</item>
-        <item name="guardian_red">#F2B63F</item>
-        <item name="guardian_red_deep">#FFD477</item>
-        <item name="guardian_wash">#342B1B</item>
-        <item name="guardian_button_bg">#C88D27</item>
+        <item name="guardian_red">#FFD13B</item>
+        <item name="guardian_red_deep">#F1B91E</item>
+        <item name="guardian_wash">#3A3018</item>
+        <item name="guardian_button_bg">#FFD13B</item>
         <item name="guardian_button_text">#211B10</item>
         <item name="guardian_success">#83C69A</item>
         <item name="guardian_danger">#FF8B80</item>
-        <item name="guardian_warning">#F2C56B</item>
+        <item name="guardian_warning">#F8C849</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
     </style>

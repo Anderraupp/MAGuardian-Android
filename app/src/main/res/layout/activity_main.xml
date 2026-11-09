@@ -16,10 +16,6 @@
                     android:layout_marginBottom="0dp" android:minHeight="48dp" android:gravity="center_vertical" />
                 <TextView style="@style/GuardianCaption" android:text="Proteção e ferramentas" />
             </LinearLayout>
-            <ImageButton android:id="@+id/btnAppearance" android:layout_width="48dp" android:layout_height="48dp"
-                android:src="@drawable/guardian_ic_theme" android:tint="?attr/guardian_ink"
-                android:background="@drawable/guardian_secondary" android:padding="12dp"
-                android:contentDescription="Designer" app:backgroundTint="@null" />
         </LinearLayout>
         <TextView style="@style/GuardianCaption" android:text="VISÃO GERAL" android:textColor="?attr/guardian_button_bg" android:letterSpacing="0.12" />
         <TextView style="@style/GuardianHeading" android:text="Seu Android, sob controle." android:textSize="26sp" android:layout_marginTop="8dp" android:layout_marginBottom="20dp" />

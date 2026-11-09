@@ -142,7 +142,6 @@ class MainActivity : AppCompatActivity() {
         GuardianNavigation.bind(this, canChangeAppearance = { !isScanning }) {
             subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
-        GuardianAppearance.bind(this) { !isScanning }
         setupUI()
         setupCatalogUI()
         com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent?.data)
@@ -1139,25 +1138,12 @@ class MainActivity : AppCompatActivity() {
             "Nenhuma ameaça identificada nesta verificação. " +
                 "Isso não garante ausência de ameaças no aparelho."
         }
-        val permissionNote = if (report.permissionReviewCount > 0) {
-            "\n\n${report.permissionReviewCount} app(s) têm combinações de permissões " +
-                "para revisão. Permissões isoladas não confirmam adware " +
-                "e não foram contadas como ameaças."
-        } else ""
         val testReport = BuildConfig.DEBUG && packageName.endsWith(".visualtest")
         val result = android.app.AlertDialog.Builder(this)
             .setTitle("Análise concluída")
-            .setMessage(summary + permissionNote)
+            .setMessage(summary)
             .setNegativeButton("Fechar", null)
-        if (testReport) {
-            result.setPositiveButton("Ver motivos do teste") { _, _ ->
-                android.app.AlertDialog.Builder(this)
-                    .setTitle("Motivos — APK de teste")
-                    .setMessage(report.diagnostics())
-                    .setPositiveButton("Fechar", null)
-                    .show()
-            }
-        } else {
+        if (!testReport) {
             result.setPositiveButton("Conhecer assinatura") { _, _ ->
                 subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
             }
