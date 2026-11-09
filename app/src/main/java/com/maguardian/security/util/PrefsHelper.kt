@@ -128,6 +128,7 @@ object PrefsHelper {
         prefs(ctx).edit().putInt(KEY_SCAN_COUNT, count).apply()
     }
 
+    @Synchronized
     fun saveThreat(ctx: Context, malware: MalwareDatabase.MalwareEntry) {
         val prefs = prefs(ctx)
         // O usuário reconheceu este app e escolheu mantê-lo.
@@ -161,6 +162,38 @@ object PrefsHelper {
         prefs.edit()
             .putString(KEY_THREATS, arr.toString())
             .putInt(KEY_TOTAL_FOUND, total)
+            .apply()
+    }
+
+    /**
+     * Retire only old permission-only warnings after a successful reassessment.
+     * Preserve the full records locally; do not mark apps uninstalled, touch
+     * Manter choices, or suppress a later catalog/behaviour detection.
+     */
+    @Synchronized
+    internal fun archivePermissionOnlyFindings(ctx: Context, reassessedWithoutAlert: Set<String>) {
+        if (reassessedWithoutAlert.isEmpty()) return
+        val store = prefs(ctx)
+        val active = JSONArray(store.getString(KEY_THREATS, "[]") ?: "[]")
+        val retained = JSONArray()
+        val archived = JSONArray(store.getString("permission_review_archive", "[]") ?: "[]")
+        var changed = false
+        for (i in 0 until active.length()) {
+            val record = active.getJSONObject(i)
+            val retire = com.maguardian.security.data.ManualScanReport.canArchiveLegacyPermissionReview(
+                record.optString("packageName"),
+                record.optString("status"),
+                record.optString("description"),
+                reassessedWithoutAlert
+            )
+            if (retire) {
+                archived.put(record)
+                changed = true
+            } else retained.put(record)
+        }
+        if (changed) store.edit()
+            .putString(KEY_THREATS, retained.toString())
+            .putString("permission_review_archive", archived.toString())
             .apply()
     }
 

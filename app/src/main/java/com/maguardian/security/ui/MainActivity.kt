@@ -27,8 +27,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.maguardian.security.R
+import com.maguardian.security.BuildConfig
 import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.data.MalwareDatabase
+import com.maguardian.security.data.ManualScanReport
 import com.maguardian.security.data.ThreatCatalog
 import com.maguardian.security.data.ThreatCatalogUpdater
 import com.maguardian.security.receiver.TrialAlertReceiver
@@ -1002,23 +1004,12 @@ class MainActivity : AppCompatActivity() {
         btnScan.isEnabled = false
         btnScan.text = "Escaneando..."
 
-        val scanSteps = listOf(
-            "Inicializando varredura...",
-            "Analisando apps instalados...",
-            "Verificando permissões suspeitas...",
-            "Checando processos em segundo plano...",
-            "Inspecionando dados de rede...",
-            "Analisando comportamento de apps...",
-            "Verificando vulnerabilidades do sistema...",
-            "Consolidando resultados..."
-        )
-
         val dialogView = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(60, 48, 60, 32)
         }
         val tvStep = android.widget.TextView(this).apply {
-            text = scanSteps[0]
+            text = "Consultando aplicativos instalados..."
             textSize = 13f
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.guardian_muted))
             gravity = android.view.Gravity.CENTER
@@ -1041,18 +1032,21 @@ class MainActivity : AppCompatActivity() {
         dialogView.addView(progressBar)
 
         val dialog = android.app.AlertDialog.Builder(this)
-            .setTitle("🔍 Fazendo Varredura")
+            .setTitle("Analisando aplicativos")
             .setView(dialogView)
             .setCancelable(false)
             .show()
 
-        val totalMs = 10_000L
-        val intervalMs = 200L
-        val steps = (totalMs / intervalMs).toInt()
-        var tick = 0
+        fun finishDialog() {
+            dialog.dismiss()
+            isScanning = false
+            btnScan.isEnabled = true
+            btnScan.text = "Analisar apps instalados"
+            refreshUI()
+        }
 
-        // Varredura real em background — popula o banco de ameaças corretamente
-        val freeThreatsFound = java.util.concurrent.atomic.AtomicInteger(0)
+        val report = ManualScanReport()
+        val reassessedWithoutAlert = mutableSetOf<String>()
         Thread {
             try {
                 ensureThreatChannelExists()
@@ -1062,7 +1056,13 @@ class MainActivity : AppCompatActivity() {
                         Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_LAUNCHER) }, 0
                     ).map { it.activityInfo.packageName }.toSet()
 
-                for (pkg in pkgs) {
+                for ((index, pkg) in pkgs.withIndex()) {
+                    if (index % 10 == 0) runOnUiThread {
+                        if (!isFinishing && !isDestroyed) {
+                            progressBar.progress = index * 100 / pkgs.size.coerceAtLeast(1)
+                            tvStep.text = "Verificando apps: ${index + 1} de ${pkgs.size}"
+                        }
+                    }
                     val pkgName = pkg.packageName
                     if (pkgName == packageName) continue
                     if (PrefsHelper.isThreatKept(this, pkgName)) continue
@@ -1080,73 +1080,88 @@ class MainActivity : AppCompatActivity() {
                          android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
                     val hasLauncher = pkgName in launcherPkgs
 
-                    MalwareDatabase.isMalware(pkgName, this)?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
-                    MalwareDatabase.checkHiddenApp(pkgName, appLabel, pkg.requestedPermissions, hasLauncher, isSystemApp)
-                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
-                    MalwareDatabase.checkHeuristic(pkgName, appLabel, pkg.requestedPermissions)
-                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
-                    MalwareDatabase.checkAdwarePermissions(pkgName, appLabel, pkg.requestedPermissions, isSystemApp)
-                        ?.let { PrefsHelper.saveThreat(this, it); freeThreatsFound.incrementAndGet() }
+                    // One installed package, at most one alert. Keep all existing
+                    // database, hidden-app and heuristic checks in priority order.
+                    val finding = MalwareDatabase.isMalware(pkgName, this)
+                        ?: MalwareDatabase.checkHiddenApp(
+                            pkgName, appLabel, pkg.requestedPermissions, hasLauncher, isSystemApp
+                        )
+                        ?: MalwareDatabase.checkHeuristic(pkgName, appLabel, pkg.requestedPermissions)
+                    if (finding != null) {
+                        PrefsHelper.saveThreat(this, finding)
+                        report.record(ManualScanReport.Finding(pkgName, appLabel, finding.description))
+                    } else {
+                        reassessedWithoutAlert.add(pkgName)
+                        MalwareDatabase.checkAdwarePermissions(
+                            pkgName, appLabel, pkg.requestedPermissions, isSystemApp
+                        )?.let {
+                            // Declared capabilities are information for review,
+                            // not proof of malicious activity or an active threat.
+                            report.record(ManualScanReport.Finding(
+                                pkgName, appLabel, it.description, permissionOnly = true
+                            ))
+                        }
+                    }
                 }
+                PrefsHelper.archivePermissionOnlyFindings(this, reassessedWithoutAlert)
                 PrefsHelper.setLastScan(this, System.currentTimeMillis())
                 PrefsHelper.incrementScanCount(this)
+                // Completion depends on the real scan, not a ten-second timer.
+                runOnUiThread {
+                    if (!isFinishing && !isDestroyed) {
+                        finishDialog()
+                        showFreeScanResult(report)
+                    }
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Erro na varredura silenciosa (não-assinante)", e)
-            }
-        }.start()
-
-        val handler = android.os.Handler(android.os.Looper.getMainLooper())
-        val runnable = object : Runnable {
-            override fun run() {
-                tick++
-                val pct = (tick * 100 / steps).coerceAtMost(100)
-                progressBar.progress = pct
-
-                val stepIdx = ((pct / 100f) * (scanSteps.size - 1)).toInt()
-                    .coerceIn(0, scanSteps.size - 1)
-                tvStep.text = scanSteps[stepIdx]
-
-                if (tick < steps) {
-                    handler.postDelayed(this, intervalMs)
-                } else {
-                    dialog.dismiss()
-                    isScanning = false
-                    btnScan.isEnabled = true
-                    btnScan.text = "Analisar apps instalados"
-                    refreshUI()
-
-                    val count = freeThreatsFound.get()
-                    if (count > 0) {
-                        android.app.AlertDialog.Builder(this@MainActivity)
-                            .setTitle("⚠️ $count Ameaça(s) Detectada(s)!")
-                            .setMessage(
-                                "Encontramos $count ameaça(s) no seu dispositivo.\n\n" +
-                                "Ative os 7 dias grátis para visualizar os apps infectados " +
-                                "e removê-los agora."
-                            )
-                            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
-                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
-                            }
-                            .setNegativeButton("Agora não", null)
-                            .show()
-                    } else {
-                        android.app.AlertDialog.Builder(this@MainActivity)
-                            .setTitle("✅ Dispositivo Seguro!")
-                            .setMessage(
-                                "Nenhuma ameaça encontrada no seu dispositivo.\n\n" +
-                                "Ative os 7 dias grátis para manter seu celular protegido " +
-                                "em tempo real contra vírus, links suspeitos e chamadas fraudulentas."
-                            )
-                            .setPositiveButton("🎁 Ativar 7 Dias Grátis") { _, _ ->
-                                subscriptionLauncher.launch(Intent(this@MainActivity, SubscriptionActivity::class.java))
-                            }
-                            .setNegativeButton("Agora não", null)
+                runOnUiThread {
+                    if (!isFinishing && !isDestroyed) {
+                        finishDialog()
+                        android.app.AlertDialog.Builder(this)
+                            .setTitle("Análise não concluída")
+                            .setMessage("Não foi possível concluir a verificação. Tente novamente. " +
+                                "Uma análise incompleta não confirma que o aparelho está seguro.")
+                            .setPositiveButton("Entendi", null)
                             .show()
                     }
                 }
             }
+        }.start()
+    }
+
+    private fun showFreeScanResult(report: ManualScanReport) {
+        val summary = if (report.alertCount > 0) {
+            "${report.alertCount} app(s) sinalizado(s) para revisão nesta análise.\n\n" +
+                "Indícios não confirmam, por si só, que um aplicativo está infectado."
+        } else {
+            "Nenhuma ameaça identificada nesta verificação. " +
+                "Isso não garante ausência de ameaças no aparelho."
         }
-        handler.postDelayed(runnable, intervalMs)
+        val permissionNote = if (report.permissionReviewCount > 0) {
+            "\n\n${report.permissionReviewCount} app(s) têm combinações de permissões " +
+                "para revisão. Permissões isoladas não confirmam adware " +
+                "e não foram contadas como ameaças."
+        } else ""
+        val testReport = BuildConfig.DEBUG && packageName.endsWith(".visualtest")
+        val result = android.app.AlertDialog.Builder(this)
+            .setTitle("Análise concluída")
+            .setMessage(summary + permissionNote)
+            .setNegativeButton("Fechar", null)
+        if (testReport) {
+            result.setPositiveButton("Ver motivos do teste") { _, _ ->
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Motivos — APK de teste")
+                    .setMessage(report.diagnostics())
+                    .setPositiveButton("Fechar", null)
+                    .show()
+            }
+        } else {
+            result.setPositiveButton("Conhecer assinatura") { _, _ ->
+                subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+            }
+        }
+        result.show()
     }
 
     // ─────────────────────────────────────────────────────────────────────────
