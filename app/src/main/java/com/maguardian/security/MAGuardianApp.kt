@@ -10,6 +10,7 @@ class MAGuardianApp : Application() {
         super.onCreate()
         com.maguardian.security.service.AppUpdateCheckJobService.schedule(this)
         com.maguardian.security.data.ThreatCatalog.initialize(this)
+        com.maguardian.security.receiver.InstallThreatMonitor.start(this)
         com.maguardian.security.data.ThreatCatalogUpdater.schedule(this)
         com.maguardian.security.data.ThreatCatalogUpdater.update(this)
         AppEventsLogger.activateApp(this)

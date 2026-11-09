@@ -161,7 +161,7 @@
         </receiver>
 
         <!-- Receptor de Instalação de Apps — detecta malware ao instalar sem precisar abrir o app -->
-        <!-- PACKAGE_ADDED é exceção garantida pelo Android mesmo em segundo plano (API 26+) -->
+        <!-- Dynamic receiver + scheduled fallback cover restricted implicit broadcasts. -->
         <receiver
             android:name=".receiver.PackageInstallReceiver"
             android:enabled="true"
@@ -172,6 +172,11 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".service.InstallThreatCheckJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
 
         <!-- Receptor de alertas periódicos para não-assinantes -->
         <receiver
