@@ -18,8 +18,12 @@
         <TextView style="@style/GuardianHeading" android:text="Cache por app" />
         <LinearLayout android:id="@+id/llAppCaches" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
         <LinearLayout style="@style/GuardianCard">
-            <TextView style="@style/GuardianHeading" android:text="O que o Android permite" />
-            <TextView style="@style/GuardianText" android:text="Use Abrir para acessar o armazenamento de um app.\n\nAo retornar, os tamanhos são consultados novamente. Se o Android ainda mostrar o valor anterior, aguarde alguns instantes e toque em Atualizar valores. A consulta não força nem simula a limpeza de outros aplicativos." />
+            <TextView style="@style/GuardianHeading" android:text="Como funciona:" />
+            <TextView style="@style/GuardianText" android:text="O Android protege os dados de cada aplicativo e, por segurança e privacidade, não permite que o M&amp;A Guardian limpe automaticamente o cache de outros apps" />
+            <TextView style="@style/GuardianHeading" android:text="Atualização dos valores:" android:layout_marginTop="20dp" />
+            <TextView style="@style/GuardianText" android:text="Após realizar as limpezas, retorne ao M&amp;A Guardian e toque em Atualizar valores para consultar novamente o cache dos aplicativos e atualizar o total identificado." />
+            <TextView style="@style/GuardianHeading" android:text="Mais controle para você:" android:layout_marginTop="20dp" />
+            <TextView style="@style/GuardianText" android:text="Você escolhe o que deseja limpar, com autonomia e segurança." />
         </LinearLayout>
         <Button android:id="@+id/btnCacheRefresh" style="@style/GuardianSecondary" android:text="Atualizar valores" android:layout_marginBottom="12dp" />
         <TextView style="@style/GuardianCaption" android:text="Arquivos pessoais não são removidos por esta tela. A limpeza e os números apresentados dependem do sistema." />
