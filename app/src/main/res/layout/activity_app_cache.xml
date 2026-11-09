@@ -7,7 +7,7 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
         <Button android:id="@+id/btnCacheBack" style="@style/GuardianSecondary" android:text="← Voltar para a tela principal" />
         <TextView style="@style/GuardianHeading" android:text="Cache por aplicativo" android:textSize="28sp" android:layout_marginTop="24dp" />
-        <TextView style="@style/GuardianText" android:text="Revise os arquivos temporários e abra as configurações de cada aplicativo para gerenciá-los." android:layout_marginBottom="24dp" />
+        <TextView style="@style/GuardianText" android:text="Consulte o espaço ocupado por cada aplicativo. Para liberar espaço, acesse Armazenamento nas configurações do app e toque em Limpar cache." android:layout_marginBottom="24dp" />
         <LinearLayout style="@style/GuardianCard">
             <TextView style="@style/GuardianCaption" android:text="TOTAL CONSULTADO" android:textColor="?attr/guardian_button_bg" android:letterSpacing="0.1" />
             <TextView android:id="@+id/tvAppCacheTotal" style="@style/GuardianHeading" android:text="Consultando…" android:textSize="30sp" android:layout_marginTop="12dp" />
