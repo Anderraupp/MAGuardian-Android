@@ -15,8 +15,9 @@
     <color name="guardian_danger">#A62D25</color>
     <color name="guardian_warning">#89591D</color>
     <bool name="guardian_light_bars">true</bool>
-    <string name="guardian_support_email" translatable="false">celulareseacessoriosmea@gmail.com</string>
+    <string name="guardian_support_email" translatable="false">contato@meacelulareseacessorios.com.br</string>
     <string name="guardian_support_whatsapp" translatable="false">5545998487232</string>
+    <string name="guardian_support_whatsapp_display" translatable="false">+55 (45) 99848-7232</string>
     <style name="Theme.MAGuardian.Preview" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="guardian_paper">@color/guardian_paper</item>
         <item name="guardian_card">@color/guardian_card</item>

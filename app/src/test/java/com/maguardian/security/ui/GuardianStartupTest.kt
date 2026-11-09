@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.maguardian.security.R
@@ -11,6 +12,7 @@ import com.maguardian.security.data.ManualScanReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -19,6 +21,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlertDialog
+import org.robolectric.shadows.ShadowDialog
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26, 34], application = Application::class)
@@ -58,6 +61,22 @@ class GuardianStartupTest {
     @Test fun opensActualMainActivity() {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
         assertEquals(5, controller.get().findViewById<BottomNavigationView>(R.id.guardianBottomNav).menu.size())
+        controller.pause().stop().destroy()
+    }
+
+    @Test fun contactShowsFullPhoneAndEmail() {
+        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
+        val activity = controller.get()
+        activity.findViewById<BottomNavigationView>(R.id.guardianBottomNav).menu
+            .performIdentifierAction(R.id.navGuardianContact, 0)
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val list = dialog.listView
+        assertEquals("WhatsApp\n+55 (45) 99848-7232", list.adapter.getItem(0))
+        assertEquals("E-mail\ncontato@meacelulareseacessorios.com.br", list.adapter.getItem(1))
+        val emailRow = list.adapter.getView(1, null, list) as TextView
+        assertTrue(emailRow.maxLines > 1)
+        assertEquals(null, emailRow.ellipsize)
+        dialog.dismiss()
         controller.pause().stop().destroy()
     }
 

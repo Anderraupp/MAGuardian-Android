@@ -6,7 +6,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AbsListView
+import android.widget.ArrayAdapter
 import android.widget.ScrollView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -56,16 +61,34 @@ internal object GuardianNavigation {
     }
 
     private fun contact(activity: AppCompatActivity) {
+        val number = activity.getString(R.string.guardian_support_whatsapp)
+        val email = activity.getString(R.string.guardian_support_email)
+        val contacts = arrayOf(
+            "WhatsApp\n${activity.getString(R.string.guardian_support_whatsapp_display)}",
+            "E-mail\n$email"
+        )
+        val adapter = object : ArrayAdapter<String>(activity, android.R.layout.simple_list_item_1, contacts) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                return (super.getView(position, convertView, parent) as TextView).apply {
+                    setSingleLine(false)
+                    maxLines = Int.MAX_VALUE
+                    ellipsize = null
+                    layoutParams = AbsListView.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                    val padding = (16 * resources.displayMetrics.density).toInt()
+                    setPadding(padding, padding, padding, padding)
+                }
+            }
+        }
         AlertDialog.Builder(activity)
             .setTitle("Fale com o M&A Guardian")
-            .setItems(arrayOf("WhatsApp", "E-mail")) { _, which ->
+            .setAdapter(adapter) { _, which ->
                 if (which == 0) {
-                    val number = activity.getString(R.string.guardian_support_whatsapp)
                     if (number.isBlank()) {
                         Toast.makeText(activity, "WhatsApp de atendimento ainda não configurado.", Toast.LENGTH_LONG).show()
                     } else open(activity, Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$number")))
                 } else {
-                    val email = activity.getString(R.string.guardian_support_email)
                     val intent = Intent(Intent.ACTION_SENDTO,
                         Uri.parse("mailto:$email?subject=${Uri.encode("M&A Guardian — atendimento")}"))
                     try {
