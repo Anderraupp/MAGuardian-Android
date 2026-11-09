@@ -3,7 +3,6 @@ package com.maguardian.security.ui
 import android.app.usage.StorageStatsManager
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.storage.StorageManager
 import android.provider.Settings
@@ -52,11 +51,6 @@ class AppCacheActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnCacheBack).setOnClickListener { finish() }
         refresh.setOnClickListener { refreshMeasurements() }
         permission.setOnClickListener { openSystem(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
-        findViewById<Button>(R.id.btnCacheCleanAll).setOnClickListener {
-            val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                StorageManager.ACTION_CLEAR_APP_CACHE else Settings.ACTION_INTERNAL_STORAGE_SETTINGS
-            openSystem(Intent(action), Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
-        }
     }
 
     override fun onResume() {

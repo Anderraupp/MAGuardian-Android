@@ -26,6 +26,9 @@ class AppCacheActionTest {
             // Do not resume: this test inspects an inert row, not live storage measurements.
             val controller = Robolectric.buildActivity(AppCacheActivity::class.java).create().start()
             val activity = controller.get()
+            val removedAction = activity.resources.getIdentifier("btnCacheCleanAll", "id", activity.packageName)
+            if (removedAction != 0) assertNull(activity.findViewById<View>(removedAction))
+            assertNotNull(activity.findViewById<Button>(R.id.btnCacheRefresh))
             val entryClass = AppCacheActivity::class.java.declaredClasses.single { it.simpleName == "CacheEntry" }
             val entry = entryClass.getDeclaredConstructor(String::class.java, String::class.java,
                 java.lang.Long::class.java).apply { isAccessible = true }

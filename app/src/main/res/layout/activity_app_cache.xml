@@ -19,10 +19,9 @@
         <LinearLayout android:id="@+id/llAppCaches" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
         <LinearLayout style="@style/GuardianCard">
             <TextView style="@style/GuardianHeading" android:text="O que o Android permite" />
-            <TextView style="@style/GuardianText" android:text="Use Abrir para acessar o armazenamento de um app. Limpar tudo abre uma opção do próprio Android e pode exigir confirmação.\n\nAo retornar, os tamanhos são consultados novamente. Se o Android ainda mostrar o valor anterior, aguarde alguns instantes e toque em Atualizar valores. A consulta não força nem simula a limpeza de outros aplicativos." />
+            <TextView style="@style/GuardianText" android:text="Use Abrir para acessar o armazenamento de um app.\n\nAo retornar, os tamanhos são consultados novamente. Se o Android ainda mostrar o valor anterior, aguarde alguns instantes e toque em Atualizar valores. A consulta não força nem simula a limpeza de outros aplicativos." />
         </LinearLayout>
         <Button android:id="@+id/btnCacheRefresh" style="@style/GuardianSecondary" android:text="Atualizar valores" android:layout_marginBottom="12dp" />
-        <Button android:id="@+id/btnCacheCleanAll" style="@style/GuardianButton" android:text="Limpar tudo pelo Android" android:layout_marginBottom="12dp" />
         <TextView style="@style/GuardianCaption" android:text="Arquivos pessoais não são removidos por esta tela. A limpeza e os números apresentados dependem do sistema." />
     </LinearLayout>
     </ScrollView>
