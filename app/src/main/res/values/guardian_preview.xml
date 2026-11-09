@@ -46,9 +46,12 @@
         <item name="android:colorBackground">?attr/guardian_paper</item>
         <item name="android:colorForeground">?attr/guardian_ink</item>
         <item name="android:windowBackground">?attr/guardian_paper</item>
-        <item name="android:textColorPrimary">?attr/guardian_ink</item>
-        <item name="android:textColorSecondary">?attr/guardian_muted</item>
-        <item name="android:textColorHint">?attr/guardian_muted</item>
+        <!-- Material 1.11 reads these as ColorStateList resource IDs before
+             applying the navigation view's explicit tint. Literal color attrs
+             resolve with resourceId=0 and crash during menu inflation. -->
+        <item name="android:textColorPrimary">@color/guardian_text_primary</item>
+        <item name="android:textColorSecondary">@color/guardian_text_secondary</item>
+        <item name="android:textColorHint">@color/guardian_text_secondary</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
