@@ -41,7 +41,7 @@
         <LinearLayout android:id="@+id/cardStatus" style="@style/GuardianCard" android:background="@drawable/guardian_status" android:padding="20dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
                 <ImageView android:id="@+id/ivShield" android:layout_width="40dp" android:layout_height="48dp"
-                    android:src="@drawable/ic_shield_check" android:tint="?attr/guardian_success" android:contentDescription="Estado da proteção" android:layout_marginEnd="16dp" />
+                    android:src="@drawable/ic_shield_alert" android:tint="?attr/guardian_danger" android:contentDescription="Estado da proteção" android:layout_marginEnd="16dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView style="@style/GuardianCaption" android:text="PROTEÇÃO DO APARELHO" />
                     <TextView android:id="@+id/tvStatus" style="@style/GuardianHeading" android:text="Verificando estado" android:textSize="21sp" android:layout_marginTop="6dp" android:layout_marginBottom="6dp" />

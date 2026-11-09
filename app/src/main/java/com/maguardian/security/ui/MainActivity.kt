@@ -1457,6 +1457,10 @@ class MainActivity : AppCompatActivity() {
 
         // Status card — não-assinantes sempre veem "Risco"
         val isFullyActive = isSubscribed && protectionEnabled && permStatus.allGranted
+        ivShield.imageTintList = android.content.res.ColorStateList.valueOf(
+            GuardianAppearance.color(this,
+                if (isFullyActive) R.color.guardian_success else R.color.guardian_danger)
+        )
         if (isFullyActive) {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_status)
             tvStatus.text = "Ativa"
