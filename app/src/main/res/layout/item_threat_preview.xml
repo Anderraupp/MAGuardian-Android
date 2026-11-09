@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/GuardianCard" android:layout_marginTop="16dp" android:background="@drawable/guardian_status">
-    <TextView android:id="@+id/tvThreatSeverity" style="@style/GuardianCaption" android:textColor="@color/guardian_red_deep" android:textStyle="bold" />
+    <TextView android:id="@+id/tvThreatSeverity" style="@style/GuardianCaption" android:textColor="?attr/guardian_danger" android:textStyle="bold" />
     <TextView android:id="@+id/tvThreatName" style="@style/GuardianHeading" android:layout_marginTop="10dp" />
     <TextView android:id="@+id/tvThreatPackage" style="@style/GuardianCaption" android:textIsSelectable="true" />
     <TextView android:id="@+id/tvThreatType" style="@style/GuardianText" android:layout_marginTop="14dp" />

@@ -16,7 +16,11 @@ import com.maguardian.security.R
 
 /** The external actions are user initiated; no form is submitted automatically. */
 internal object GuardianNavigation {
-    fun bind(activity: AppCompatActivity, subscribe: (() -> Unit)? = null) {
+    fun bind(
+        activity: AppCompatActivity,
+        canChangeAppearance: () -> Boolean = { true },
+        subscribe: (() -> Unit)? = null
+    ) {
         val nav = activity.findViewById<BottomNavigationView>(R.id.guardianBottomNav)
         // ScreenInsets owns the safe area once at the outer root; do not pad twice.
         ViewCompat.setOnApplyWindowInsetsListener(nav) { _, insets -> insets }
@@ -36,6 +40,7 @@ internal object GuardianNavigation {
                 R.id.navGuardianAbout -> open(activity, Intent(Intent.ACTION_VIEW,
                     Uri.parse("https://guardian.meacelulareseacessorios.com.br/")))
                 R.id.navGuardianContact -> contact(activity)
+                R.id.navGuardianDesigner -> GuardianAppearance.showDesigner(activity, canChangeAppearance)
                 R.id.navGuardianSubscription -> if (activity !is SubscriptionActivity) {
                     if (subscribe != null) subscribe()
                     else activity.startActivity(Intent(activity, SubscriptionActivity::class.java).apply {

@@ -18,15 +18,37 @@
     <string name="guardian_support_email" translatable="false">celulareseacessoriosmea@gmail.com</string>
     <string name="guardian_support_whatsapp" translatable="false">5545998487232</string>
     <style name="Theme.MAGuardian.Preview" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/guardian_red</item>
-        <item name="colorPrimaryVariant">@color/guardian_red_deep</item>
-        <item name="colorOnPrimary">@color/guardian_button_text</item>
-        <item name="colorSecondary">@color/guardian_red</item>
-        <item name="android:colorAccent">@color/guardian_red</item>
-        <item name="android:colorBackground">@color/guardian_paper</item>
-        <item name="android:windowBackground">@color/guardian_paper</item>
-        <item name="android:textColorPrimary">@color/guardian_ink</item>
-        <item name="android:textColorSecondary">@color/guardian_muted</item>
+        <item name="guardian_paper">@color/guardian_paper</item>
+        <item name="guardian_card">@color/guardian_card</item>
+        <item name="guardian_ink">@color/guardian_ink</item>
+        <item name="guardian_muted">@color/guardian_muted</item>
+        <item name="guardian_line">@color/guardian_line</item>
+        <item name="guardian_red">@color/guardian_red</item>
+        <item name="guardian_red_deep">@color/guardian_red_deep</item>
+        <item name="guardian_wash">@color/guardian_wash</item>
+        <item name="guardian_button_bg">@color/guardian_button_bg</item>
+        <item name="guardian_button_text">@color/guardian_button_text</item>
+        <item name="guardian_success">@color/guardian_success</item>
+        <item name="guardian_danger">@color/guardian_danger</item>
+        <item name="guardian_warning">@color/guardian_warning</item>
+        <item name="colorPrimary">?attr/guardian_button_bg</item>
+        <item name="colorPrimaryVariant">?attr/guardian_button_bg</item>
+        <item name="colorOnPrimary">?attr/guardian_button_text</item>
+        <item name="colorSecondary">?attr/guardian_button_bg</item>
+        <item name="colorSecondaryVariant">?attr/guardian_button_bg</item>
+        <item name="colorOnSecondary">?attr/guardian_button_text</item>
+        <item name="colorSurface">?attr/guardian_card</item>
+        <item name="colorOnSurface">?attr/guardian_ink</item>
+        <item name="colorError">?attr/guardian_danger</item>
+        <item name="colorControlActivated">?attr/guardian_button_bg</item>
+        <item name="colorControlNormal">?attr/guardian_muted</item>
+        <item name="android:colorAccent">?attr/guardian_button_bg</item>
+        <item name="android:colorBackground">?attr/guardian_paper</item>
+        <item name="android:colorForeground">?attr/guardian_ink</item>
+        <item name="android:windowBackground">?attr/guardian_paper</item>
+        <item name="android:textColorPrimary">?attr/guardian_ink</item>
+        <item name="android:textColorSecondary">?attr/guardian_muted</item>
+        <item name="android:textColorHint">?attr/guardian_muted</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -39,12 +61,12 @@
     <style name="GuardianText">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/guardian_ink</item>
+        <item name="android:textColor">?attr/guardian_ink</item>
         <item name="android:textSize">14sp</item>
         <item name="android:lineSpacingExtra">3dp</item>
     </style>
     <style name="GuardianCaption" parent="GuardianText">
-        <item name="android:textColor">@color/guardian_muted</item>
+        <item name="android:textColor">?attr/guardian_muted</item>
         <item name="android:textSize">12sp</item>
     </style>
     <style name="GuardianHeading" parent="GuardianText">
@@ -67,13 +89,13 @@
         <item name="android:textAllCaps">false</item>
         <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/guardian_button_text</item>
+        <item name="android:textColor">?attr/guardian_button_text</item>
         <item name="android:background">@drawable/guardian_primary</item>
         <item name="backgroundTint">@null</item>
         <item name="android:padding">12dp</item>
     </style>
     <style name="GuardianSecondary" parent="GuardianButton">
-        <item name="android:textColor">@color/guardian_ink</item>
+        <item name="android:textColor">?attr/guardian_ink</item>
         <item name="android:background">@drawable/guardian_secondary</item>
     </style>
     <style name="GuardianTool" parent="GuardianSecondary">
@@ -81,7 +103,7 @@
         <item name="android:layout_weight">1</item>
         <item name="android:minHeight">110dp</item>
         <item name="android:drawablePadding">12dp</item>
-        <item name="android:drawableTint">@color/guardian_red</item>
+        <item name="android:drawableTint">?attr/guardian_button_bg</item>
         <item name="android:gravity">center</item>
     </style>
     <style name="GuardianMetric" parent="GuardianText">
@@ -92,11 +114,62 @@
     <style name="GuardianFooter" parent="GuardianSecondary">
         <item name="android:textSize">12sp</item>
         <item name="android:background">?android:attr/selectableItemBackground</item>
-        <item name="android:textColor">@color/guardian_muted</item>
+        <item name="android:textColor">?attr/guardian_muted</item>
     </style>
     <style name="GuardianNavLabel">
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">11sp</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Theme.MAGuardian.Palette.Original" parent="Theme.MAGuardian.Preview">
+        <item name="guardian_paper">#0A0808</item>
+        <item name="guardian_card">#1C1212</item>
+        <item name="guardian_ink">#E8E8E8</item>
+        <item name="guardian_muted">#B5AEB0</item>
+        <item name="guardian_line">#3B2525</item>
+        <item name="guardian_red">#E13A32</item>
+        <item name="guardian_red_deep">#F06459</item>
+        <item name="guardian_wash">#271515</item>
+        <item name="guardian_button_bg">#DC2626</item>
+        <item name="guardian_button_text">#FFF8F4</item>
+        <item name="guardian_success">#79D39A</item>
+        <item name="guardian_danger">#FF8A80</item>
+        <item name="guardian_warning">#F2C36B</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+    <style name="Theme.MAGuardian.Palette.Petroleo" parent="Theme.MAGuardian.Preview">
+        <item name="guardian_paper">#DCEBEA</item>
+        <item name="guardian_card">#E8F2F0</item>
+        <item name="guardian_ink">#173C3B</item>
+        <item name="guardian_muted">#426461</item>
+        <item name="guardian_line">#B5CFCC</item>
+        <item name="guardian_red">#126D68</item>
+        <item name="guardian_red_deep">#0D5754</item>
+        <item name="guardian_wash">#CDE4DF</item>
+        <item name="guardian_button_bg">#145E5B</item>
+        <item name="guardian_button_text">#F1F8F5</item>
+        <item name="guardian_success">#28643E</item>
+        <item name="guardian_danger">#A52F2B</item>
+        <item name="guardian_warning">#79500F</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+    <style name="Theme.MAGuardian.Palette.Gold" parent="Theme.MAGuardian.Preview">
+        <item name="guardian_paper">#131515</item>
+        <item name="guardian_card">#202322</item>
+        <item name="guardian_ink">#E8E7DF</item>
+        <item name="guardian_muted">#B7BCB6</item>
+        <item name="guardian_line">#454B47</item>
+        <item name="guardian_red">#F2B63F</item>
+        <item name="guardian_red_deep">#FFD477</item>
+        <item name="guardian_wash">#342B1B</item>
+        <item name="guardian_button_bg">#C88D27</item>
+        <item name="guardian_button_text">#211B10</item>
+        <item name="guardian_success">#83C69A</item>
+        <item name="guardian_danger">#FF8B80</item>
+        <item name="guardian_warning">#F2C56B</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 </resources>

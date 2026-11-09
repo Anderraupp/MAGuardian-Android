@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:background="@color/guardian_paper">
+    android:orientation="vertical" android:background="?attr/guardian_paper">
     <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent"
         android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -17,11 +17,11 @@
                 <TextView style="@style/GuardianCaption" android:text="Proteção e ferramentas" />
             </LinearLayout>
             <ImageButton android:id="@+id/btnAppearance" android:layout_width="48dp" android:layout_height="48dp"
-                android:src="@drawable/guardian_ic_theme" android:tint="@color/guardian_ink"
+                android:src="@drawable/guardian_ic_theme" android:tint="?attr/guardian_ink"
                 android:background="@drawable/guardian_secondary" android:padding="12dp"
-                android:contentDescription="Escolher tema claro ou escuro" app:backgroundTint="@null" />
+                android:contentDescription="Designer" app:backgroundTint="@null" />
         </LinearLayout>
-        <TextView style="@style/GuardianCaption" android:text="VISÃO GERAL" android:textColor="@color/guardian_red_deep" android:letterSpacing="0.12" />
+        <TextView style="@style/GuardianCaption" android:text="VISÃO GERAL" android:textColor="?attr/guardian_button_bg" android:letterSpacing="0.12" />
         <TextView style="@style/GuardianHeading" android:text="Seu Android, sob controle." android:textSize="26sp" android:layout_marginTop="8dp" android:layout_marginBottom="20dp" />
 
         <LinearLayout android:id="@+id/layoutPermWarning" style="@style/GuardianCard" android:visibility="gone" android:background="@drawable/guardian_status">
@@ -36,7 +36,7 @@
         <LinearLayout android:id="@+id/cardStatus" style="@style/GuardianCard" android:background="@drawable/guardian_status" android:padding="20dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
                 <ImageView android:id="@+id/ivShield" android:layout_width="40dp" android:layout_height="48dp"
-                    android:src="@drawable/ic_shield_check" android:tint="@color/guardian_red_deep" android:contentDescription="Estado da proteção" android:layout_marginEnd="16dp" />
+                    android:src="@drawable/ic_shield_check" android:tint="?attr/guardian_success" android:contentDescription="Estado da proteção" android:layout_marginEnd="16dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView style="@style/GuardianCaption" android:text="PROTEÇÃO DO APARELHO" />
                     <TextView android:id="@+id/tvStatus" style="@style/GuardianHeading" android:text="Verificando estado" android:textSize="21sp" android:layout_marginTop="6dp" android:layout_marginBottom="6dp" />
@@ -44,7 +44,7 @@
                 </LinearLayout>
                 <TextView android:id="@+id/btnToggle" android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:minHeight="48dp" android:maxWidth="100dp" android:gravity="center" android:padding="10dp"
-                    android:text="Ativar" android:textSize="13sp" android:textStyle="bold" android:textColor="@color/guardian_ink"
+                    android:text="Ativar" android:textSize="13sp" android:textStyle="bold" android:textColor="?attr/guardian_ink"
                     android:background="@drawable/guardian_secondary" android:clickable="true" android:focusable="true" />
             </LinearLayout>
             <TextView android:id="@+id/tvStatusDesc" style="@style/GuardianText" android:text="Consultando o estado da proteção." android:layout_marginTop="12dp" />
@@ -53,7 +53,7 @@
             <TextView android:id="@+id/tvScansClean" style="@style/GuardianCaption" android:visibility="gone" />
         </LinearLayout>
         <Button android:id="@+id/btnScan" style="@style/GuardianButton" android:text="Analisar apps instalados"
-            android:drawableStart="@drawable/ic_shield" android:drawableTint="@color/guardian_button_text" android:drawablePadding="12dp" />
+            android:drawableStart="@drawable/ic_shield" android:drawableTint="?attr/guardian_button_text" android:drawablePadding="12dp" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="20dp" android:layout_marginBottom="24dp">
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                 <TextView android:id="@+id/tvTotalFound" style="@style/GuardianMetric" android:text="0" />
@@ -91,8 +91,8 @@
             <TextView style="@style/GuardianHeading" android:text="Chamadas e bloqueios" />
             <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchBlockTelemarketing"
                 android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
-                android:text="Bloquear telemarketing" android:textColor="@color/guardian_ink" android:textSize="14sp"
-                app:thumbTint="@color/guardian_red" />
+                android:text="Bloquear telemarketing" android:textColor="?attr/guardian_ink" android:textSize="14sp"
+                app:thumbTint="?attr/guardian_red" />
             <TextView android:id="@+id/tvBlockTelemarketingStatus" style="@style/GuardianCaption" android:layout_marginTop="8dp" />
         </LinearLayout>
         <LinearLayout android:id="@+id/cardReportNumber" style="@style/GuardianCard">

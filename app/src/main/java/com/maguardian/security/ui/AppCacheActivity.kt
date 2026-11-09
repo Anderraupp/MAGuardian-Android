@@ -61,6 +61,7 @@ class AppCacheActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (GuardianAppearance.refreshIfChanged(this)) return
         refreshMeasurements()
     }
 
@@ -136,7 +137,7 @@ class AppCacheActivity : AppCompatActivity() {
         rows.addView(TextView(this).apply {
             text = message
             textSize = 14f
-            setTextColor(ContextCompat.getColor(this@AppCacheActivity, R.color.guardian_muted))
+            setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_muted))
             setPadding(dp(16), dp(16), dp(16), dp(16))
         })
     }
@@ -157,13 +158,13 @@ class AppCacheActivity : AppCompatActivity() {
             text = entry.label
             textSize = 15f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(this@AppCacheActivity, R.color.guardian_ink))
+            setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_ink))
         })
         labels.addView(TextView(this).apply {
             text = entry.bytes?.let(::formatBytes) ?: "Tamanho indisponível"
             textSize = 13f
             setPadding(0, dp(5), 0, 0)
-            setTextColor(ContextCompat.getColor(this@AppCacheActivity, R.color.guardian_muted))
+            setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_muted))
         })
         row.addView(labels)
         row.addView(androidx.appcompat.widget.AppCompatButton(this, null, 0).apply {
@@ -174,7 +175,7 @@ class AppCacheActivity : AppCompatActivity() {
             setPadding(dp(12), 0, dp(12), 0)
             background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_secondary)
             backgroundTintList = null
-            setTextColor(ContextCompat.getColor(this@AppCacheActivity, R.color.guardian_ink))
+            setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_ink))
             contentDescription = "Abrir configurações de ${entry.label}"
             setOnClickListener {
                 openSystem(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${entry.pkg}")))

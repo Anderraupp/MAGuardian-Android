@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="guardian_paper" format="color" />
+    <attr name="guardian_card" format="color" />
+    <attr name="guardian_ink" format="color" />
+    <attr name="guardian_muted" format="color" />
+    <attr name="guardian_line" format="color" />
+    <attr name="guardian_red" format="color" />
+    <attr name="guardian_red_deep" format="color" />
+    <attr name="guardian_wash" format="color" />
+    <attr name="guardian_button_bg" format="color" />
+    <attr name="guardian_button_text" format="color" />
+    <attr name="guardian_success" format="color" />
+    <attr name="guardian_danger" format="color" />
+    <attr name="guardian_warning" format="color" />
+</resources>

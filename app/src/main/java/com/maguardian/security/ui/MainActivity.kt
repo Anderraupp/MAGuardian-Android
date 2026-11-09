@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_main)
         ScreenInsets.apply(this, light = GuardianAppearance.isLight(this))
-        GuardianNavigation.bind(this) {
+        GuardianNavigation.bind(this, canChangeAppearance = { !isScanning }) {
             subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
         GuardianAppearance.bind(this) { !isScanning }
@@ -361,6 +361,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (GuardianAppearance.refreshIfChanged(this)) return
         screenResumed = true
         showCatalogStatus()
 
@@ -892,10 +893,10 @@ class MainActivity : AppCompatActivity() {
     private fun updateBlockTelemarketingStatus(tv: TextView, enabled: Boolean) {
         if (enabled) {
             tv.text = "Ativado — telemarketing e cobrança bloqueados automaticamente"
-            tv.setTextColor(ContextCompat.getColor(this, R.color.guardian_success))
+            tv.setTextColor(GuardianAppearance.color(this, R.color.guardian_success))
         } else {
             tv.text = "Desativado — ligações de cobrança passam normalmente"
-            tv.setTextColor(ContextCompat.getColor(this, R.color.guardian_muted))
+            tv.setTextColor(GuardianAppearance.color(this, R.color.guardian_muted))
         }
     }
 
@@ -906,11 +907,11 @@ class MainActivity : AppCompatActivity() {
             val isActive = roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)
             if (isActive) {
                 btn.text = "Desativar"
-                btn.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+                btn.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
                 btn.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
             } else {
                 btn.text = "Ativar"
-                btn.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+                btn.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
                 btn.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
             }
         }
@@ -1011,7 +1012,7 @@ class MainActivity : AppCompatActivity() {
         val tvStep = android.widget.TextView(this).apply {
             text = "Consultando aplicativos instalados..."
             textSize = 13f
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.guardian_muted))
+            setTextColor(GuardianAppearance.color(this@MainActivity, R.color.guardian_muted))
             gravity = android.view.Gravity.CENTER
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1476,7 +1477,7 @@ class MainActivity : AppCompatActivity() {
         if (isFullyActive) {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_status)
             tvStatus.text = "Ativa"
-            tvStatus.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+            tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             tvStatusBadge.text = "Ativa"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.success))
             tvStatusBadge.background = ContextCompat.getDrawable(this, R.drawable.badge_success)
@@ -1486,7 +1487,7 @@ class MainActivity : AppCompatActivity() {
                 "Monitoramento em tempo real. Nenhuma ameaça ativa registrada."
             ivShield.setImageResource(R.drawable.ic_shield_check)
             btnToggle.text = "Desativar"
-            btnToggle.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+            btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
         } else {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_status)
@@ -1495,7 +1496,7 @@ class MainActivity : AppCompatActivity() {
                 !permStatus.allGranted -> "Revisar permissões"
                 else -> "Pausada"
             }
-            tvStatus.setTextColor(ContextCompat.getColor(this, R.color.guardian_ink))
+            tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             tvStatusBadge.text = "Risco"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.danger))
             tvStatusBadge.background = ContextCompat.getDrawable(this, R.drawable.badge_danger)
@@ -1506,7 +1507,7 @@ class MainActivity : AppCompatActivity() {
             }
             ivShield.setImageResource(R.drawable.ic_shield_alert)
             btnToggle.text = "Ativar"
-            btnToggle.setTextColor(ContextCompat.getColor(this, R.color.guardian_button_text))
+            btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_button_text))
             btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_primary)
         }
 

@@ -49,7 +49,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/guardian_ink"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:maxLines="2"
@@ -59,7 +59,7 @@
                 android:id="@+id/tvThreatSeverity"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/danger"
+                android:textColor="?attr/guardian_danger"
                 android:textSize="10sp"
                 android:textStyle="bold"
                 android:background="@drawable/badge_danger"
@@ -74,7 +74,7 @@
             android:id="@+id/tvThreatPackage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_muted"
+            android:textColor="?attr/guardian_muted"
             android:textSize="10sp"
             android:maxLines="2"
             android:ellipsize="end"
@@ -85,7 +85,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Uma ameaça foi detectada! Caso não reconheça o app clique em desinstalar caso seja de seu conhecimento clique em manter"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/guardian_muted"
             android:textSize="11sp"
             android:lineSpacingExtra="2dp" />
 
@@ -100,7 +100,7 @@
                 android:id="@+id/tvThreatType"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/guardian_muted"
                 android:textSize="10sp" />
 
             <Button

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:background="@color/guardian_paper">
+    android:orientation="vertical" android:background="?attr/guardian_paper">
     <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent"
         android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp">
@@ -14,7 +14,7 @@
         <TextView android:id="@+id/tvLoadingPlans" style="@style/GuardianCaption" android:text="Carregando plano…" android:gravity="center" />
         <LinearLayout android:id="@+id/layoutContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
             <LinearLayout style="@style/GuardianCard">
-                <TextView style="@style/GuardianCaption" android:text="PLANO MENSAL" android:letterSpacing="0.1" android:textColor="@color/guardian_red_deep" />
+                <TextView style="@style/GuardianCaption" android:text="PLANO MENSAL" android:letterSpacing="0.1" android:textColor="?attr/guardian_button_bg" />
                 <TextView android:id="@+id/tvMonthlyPrice" style="@style/GuardianHeading" android:text="R$ 9,99/mês" android:textSize="32sp" android:layout_marginTop="12dp" />
                 <TextView style="@style/GuardianText" android:text="Renovação automática mensal. Cancele pela Google Play nas configurações da assinatura." />
             </LinearLayout>

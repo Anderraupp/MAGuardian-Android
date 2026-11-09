@@ -11,6 +11,11 @@ import com.maguardian.security.billing.BillingManager
 import com.maguardian.security.util.PrefsHelper
 
 class SubscriptionActivity : AppCompatActivity() {
+    override fun onResume() {
+        super.onResume()
+        GuardianAppearance.refreshIfChanged(this)
+    }
+
 
     private lateinit var billing: BillingManager
 

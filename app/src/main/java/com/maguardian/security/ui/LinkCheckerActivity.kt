@@ -14,6 +14,11 @@ import com.maguardian.security.R
 import com.maguardian.security.util.LinkChecker
 
 class LinkCheckerActivity : AppCompatActivity() {
+    override fun onResume() {
+        super.onResume()
+        GuardianAppearance.refreshIfChanged(this)
+    }
+
 
     private lateinit var etUrl: android.widget.EditText
     private lateinit var btnCheck: Button
@@ -26,6 +31,19 @@ class LinkCheckerActivity : AppCompatActivity() {
     private lateinit var viewScoreBar: View
     private lateinit var tvReasonsLabel: TextView
     private lateinit var llReasons: LinearLayout
+    private var lastResult: LinkChecker.Result? = null
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        lastResult?.let { result ->
+            outState.putBundle("guardian_link_result", Bundle().apply {
+                putInt("score", result.score)
+                putString("verdict", result.verdict)
+                putString("category", result.category)
+                putStringArrayList("reasons", ArrayList(result.reasons))
+            })
+        }
+        super.onSaveInstanceState(outState)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         GuardianAppearance.apply(this)
@@ -33,7 +51,7 @@ class LinkCheckerActivity : AppCompatActivity() {
         ScreenInsets.configure(window)
         setContentView(R.layout.activity_link_checker)
         ScreenInsets.apply(this, light = GuardianAppearance.isLight(this))
-        GuardianNavigation.bind(this)
+        GuardianNavigation.bind(this, canChangeAppearance = { btnCheck.isEnabled })
 
         etUrl         = findViewById(R.id.etUrl)
         btnCheck      = findViewById(R.id.btnCheck)
@@ -62,9 +80,16 @@ class LinkCheckerActivity : AppCompatActivity() {
             if (url.isEmpty()) { etUrl.error = "Cole ou digite um link"; return@setOnClickListener }
             showResult(LinkChecker.check(url))
         }
+        savedInstanceState?.getBundle("guardian_link_result")?.let { saved ->
+            val verdict = saved.getString("verdict") ?: return@let
+            val category = saved.getString("category") ?: return@let
+            val reasons = saved.getStringArrayList("reasons") ?: return@let
+            showResult(LinkChecker.Result(saved.getInt("score"), verdict, category, reasons))
+        }
     }
 
     private fun showResult(result: LinkChecker.Result) {
+        lastResult = result
         cardResult.visibility = View.VISIBLE
 
         val (icon, colorResource) = when (result.verdict) {
@@ -72,7 +97,7 @@ class LinkCheckerActivity : AppCompatActivity() {
             "SUSPEITO"    -> "!" to R.color.guardian_warning
             else          -> "✓" to R.color.guardian_success
         }
-        val color = resources.getColor(colorResource, theme)
+        val color = GuardianAppearance.color(this, colorResource)
 
         tvVerdictIcon.text = icon
         tvVerdictIcon.setTextColor(color)
@@ -102,9 +127,9 @@ class LinkCheckerActivity : AppCompatActivity() {
                 val tv = TextView(this).apply {
                     text = "• $reason"
                     textSize = 14f
-                    setTextColor(resources.getColor(R.color.guardian_muted, theme))
+                    setTextColor(GuardianAppearance.color(this@LinkCheckerActivity, R.color.guardian_muted))
                     setPadding(dp10, dp6, dp10, dp6)
-                    setBackgroundColor(resources.getColor(R.color.guardian_wash, theme))
+                    setBackgroundColor(GuardianAppearance.color(this@LinkCheckerActivity, R.color.guardian_wash))
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
