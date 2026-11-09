@@ -30,8 +30,8 @@
             <LinearLayout android:id="@+id/llReasons" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
         </LinearLayout>
         <LinearLayout style="@style/GuardianCard">
-            <TextView style="@style/GuardianText" android:text="Confira antes de informar dados" android:textStyle="bold" />
-            <TextView style="@style/GuardianCaption" android:text="A análise usa sinais locais do endereço. Um resultado sem alertas não garante que uma página seja segura. Em caso de dúvida, não informe senhas ou dados bancários." android:layout_marginTop="8dp" />
+            <TextView style="@style/GuardianText" android:text="Confira antes de acessar:" android:textStyle="bold" />
+            <TextView style="@style/GuardianCaption" android:text="Cole o link e deixe o M&amp;A Guardian analisar possíveis sinais de risco antes de você continuar." android:layout_marginTop="8dp" />
         </LinearLayout>
     </LinearLayout>
     </ScrollView>
