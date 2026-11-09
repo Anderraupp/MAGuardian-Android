@@ -61,6 +61,25 @@ class GuardianStartupTest {
     @Test fun opensPetroleoPalette() = inflate("petroleo")
     @Test fun opensGoldPalette() = inflate("gold")
 
+    @Test fun taglineFitsOnOneLineOnSmallScreens() {
+        val controller = Robolectric.buildActivity(PaletteActivity::class.java).setup()
+        val activity = controller.get()
+        val tagline = activity.findViewById<TextView>(R.id.tvAppTagline)
+        assertEquals("Proteção Inteligente para o seu dispositivo", tagline.text.toString())
+        assertEquals(1, tagline.maxLines)
+        assertEquals(TextView.AUTO_SIZE_TEXT_TYPE_UNIFORM, tagline.autoSizeTextType)
+        for (screenDp in listOf(320, 360, 402)) {
+            val width = ((screenDp - 40 - 72) * activity.resources.displayMetrics.density).toInt()
+            tagline.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+            tagline.layout(0, 0, width, tagline.measuredHeight)
+            assertEquals(1, tagline.lineCount)
+            assertEquals(0, tagline.layout.getEllipsisCount(0))
+            assertTrue(tagline.paint.measureText(tagline.text.toString()) <= width + 1)
+        }
+        controller.pause().stop().destroy()
+    }
+
     @Test fun designerShowsNamesAndKeepsTheSavedChoice() {
         val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("guardian_appearance", 0)
         prefs.edit().putString("palette", "petroleo").commit()
