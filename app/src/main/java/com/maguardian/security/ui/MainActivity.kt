@@ -1489,7 +1489,7 @@ class MainActivity : AppCompatActivity() {
                 "$totalFound ameaça(s) detectada(s)."
             else
                 "Monitoramento em tempo real. Nenhuma ameaça ativa registrada."
-            ivShield.setImageResource(R.drawable.ic_shield_check)
+            ivShield.setImageResource(R.drawable.guardian_status_shield)
             btnToggle.text = "Desativar"
             btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
@@ -1509,7 +1509,7 @@ class MainActivity : AppCompatActivity() {
                 !permStatus.allGranted -> "Conceda as permissões para ativar a proteção."
                 else -> "Ative a proteção para monitorar ameaças automaticamente."
             }
-            ivShield.setImageResource(R.drawable.ic_shield_alert)
+            ivShield.setImageResource(R.drawable.guardian_status_shield)
             btnToggle.text = "Ativar"
             btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_button_text))
             btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_primary)

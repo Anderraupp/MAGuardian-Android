@@ -15,10 +15,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26, 34], application = Application::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ProtectionShieldColorTest {
     @Test fun shieldIsGreenOnlyWhenProtectionIsFullyActive() {
         val ctx: Context = RuntimeEnvironment.getApplication()
@@ -48,6 +50,21 @@ class ProtectionShieldColorTest {
                     assertEquals("Estado do escudo em $palette", GuardianAppearance.color(activity,
                         if (active) R.color.guardian_success else R.color.guardian_danger),
                         shield.imageTintList!!.defaultColor)
+                    assertEquals(R.drawable.guardian_status_shield, shadowOf(shield.drawable).createdFromResId)
+                    assertEquals(shield.layoutParams.width, shield.layoutParams.height)
+                    if (palette == "original" && android.os.Build.VERSION.SDK_INT == 34 &&
+                        permitted && ((subscribed && enabled) || (!subscribed && !enabled))) {
+                        val bitmap = android.graphics.Bitmap.createBitmap(144, 144, android.graphics.Bitmap.Config.ARGB_8888)
+                        val canvas = android.graphics.Canvas(bitmap)
+                        canvas.drawColor(0xFF1C1212.toInt())
+                        shield.measure(android.view.View.MeasureSpec.makeMeasureSpec(144, android.view.View.MeasureSpec.EXACTLY),
+                            android.view.View.MeasureSpec.makeMeasureSpec(144, android.view.View.MeasureSpec.EXACTLY))
+                        shield.layout(0, 0, 144, 144)
+                        shield.draw(canvas)
+                        java.io.File(System.getProperty("java.io.tmpdir"), "guardian-shield-${if (active) "active" else "inactive"}.png")
+                            .outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+                        bitmap.recycle()
+                    }
                     assertEquals(if (active) "Desativar" else "Ativar",
                         activity.findViewById<TextView>(R.id.btnToggle).text.toString())
                     assertEquals(enabled, PrefsHelper.isProtectionEnabled(activity))

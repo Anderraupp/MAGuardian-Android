@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="64" android:viewportHeight="64">
+    <!-- Tint follows the real protection state; alpha preserves the soft tile. -->
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.10"
+        android:pathData="M19,2H45C55,2 62,9 62,19V45C62,55 55,62 45,62H19C9,62 2,55 2,45V19C2,9 9,2 19,2Z" />
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF" android:strokeAlpha="0.12" android:strokeWidth="1"
+        android:pathData="M19,2.5H45C54.7,2.5 61.5,9.3 61.5,19V45C61.5,54.7 54.7,61.5 45,61.5H19C9.3,61.5 2.5,54.7 2.5,45V19C2.5,9.3 9.3,2.5 19,2.5Z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.06"
+        android:strokeColor="#FFFFFF" android:strokeWidth="2.8"
+        android:strokeLineJoin="round"
+        android:pathData="M32,13L47,19V31C47,40.5 41.2,47.8 32,51C22.8,47.8 17,40.5 17,31V19Z" />
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M25,31.5L30,36.5L39.5,26.5" />
+</vector>
