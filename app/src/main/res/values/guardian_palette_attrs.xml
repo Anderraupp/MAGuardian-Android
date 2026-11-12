@@ -15,4 +15,7 @@
     <attr name="guardian_warning" format="color" />
     <attr name="guardian_protection_surface" format="color" />
     <attr name="guardian_protection_border" format="color" />
+    <attr name="guardian_primary_start" format="color" />
+    <attr name="guardian_primary_middle" format="color" />
+    <attr name="guardian_primary_end" format="color" />
 </resources>

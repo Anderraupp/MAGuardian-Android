@@ -1,7 +1,10 @@
 <ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#33FFFFFF">
     <item>
         <shape>
-            <solid android:color="?attr/guardian_button_bg" />
+            <gradient android:angle="270"
+                android:startColor="?attr/guardian_primary_start"
+                android:centerColor="?attr/guardian_primary_middle"
+                android:endColor="?attr/guardian_primary_end" />
             <corners android:radius="8dp" />
         </shape>
     </item>

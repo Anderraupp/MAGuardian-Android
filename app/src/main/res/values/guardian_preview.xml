@@ -19,6 +19,9 @@
     <string name="guardian_support_whatsapp" translatable="false">5545998487232</string>
     <string name="guardian_support_whatsapp_display" translatable="false">+55 (45) 99848-7232</string>
     <style name="Theme.MAGuardian.Preview" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="guardian_primary_start">?attr/guardian_button_bg</item>
+        <item name="guardian_primary_middle">?attr/guardian_button_bg</item>
+        <item name="guardian_primary_end">?attr/guardian_button_bg</item>
         <item name="guardian_protection_surface">#0F1821</item>
         <item name="guardian_protection_border">#2B3642</item>
         <item name="guardian_paper">@color/guardian_paper</item>
@@ -197,14 +200,17 @@
         <item name="guardian_ink">#E8E7DF</item>
         <item name="guardian_muted">#B7BCB6</item>
         <item name="guardian_line">#454B47</item>
-        <item name="guardian_red">#FFD13B</item>
-        <item name="guardian_red_deep">#F1B91E</item>
-        <item name="guardian_wash">#3A3018</item>
-        <item name="guardian_button_bg">#FFD13B</item>
+        <item name="guardian_red">#E7B53D</item>
+        <item name="guardian_red_deep">#B77917</item>
+        <item name="guardian_wash">#352A14</item>
+        <item name="guardian_button_bg">#E7B53D</item>
+        <item name="guardian_primary_start">#FFF0AB</item>
+        <item name="guardian_primary_middle">#F2C34A</item>
+        <item name="guardian_primary_end">#B77917</item>
         <item name="guardian_button_text">#211B10</item>
         <item name="guardian_success">#83C69A</item>
         <item name="guardian_danger">#FF8B80</item>
-        <item name="guardian_warning">#F8C849</item>
+        <item name="guardian_warning">#EDC461</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
     </style>
