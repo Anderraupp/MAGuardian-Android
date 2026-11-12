@@ -96,7 +96,7 @@
             <Button android:id="@+id/btnCleanCache" style="@style/GuardianTool" android:text="Limpar cache" android:drawableTop="@drawable/guardian_ic_cache" android:layout_marginEnd="5dp" />
             <Button android:id="@+id/btnAppCache" style="@style/GuardianTool" android:text="Cache por app" android:drawableTop="@drawable/guardian_ic_app" android:layout_marginStart="5dp" />
         </LinearLayout>
-        <TextView android:id="@+id/tvCacheSize" style="@style/GuardianCaption" android:text="Consultando cache…" android:layout_marginBottom="20dp" />
+        <TextView android:id="@+id/tvCacheSize" style="@style/GuardianCaption" android:text="Consultando cache…" android:visibility="gone" />
 
         <LinearLayout android:id="@+id/cardBlockTelemarketing" style="@style/GuardianCard">
             <TextView style="@style/GuardianHeading" android:text="Chamadas e bloqueios" />
