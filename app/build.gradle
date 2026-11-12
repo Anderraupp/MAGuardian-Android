@@ -11,8 +11,8 @@ android {
         applicationId "com.maguardian.security"
         minSdk 26
         targetSdk 36
-        versionCode 59
-        versionName "1.6.21"
+        versionCode 60
+        versionName "1.6.22"
         testInstrumentationRunner "com.maguardian.security.data.CatalogTestRunner"
         // A harmless fixture outside the application's intentionally trusted prefix.
         testApplicationId "com.catalogvalidation.fixture"

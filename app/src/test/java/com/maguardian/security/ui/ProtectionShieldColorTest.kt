@@ -65,7 +65,7 @@ class ProtectionShieldColorTest {
                             .outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
                         bitmap.recycle()
                     }
-                    assertEquals(if (active) "Desativar" else "Ativar",
+                    assertEquals(if (active) "Desativar" else if (!subscribed) "Conhecer planos e ativar proteção" else "Ativar",
                         activity.findViewById<TextView>(R.id.btnToggle).text.toString())
                     assertEquals(enabled, PrefsHelper.isProtectionEnabled(activity))
                     assertEquals(subscribed, PrefsHelper.isSubscriptionActive(activity))

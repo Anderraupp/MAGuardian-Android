@@ -13,4 +13,6 @@
     <attr name="guardian_success" format="color" />
     <attr name="guardian_danger" format="color" />
     <attr name="guardian_warning" format="color" />
+    <attr name="guardian_protection_surface" format="color" />
+    <attr name="guardian_protection_border" format="color" />
 </resources>

@@ -19,6 +19,8 @@
     <string name="guardian_support_whatsapp" translatable="false">5545998487232</string>
     <string name="guardian_support_whatsapp_display" translatable="false">+55 (45) 99848-7232</string>
     <style name="Theme.MAGuardian.Preview" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="guardian_protection_surface">#0F1821</item>
+        <item name="guardian_protection_border">#2B3642</item>
         <item name="guardian_paper">@color/guardian_paper</item>
         <item name="guardian_card">@color/guardian_card</item>
         <item name="guardian_ink">@color/guardian_ink</item>
@@ -171,6 +173,8 @@
         <item name="android:windowLightNavigationBar">false</item>
     </style>
     <style name="Theme.MAGuardian.Palette.Petroleo" parent="Theme.MAGuardian.Preview">
+        <item name="guardian_protection_surface">#E8F2F0</item>
+        <item name="guardian_protection_border">#B5CFCC</item>
         <item name="guardian_paper">#DCEBEA</item>
         <item name="guardian_card">#E8F2F0</item>
         <item name="guardian_ink">#173C3B</item>

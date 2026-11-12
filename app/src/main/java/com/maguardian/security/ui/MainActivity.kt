@@ -1472,15 +1472,15 @@ class MainActivity : AppCompatActivity() {
         )
         tvScansClean.text = if (isProtectionActive) "Em tempo real" else "Desativada"
 
-        // Status card — não-assinantes sempre veem "Risco"
+        // Presentation only; full-access, protection and permission checks stay unchanged.
         val isFullyActive = isSubscribed && protectionEnabled && permStatus.allGranted
         ivShield.imageTintList = android.content.res.ColorStateList.valueOf(
             GuardianAppearance.color(this,
                 if (isFullyActive) R.color.guardian_success else R.color.guardian_danger)
         )
         if (isFullyActive) {
-            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_status)
-            tvStatus.text = "Ativa"
+            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_protection_card)
+            tvStatus.text = "Proteção em tempo real ativa."
             tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             tvStatusBadge.text = "Ativa"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.success))
@@ -1494,25 +1494,40 @@ class MainActivity : AppCompatActivity() {
             btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
         } else {
-            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_status)
+            cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_protection_card)
             tvStatus.text = when {
-                !isSubscribed -> "Inativa"
-                !permStatus.allGranted -> "Revisar permissões"
-                else -> "Pausada"
+                !isSubscribed -> "Seu dispositivo merece proteção."
+                !permStatus.allGranted -> "Conclua a ativação da proteção."
+                else -> "Sua proteção está pausada."
             }
             tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
-            tvStatusBadge.text = "Risco"
-            tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.danger))
-            tvStatusBadge.background = ContextCompat.getDrawable(this, R.drawable.badge_danger)
+            tvStatusBadge.text = when {
+                !isSubscribed -> "Disponível"
+                !permStatus.allGranted -> "Permissões"
+                else -> "Pausada"
+            }
+            tvStatusBadge.setTextColor(GuardianAppearance.color(this,
+                if (!isSubscribed) R.color.guardian_success else R.color.guardian_warning))
+            tvStatusBadge.background = ContextCompat.getDrawable(this,
+                if (!isSubscribed) R.drawable.badge_success else R.drawable.badge_danger)
             tvStatusDesc.text = when {
-                !isSubscribed -> "Assine o M&A Guardian para ativar a proteção em tempo real."
+                !isSubscribed -> "Ative o monitoramento em tempo real e tenha mais controle sobre aplicativos e atividades suspeitas."
                 !permStatus.allGranted -> "Conceda as permissões para ativar a proteção."
                 else -> "Ative a proteção para monitorar ameaças automaticamente."
             }
             ivShield.setImageResource(R.drawable.guardian_status_shield)
-            btnToggle.text = "Ativar"
-            btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_button_text))
-            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_primary)
+            btnToggle.text = if (!isSubscribed) "Conhecer planos e ativar proteção" else "Ativar"
+            btnToggle.setTextColor(if (!isSubscribed) android.graphics.Color.WHITE
+                else GuardianAppearance.color(this, R.color.guardian_button_text))
+            btnToggle.background = ContextCompat.getDrawable(this,
+                if (!isSubscribed) R.drawable.guardian_protection_action else R.drawable.guardian_primary)
+        }
+        tvStatusBadge.visibility = View.VISIBLE
+        findViewById<TextView>(R.id.tvProtectionTrial).apply {
+            val days = PrefsHelper.trialDaysRemaining(this@MainActivity)
+            visibility = if (!PrefsHelper.isSubscriptionActive(this@MainActivity) && days > 0) View.VISIBLE else View.GONE
+            text = if (days >= 7) "7 dias grátis para experimentar"
+                else "$days dia(s) restantes para experimentar"
         }
 
         // Estatísticas

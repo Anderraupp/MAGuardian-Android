@@ -54,21 +54,33 @@
             <Button android:id="@+id/btnNotifPermission" style="@style/GuardianButton" android:text="Ativar notificações" android:layout_marginTop="10dp" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/cardStatus" style="@style/GuardianCard" android:background="@drawable/guardian_status" android:padding="20dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <LinearLayout android:id="@+id/cardStatus" style="@style/GuardianCard" android:background="@drawable/guardian_protection_card" android:padding="16dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false">
                 <ImageView android:id="@+id/ivShield" android:layout_width="48dp" android:layout_height="48dp"
                     android:src="@drawable/guardian_status_shield" android:tint="?attr/guardian_danger" android:contentDescription="Estado da proteção" android:layout_marginEnd="8dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                    <TextView style="@style/GuardianCaption" android:text="PROTEÇÃO DO APARELHO" />
-                    <TextView android:id="@+id/tvStatus" style="@style/GuardianHeading" android:text="Verificando estado" android:textSize="21sp" android:layout_marginTop="6dp" android:layout_marginBottom="6dp" />
-                    <TextView android:id="@+id/tvStatusBadge" style="@style/GuardianCaption" android:text="" android:visibility="gone" />
+                    <TextView style="@style/GuardianText" android:text="Proteção em tempo real"
+                        android:textStyle="bold" android:textSize="16sp" android:maxLines="2" android:includeFontPadding="false" />
+                    <TextView style="@style/GuardianCaption" android:text="M&amp;A Guardian Premium" android:layout_marginTop="4dp"
+                        android:maxLines="2" android:includeFontPadding="false" />
                 </LinearLayout>
-                <TextView android:id="@+id/btnToggle" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:minHeight="48dp" android:maxWidth="100dp" android:gravity="center" android:padding="10dp"
-                    android:text="Ativar" android:textSize="13sp" android:textStyle="bold" android:textColor="?attr/guardian_ink"
-                    android:background="@drawable/guardian_secondary" android:clickable="true" android:focusable="true" />
+                <TextView android:id="@+id/tvStatusBadge" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp" android:paddingStart="8dp" android:paddingEnd="8dp"
+                    android:paddingTop="5dp" android:paddingBottom="5dp" android:maxWidth="86dp"
+                    android:text="Disponível" android:textSize="11sp" android:textStyle="bold" android:gravity="center"
+                    android:includeFontPadding="false" />
             </LinearLayout>
-            <TextView android:id="@+id/tvStatusDesc" style="@style/GuardianText" android:text="Consultando o estado da proteção." android:layout_marginTop="12dp" />
+            <TextView android:id="@+id/tvStatus" style="@style/GuardianHeading" android:text="Seu dispositivo merece proteção."
+                android:textSize="22sp" android:layout_marginTop="20dp" android:layout_marginBottom="14dp" />
+            <TextView android:id="@+id/tvStatusDesc" style="@style/GuardianText"
+                android:text="Ative o monitoramento em tempo real e tenha mais controle sobre aplicativos e atividades suspeitas." />
+            <TextView android:id="@+id/btnToggle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="52dp" android:layout_marginTop="18dp" android:gravity="center" android:padding="12dp"
+                android:text="Conhecer planos e ativar proteção" android:textSize="15sp" android:textStyle="bold"
+                android:textColor="#FFFFFF" android:background="@drawable/guardian_protection_action"
+                android:clickable="true" android:focusable="true" />
+            <TextView android:id="@+id/tvProtectionTrial" style="@style/GuardianCaption" android:text=""
+                android:gravity="center" android:layout_marginTop="12dp" android:visibility="gone" />
             <!-- Kept for the existing state binding, not presented as a security guarantee. -->
             <TextView android:id="@+id/tvSecurityRate" style="@style/GuardianCaption" android:visibility="gone" />
             <TextView android:id="@+id/tvScansClean" style="@style/GuardianCaption" android:visibility="gone" />
