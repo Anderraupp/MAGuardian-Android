@@ -142,6 +142,9 @@ class MainActivity : AppCompatActivity() {
             subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
         setupUI()
+        GuardianNotices.bind(this) {
+            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+        }
         setupCatalogUI()
         com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent?.data)
         val adminButton = findViewById<Button>(R.id.btnCatalogAdmin)
@@ -197,6 +200,7 @@ class MainActivity : AppCompatActivity() {
         appUpdateManager.registerListener(installStateListener)
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
             com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
+            GuardianNotices.refresh(this)
             if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
                 && info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
             ) {
@@ -210,6 +214,7 @@ class MainActivity : AppCompatActivity() {
         appUpdateManager.appUpdateInfo
             .addOnSuccessListener { info ->
                 com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
+                GuardianNotices.refresh(this)
             }
             .addOnFailureListener { error ->
                 Log.w(TAG, "Google Play não informou atualização disponível", error)
@@ -367,6 +372,7 @@ class MainActivity : AppCompatActivity() {
         if (::appUpdateManager.isInitialized) {
             appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
                 com.maguardian.security.util.AppUpdateNotifier.handle(this, info)
+                GuardianNotices.refresh(this)
                 if (info.installStatus() == InstallStatus.DOWNLOADED) {
                     showInstallSnackbar()
                 }
@@ -1356,6 +1362,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshUI() {
+        GuardianNotices.refresh(this)
         val title = android.text.SpannableString(
             if (PrefsHelper.isSubscriptionActive(this)) "M&A Guardian PRO" else "M&A Guardian"
         )

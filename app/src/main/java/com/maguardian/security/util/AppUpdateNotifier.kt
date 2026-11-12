@@ -24,6 +24,8 @@ object AppUpdateNotifier {
     private const val LAST_VERSION = "last_notified_version"
 
     fun handle(context: Context, info: AppUpdateInfo) {
+        // In-app notices remain available even if Android notifications are denied.
+        AppNoticeCenter.recordPlayInfo(context, info)
         val nm = context.getSystemService(NotificationManager::class.java)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         @Suppress("DEPRECATION")
