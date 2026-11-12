@@ -2,7 +2,7 @@
     <item>
         <shape>
             <solid android:color="?attr/guardian_button_bg" />
-            <corners android:radius="8dp" android:bottomLeftRadius="4dp" />
+            <corners android:radius="8dp" />
         </shape>
     </item>
 </ripple>

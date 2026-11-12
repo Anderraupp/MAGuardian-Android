@@ -63,36 +63,36 @@
         </LinearLayout>
         <Button android:id="@+id/btnScan" style="@style/GuardianButton" android:text="Analisar apps instalados"
             android:drawableStart="@drawable/ic_shield" android:drawableTint="?attr/guardian_button_text" android:drawablePadding="12dp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="20dp" android:layout_marginBottom="24dp">
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:id="@+id/tvTotalFound" style="@style/GuardianMetric" android:text="0" />
-                <TextView style="@style/GuardianCaption" android:text="Ameaças\nativas" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="20dp" android:layout_marginBottom="24dp">
+          <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:gravity="top" android:layout_marginBottom="10dp">
+            <LinearLayout style="@style/GuardianMetricCard" android:layout_marginEnd="5dp">
+                <TextView android:id="@+id/tvTotalFound" style="@style/GuardianMetricValue" android:text="0" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Ameaças ativas" />
             </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:id="@+id/tvTotalRemoved" style="@style/GuardianMetric" android:text="0" />
-                <TextView style="@style/GuardianCaption" android:text="Removidas" />
+            <LinearLayout style="@style/GuardianMetricCard" android:layout_marginStart="5dp">
+                <TextView android:id="@+id/tvTotalRemoved" style="@style/GuardianMetricValue" android:text="0" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Removidas" />
             </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:id="@+id/tvTotalScans" style="@style/GuardianMetric" android:text="0" />
-                <TextView style="@style/GuardianCaption" android:text="Análises" />
+          </LinearLayout>
+          <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:gravity="top">
+            <LinearLayout style="@style/GuardianMetricCard" android:layout_marginEnd="5dp">
+                <TextView android:id="@+id/tvTotalScans" style="@style/GuardianMetricValue" android:text="0" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Análises" />
             </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1.2" android:orientation="vertical">
-                <TextView android:id="@+id/tvLastScan" style="@style/GuardianText" android:text="Nunca" android:textSize="13sp" android:layout_marginBottom="6dp" />
-                <TextView style="@style/GuardianCaption" android:text="Última análise" />
+            <LinearLayout style="@style/GuardianMetricCard" android:layout_marginStart="5dp">
+                <TextView android:id="@+id/tvLastScan" style="@style/GuardianMetricValue" android:text="Nunca" android:textSize="18sp" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Última análise" />
             </LinearLayout>
+          </LinearLayout>
         </LinearLayout>
 
         <TextView style="@style/GuardianHeading" android:text="Ferramentas" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:gravity="top" android:layout_marginBottom="14dp">
             <Button android:id="@+id/btnLinkChecker" style="@style/GuardianTool" android:text="Conferir um link" android:drawableTop="@drawable/guardian_ic_link" android:layout_marginEnd="5dp" />
             <Button android:id="@+id/btnCallScanner" style="@style/GuardianTool" android:text="Proteção de ligações\nAtivar"
-                android:layout_height="110dp" android:maxLines="4" android:includeFontPadding="false"
-                android:textSize="14sp" android:paddingTop="8dp" android:paddingBottom="8dp"
-                app:autoSizeTextType="uniform" app:autoSizeMinTextSize="10sp"
-                app:autoSizeMaxTextSize="14sp" app:autoSizeStepGranularity="1sp" android:drawablePadding="8dp"
                 android:drawableTop="@drawable/guardian_ic_phone" android:layout_marginStart="5dp" />
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:gravity="top" android:layout_marginBottom="10dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:gravity="top" android:layout_marginBottom="14dp">
             <Button android:id="@+id/btnCleanCache" style="@style/GuardianTool" android:text="Limpar cache" android:drawableTop="@drawable/guardian_ic_cache" android:layout_marginEnd="5dp" />
             <Button android:id="@+id/btnAppCache" style="@style/GuardianTool" android:text="Cache por app" android:drawableTop="@drawable/guardian_ic_app" android:layout_marginStart="5dp" />
         </LinearLayout>
