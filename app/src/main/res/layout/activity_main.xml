@@ -13,9 +13,13 @@
                 android:scaleType="fitCenter" android:contentDescription="Logo M&amp;A Guardian" android:layout_marginEnd="8dp" />
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                 <TextView android:id="@+id/tvAppTitle" style="@style/GuardianHeading" android:text="M&amp;A Guardian"
-                    android:layout_marginBottom="0dp" android:minHeight="48dp" android:gravity="center_vertical" />
+                    android:layout_marginBottom="2dp" android:includeFontPadding="false"
+                    android:maxLines="1" android:gravity="center_vertical"
+                    app:autoSizeTextType="uniform" app:autoSizeMinTextSize="16sp"
+                    app:autoSizeMaxTextSize="19sp" app:autoSizeStepGranularity="1sp" />
                 <TextView android:id="@+id/tvAppTagline" style="@style/GuardianCaption"
                     android:text="Proteção Inteligente para o seu dispositivo"
+                    android:includeFontPadding="false"
                     android:maxLines="1" android:scrollHorizontally="false"
                     app:autoSizeTextType="uniform" app:autoSizeMinTextSize="8sp"
                     app:autoSizeMaxTextSize="12sp" app:autoSizeStepGranularity="1sp" />

@@ -1356,6 +1356,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshUI() {
+        val title = android.text.SpannableString(
+            if (PrefsHelper.isSubscriptionActive(this)) "M&A Guardian PRO" else "M&A Guardian"
+        )
+        if (PrefsHelper.isSubscriptionActive(this)) {
+            title.setSpan(android.text.style.ForegroundColorSpan(0xFF2196F3.toInt()),
+                13, title.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            title.setSpan(android.text.style.RelativeSizeSpan(0.7f),
+                13, title.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        findViewById<TextView>(R.id.tvAppTitle).text = title
         val permStatus = PermissionHelper.checkAll(this)
         val protectionEnabled = PrefsHelper.isProtectionEnabled(this)
         val totalScans = PrefsHelper.getScanCount(this)
