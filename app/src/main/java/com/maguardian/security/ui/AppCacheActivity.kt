@@ -152,7 +152,22 @@ class AppCacheActivity : AppCompatActivity() {
         val twoColumns = resources.configuration.screenWidthDp >= 360 && resources.configuration.fontScale <= 1.15f
         if (!twoColumns) { entries.forEach { addEntry(it) }; return }
         entries.chunked(2).forEach { pair ->
-            val line = LinearLayout(this).apply {
+            val line = object : LinearLayout(this) {
+                override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                    super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+                    // Measure natural heights first, then align both real cards.
+                    // MATCH_PARENT here collapses an odd final card in a ScrollView.
+                    for (i in 0 until childCount) {
+                        val child = getChildAt(i)
+                        if (child !is LinearLayout) continue
+                        val margins = child.layoutParams as LinearLayout.LayoutParams
+                        val available = measuredHeight - paddingTop - paddingBottom - margins.topMargin - margins.bottomMargin
+                        if (available > 0) child.measure(
+                            View.MeasureSpec.makeMeasureSpec(child.measuredWidth, View.MeasureSpec.EXACTLY),
+                            View.MeasureSpec.makeMeasureSpec(available, View.MeasureSpec.EXACTLY))
+                    }
+                }
+            }.apply {
                 orientation = LinearLayout.HORIZONTAL
                 isBaselineAligned = false
                 layoutParams = LinearLayout.LayoutParams(-1, -2)
@@ -165,41 +180,47 @@ class AppCacheActivity : AppCompatActivity() {
 
     private fun addEntryTo(entry: CacheEntry, parent: LinearLayout, compact: Boolean) {
         val row = LinearLayout(this).apply {
-            orientation = if (compact) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+            orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_card)
-            setPadding(dp(10), dp(12), dp(10), dp(12))
+            background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_compact_card)
+            setPadding(dp(6), dp(6), dp(6), dp(6))
             layoutParams = LinearLayout.LayoutParams(if (compact) 0 else -1, -2, if (compact) 1f else 0f).apply {
-                bottomMargin = dp(10)
+                bottomMargin = dp(8)
                 if (compact) { marginStart = dp(4); marginEnd = dp(4) }
             }
         }
-        row.addView(android.widget.ImageView(this).apply {
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(32)
+            layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
+        }
+        header.addView(android.widget.ImageView(this).apply {
             setImageDrawable(try { packageManager.getApplicationIcon(entry.pkg) }
                 catch (_: Exception) { ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_ic_app) })
             contentDescription = null
-            layoutParams = LinearLayout.LayoutParams(dp(32), dp(32)).apply {
-                if (compact) bottomMargin = dp(6) else marginEnd = dp(10)
-            }
+            layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply { marginEnd = dp(8) }
         })
         val labels = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = if (compact) LinearLayout.LayoutParams(-1, -2) else LinearLayout.LayoutParams(0, -2, 1f)
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
         }
         labels.addView(TextView(this).apply {
             text = entry.label
-            textSize = 14f
-            if (compact) minHeight = dp(48)
+            textSize = 13f
+            includeFontPadding = false
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_ink))
         })
         labels.addView(TextView(this).apply {
             text = entry.bytes?.let(::formatBytes) ?: "Tamanho indisponível"
-            textSize = 13f
-            setPadding(0, dp(5), 0, 0)
+            textSize = 12f
+            includeFontPadding = false
+            setPadding(0, dp(2), 0, 0)
             setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_muted))
         })
-        row.addView(labels)
+        header.addView(labels)
+        row.addView(header)
         row.addView(androidx.appcompat.widget.AppCompatButton(this, null, 0).apply {
             text = "Abrir"
             textSize = 13f
@@ -207,12 +228,15 @@ class AppCacheActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             maxLines = 1
             includeFontPadding = false
-            layoutParams = LinearLayout.LayoutParams(if (compact) -1 else -2, dp(48)).apply { if (compact) topMargin = dp(8) }
+            layoutParams = LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(2) }
             minWidth = dp(76)
             minHeight = dp(48)
             setPadding(dp(10), 0, dp(10), 0)
-            background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.app_cache_open)
+            background = android.graphics.drawable.InsetDrawable(
+                ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_compact_card), 0, dp(6), 0, dp(6))
             backgroundTintList = null
+            setCompoundDrawablesWithIntrinsicBounds(R.drawable.guardian_ic_external, 0, 0, 0)
+            compoundDrawablePadding = dp(6)
             setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_ink))
             contentDescription = "Abrir configurações de ${entry.label}"
             setOnClickListener {

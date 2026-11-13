@@ -85,3 +85,17 @@ entre cenários/estado/execução antes de usar esse teste como evidência confi
 de regressão. Reproduzir com `:app:testDebugUnitTest` e comparar com o filtro
 `--tests '*MalwareDetectionRegressionTest.manualButtonRecordsKnownThreatWithAndWithoutFullAccess*'`.
 Não modificar critérios de detecção, proteção ou permissões para acomodar testes.
+
+## Cartões compactos da revisão 1.6.26
+
+Somente apresentação: resumo diário em cartões horizontais com ícone ao lado
+do valor e legenda; cache em cartões com cabeçalho horizontal (ícone, nome e
+valor), sem reserva vazia abaixo do nome. As dimensões são compartilhadas
+pelos três temas. O botão Abrir tem uma borda visual mais baixa, mantendo a
+área de toque de 48 dp. Nomes compridos e fontes grandes podem aumentar a
+altura necessária, sem truncamento.
+
+Não foram modificados os filtros da lista, cálculo dos valores, consulta ao
+Android, configurações abertas, estatísticas, regras de detecção ou serviços.
+A validação desta revisão é focada na interface e nos comportamentos do cache;
+não resolve nem declara resolvida a ressalva anterior da suíte de detecção.

@@ -2,6 +2,18 @@
 <resources>
     <dimen name="guardian_screen_padding">16dp</dimen>
     <dimen name="guardian_gap">12dp</dimen>
+    <style name="GuardianMetricIcon">
+        <item name="android:layout_width">28dp</item>
+        <item name="android:layout_height">28dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="GuardianMetricColumn">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+    </style>
     <style name="GuardianPageTitle" parent="GuardianHeading">
         <item name="android:gravity">center</item>
         <item name="android:textSize">24sp</item>

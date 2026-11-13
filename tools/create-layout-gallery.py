@@ -37,21 +37,20 @@ for theme, theme_name in themes.items():
             f'<img src="data:image/png;base64,{encoded}" alt="{html.escape(page_name)} — {html.escape(theme_name)}"></a>{extra}</figure>'
         )
 comparisons = []
-for theme, reference_name in {
-    "original": "image_1794600284260.png",
-    "petroleo": "image_1794600291252.png",
-    "gold": "image_1794600298819.png",
-}.items():
+for page, reference_name, label in [
+    ("inicio", "image_1794600269812.png", "Resumo diário compacto"),
+    ("cache", "image_1794600193688.png", "Cache por aplicativo compacto"),
+]:
+    theme = "original"
     reference = base64.b64encode((root / "attached_assets" / reference_name).read_bytes()).decode("ascii")
-    actual = base64.b64encode((source / f"{theme}-premium.png").read_bytes()).decode("ascii")
+    actual = base64.b64encode((source / f"{theme}-{page}.png").read_bytes()).decode("ascii")
     comparisons.append(
-        f'<figure data-theme="{theme}"><figcaption>{themes[theme]}<small>Referência enviada / APK corrigido</small></figcaption>'
-        f'<div class="pair"><img src="data:image/png;base64,{reference}" alt="Referência Premium enviada pelo usuário">'
-        f'<img src="data:image/png;base64,{actual}" alt="Premium renderizado no APK 1.6.25"></div></figure>'
+        f'<figure data-theme="{theme}"><figcaption>{label}<small>Referência enviada / APK corrigido</small></figcaption>'
+        f'<div class="pair"><img src="data:image/png;base64,{reference}" alt="Referência enviada pelo usuário">'
+        f'<img src="data:image/png;base64,{actual}" alt="Tela renderizada no APK 1.6.26"></div></figure>'
     )
 totals = dict(tests=0, failures=0, errors=0, skipped=0)
-full_results = output / "full-suite-results"
-result_source = full_results if full_results.exists() else root / "android-native/app/build/test-results/testDebugUnitTest"
+result_source = root / "android-native/app/build/test-results/testDebugUnitTest"
 for file in result_source.glob("TEST-*.xml"):
     suite = ET.parse(file).getroot()
     for key in totals:
@@ -94,13 +93,13 @@ section{margin-top:32px}a{color:#70132d}code{background:#eee8df;padding:2px 5px}
 @media(max-width:800px){.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.gallery{grid-template-columns:1fr}header,main{padding:16px}}
 </style>
-<header><h1>M&amp;A Guardian</h1><p>Revisão do layout nativo — APK de teste 1.6.25 (63).</p>
+<header><h1>M&amp;A Guardian</h1><p>Cartões compactos — APK de teste 1.6.26 (64).</p>
 <div class="note"><b>O que estas imagens comprovam:</b> são capturas renderizadas dos componentes Android implementados,
 não montagens dos anexos nem testes em aparelho físico. Mostram o primeiro trecho de cada tela; o restante continua acessível por rolagem.
 O preço de R$ 9,99/mês é identificado como referência quando a Play não retorna uma oferta. Listas vazias e eventuais contadores refletem o ambiente automatizado e os eventos de teste nele executados;
 não são medições do seu celular nem ofertas ou valores comerciais inventados.</div></header>
-<main><details><summary>Comparar Premium com suas referências</summary>
-<p>A referência inclui a moldura do celular; a imagem do APK mostra os componentes nativos, sem moldura. A oferta não confirmada é identificada como referência, em vez de simular sete dias gratuitos.</p>
+<main><details open><summary>Comparar o início e o cache com suas referências</summary>
+<p>A referência inclui a moldura do celular; a imagem do APK mostra os componentes nativos, sem moldura. Os três temas compartilham as mesmas dimensões. Com fonte ampliada ou nomes compridos, os cartões podem crescer para não cortar conteúdo.</p>
 <div class="gallery">COMPARISONS</div></details><nav aria-label="Filtrar tema">
 <button aria-pressed="true" data-filter="all">Comparar todos</button>
 <button aria-pressed="false" data-filter="original">Preto e dourado</button>
@@ -109,11 +108,10 @@ não são medições do seu celular nem ofertas ou valores comerciais inventados
 <div class="gallery">CARDS</div>
 <section><h2>Botões e funcionalidades</h2><table><thead><tr><th>Ação</th><th>Destino real</th></tr></thead><tbody>ROWS</tbody></table></section>
 <section><h2>Verificações executadas</h2><p>RESULTS</p>
-<p>Na revisão 1.6.25, os testes nativos de interface, fontes ampliadas e navegação passaram.
-A suíte completa registrou uma falha no cenário de detecção manual no Android 8 simulado.
-O mesmo método passou isoladamente nos dois Androids testados, sem alteração do detector.
-Isso indica uma inconsistência de execução ou isolamento que ainda precisa ser esclarecida;
-não é apresentado como uma suíte integralmente aprovada nem como comprovação em aparelho físico.</p>
+<p>Esta revisão executa verificações focadas nos cartões, medidas reais de cache, abertura das configurações, navegação e acessibilidade.
+Não se repetiu a suíte completa de detecção: o detector e os serviços não foram alterados.
+A ressalva da revisão anterior sobre um teste de detecção em lote continua registrada em layout-update.md e não é declarada resolvida por estes testes visuais.
+Estas capturas não comprovam funcionamento em aparelho físico.</p>
 <p>Compilação do APK de teste, testes nativos automatizados, abertura das telas em Android 8 e Android 14 simulados,
 contraste, navegação, persistência de tema, textos em telas pequenas/fontes ampliadas, análise de links,
 detecção, instalação de aplicativos sinalizados, registros diários e leitura de ofertas de compra foram verificados conforme o relatório de testes.</p>

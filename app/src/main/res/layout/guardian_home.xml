@@ -70,23 +70,35 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:baselineAligned="false" android:orientation="horizontal" android:layout_marginBottom="10dp">
         <LinearLayout style="@style/GuardianMetricCard" android:layout_marginEnd="5dp">
-            <TextView android:id="@+id/tvTotalFound" style="@style/GuardianMetricValue" android:text="0" />
-            <TextView style="@style/GuardianMetricLabel" android:text="Ocorrências hoje" />
+            <ImageView style="@style/GuardianMetricIcon" android:src="@drawable/guardian_ic_warning_shield" />
+            <LinearLayout style="@style/GuardianMetricColumn">
+                <TextView android:id="@+id/tvTotalFound" style="@style/GuardianMetricValue" android:text="0" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Ocorrências hoje" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout style="@style/GuardianMetricCard" android:layout_marginStart="5dp">
-            <TextView android:id="@+id/tvTotalRemoved" style="@style/GuardianMetricValue" android:text="0" />
-            <TextView style="@style/GuardianMetricLabel" android:text="Remoções hoje" />
+            <ImageView style="@style/GuardianMetricIcon" android:src="@drawable/guardian_ic_trash" />
+            <LinearLayout style="@style/GuardianMetricColumn">
+                <TextView android:id="@+id/tvTotalRemoved" style="@style/GuardianMetricValue" android:text="0" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Remoções hoje" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:baselineAligned="false" android:orientation="horizontal">
         <LinearLayout style="@style/GuardianMetricCard" android:layout_marginEnd="5dp">
-            <TextView android:id="@+id/tvTotalScans" style="@style/GuardianMetricValue" android:text="0" />
-            <TextView style="@style/GuardianMetricLabel" android:text="Análises hoje" />
+            <ImageView style="@style/GuardianMetricIcon" android:src="@drawable/guardian_ic_search" />
+            <LinearLayout style="@style/GuardianMetricColumn">
+                <TextView android:id="@+id/tvTotalScans" style="@style/GuardianMetricValue" android:text="0" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Análises hoje" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout style="@style/GuardianMetricCard" android:layout_marginStart="5dp">
-            <TextView android:id="@+id/tvLastScan" style="@style/GuardianMetricValue" android:text="—" android:textSize="18sp" />
-            <TextView style="@style/GuardianMetricLabel" android:text="Última análise" />
+            <ImageView style="@style/GuardianMetricIcon" android:src="@drawable/guardian_ic_clock" />
+            <LinearLayout style="@style/GuardianMetricColumn">
+                <TextView android:id="@+id/tvLastScan" style="@style/GuardianMetricValue" android:text="—" android:textSize="18sp" />
+                <TextView style="@style/GuardianMetricLabel" android:text="Última análise" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
     <TextView style="@style/GuardianSection" android:text="Atividade recente" />

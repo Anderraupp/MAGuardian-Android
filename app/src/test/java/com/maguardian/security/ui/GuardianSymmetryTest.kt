@@ -33,7 +33,7 @@ class GuardianSymmetryTest {
                     NativeLayoutChecks.measure(home, pixels)
                     NativeLayoutChecks.visibleTextFits(home)
                     val cards = listOf(R.id.tvTotalFound, R.id.tvTotalRemoved, R.id.tvTotalScans, R.id.tvLastScan)
-                        .map { activity.findViewById<TextView>(it).parent as View }
+                        .map { activity.findViewById<TextView>(it).parent.parent as View }
                     assertTrue(kotlin.math.abs(cards[0].width - cards[1].width) <= 1)
                     assertEquals(cards[0].height, cards[1].height)
                     assertEquals(cards[2].height, cards[3].height)

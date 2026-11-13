@@ -124,26 +124,28 @@
     <style name="GuardianMetricCard">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">match_parent</item>
-        <item name="android:minHeight">72dp</item>
+        <item name="android:minHeight">56dp</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:orientation">vertical</item>
-        <item name="android:gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
         <item name="android:padding">8dp</item>
-        <item name="android:background">@drawable/guardian_card</item>
+        <item name="android:background">@drawable/guardian_compact_card</item>
     </style>
     <style name="GuardianMetricValue" parent="GuardianText">
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:minHeight">28dp</item>
-        <item name="android:gravity">center</item>
-        <item name="android:textSize">24sp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:gravity">start</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:lineSpacingExtra">0dp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:includeFontPadding">false</item>
         <item name="android:maxLines">2</item>
     </style>
     <style name="GuardianMetricLabel" parent="GuardianCaption">
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:minHeight">20dp</item>
-        <item name="android:gravity">center</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:gravity">start</item>
+        <item name="android:lineSpacingExtra">0dp</item>
         <item name="android:includeFontPadding">false</item>
     </style>
     <style name="GuardianMetric" parent="GuardianText">

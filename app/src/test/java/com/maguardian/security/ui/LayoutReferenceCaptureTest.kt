@@ -59,6 +59,11 @@ class LayoutReferenceCaptureTest {
                 shadowOf(Looper.getMainLooper()).idle()
                 NativeLayoutChecks.capture(cache.get(), "$palette-cache")
                 assertEquals(View.VISIBLE, cache.get().findViewById<View>(R.id.tvCacheLimitations).visibility)
+                val rows = cache.get().findViewById<ViewGroup>(R.id.llAppCaches)
+                if (rows.childCount > 0) {
+                    val firstRow = rows.getChildAt(0) as ViewGroup
+                    assertTrue("Cartão de cache visível em $palette", firstRow.getChildAt(0).height > 0)
+                }
             } finally { cache.stop().destroy() }
             val premium = Robolectric.buildActivity(SubscriptionActivity::class.java).create().start()
             try {
