@@ -29,7 +29,12 @@ class SupportActivity : GuardianPageActivity() {
             }
             card.addView(label(title, true).apply { setCompoundDrawablesWithIntrinsicBounds(icon, 0, 0, 0); compoundDrawablePadding = dp(10) })
             card.addView(label(address).apply { setTextIsSelectable(true) })
-            card.addView(action(button, click))
+            card.addView(action(button, click).apply {
+                if (title == "WhatsApp") {
+                    setBackgroundResource(R.drawable.guardian_subscribe)
+                    setTextColor(android.graphics.Color.WHITE)
+                }
+            })
             content.addView(card)
         }
         val whatsapp = getString(R.string.guardian_support_whatsapp)

@@ -12,7 +12,9 @@ internal object GuardianNavigation {
     const val TOOLS = "guardian_open_tools"
     fun bind(activity: AppCompatActivity, canChangeAppearance: () -> Boolean = { true }, subscribe: (() -> Unit)? = null) {
         val nav = activity.findViewById<BottomNavigationView>(R.id.guardianBottomNav)
-        nav.isItemActiveIndicatorEnabled = true
+        GuardianVisuals.bind(activity)
+        nav.isItemActiveIndicatorEnabled = false
+        nav.itemBackgroundResource = R.drawable.guardian_nav_item
         nav.itemActiveIndicatorColor = android.content.res.ColorStateList.valueOf(GuardianAppearance.color(activity, R.color.guardian_wash))
         nav.itemActiveIndicatorShapeAppearance = com.google.android.material.shape.ShapeAppearanceModel.builder()
             .setAllCornerSizes(14 * activity.resources.displayMetrics.density).build()
@@ -27,7 +29,7 @@ internal object GuardianNavigation {
             if (view is android.view.ViewGroup) for (i in 0 until view.childCount) wrapLabels(view.getChildAt(i))
         }
         wrapLabels(nav)
-        nav.minimumHeight = ((68 + 24 * (activity.resources.configuration.fontScale - 1).coerceAtLeast(0f)) *
+        nav.minimumHeight = ((64 + 24 * (activity.resources.configuration.fontScale - 1).coerceAtLeast(0f)) *
             activity.resources.displayMetrics.density).toInt()
         ViewCompat.setOnApplyWindowInsetsListener(nav) { _, insets -> insets }
         nav.selectedItemId = when (activity) {

@@ -1558,7 +1558,7 @@ class MainActivity : AppCompatActivity() {
             tvTotalRemoved.text = daily.removed.toString()
             tvTotalScans.text = daily.scans.toString()
             val knownLast = maxOf(daily.lastScan, lastScanMs)
-            tvLastScan.text = if (knownLast > 0) SimpleDateFormat("dd/MM\nHH:mm", Locale("pt", "BR")).format(Date(knownLast)) else "—"
+            tvLastScan.text = if (knownLast > 0) SimpleDateFormat("HH:mm", Locale("pt", "BR")).format(Date(knownLast)) else "—"
             findViewById<TextView>(R.id.tvJournalState).text =
                 if (com.maguardian.security.data.ActivityJournal.incomplete(this)) "Alguns eventos não puderam ser registrados; os totais podem estar incompletos."
                 else "Registros a partir desta atualização."
@@ -1637,12 +1637,12 @@ class MainActivity : AppCompatActivity() {
     private fun startPulse(viewId: Int) {
         if (pulseAnimators.containsKey(viewId)) return
         val view = findViewById<View>(viewId) ?: return
-        val animator = ValueAnimator.ofObject(ArgbEvaluator(), COLOR_RED, COLOR_YELLOW).apply {
-            duration = 700
+        val animator = ValueAnimator.ofFloat(0.88f, 1f).apply {
+            duration = 1200
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             addUpdateListener { va ->
-                view.background = ColorDrawable(va.animatedValue as Int)
+                view.alpha = va.animatedValue as Float
             }
             start()
         }
@@ -1651,6 +1651,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopPulse(viewId: Int) {
         pulseAnimators.remove(viewId)?.cancel()
+        findViewById<View>(viewId)?.alpha = 1f
     }
 
     private fun stopAllPulses() {

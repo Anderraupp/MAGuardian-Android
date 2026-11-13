@@ -58,7 +58,7 @@
             <TextView android:id="@+id/tvStatusDesc" style="@style/GuardianCaption" android:layout_marginTop="4dp" />
         </LinearLayout>
         <TextView android:id="@+id/btnToggle" style="@style/GuardianText" android:layout_width="wrap_content" android:text="Ativar" android:minHeight="48dp"
-            android:maxWidth="116dp" android:layout_marginStart="10dp"
+            android:maxWidth="116dp" android:layout_marginStart="10dp" android:textSize="12sp"
             android:gravity="center" android:padding="10dp"
             android:background="@drawable/guardian_secondary" android:clickable="true" android:focusable="true" />
         <TextView android:id="@+id/tvSecurityRate" style="@style/GuardianCaption" android:visibility="gone" />

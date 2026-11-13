@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_search" android:text="Análise de aplicativos" />
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_shield" android:text="Monitoramento em tempo real" />
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_cache" android:text="Limpeza guiada de cache" />
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_phone" android:text="Bloqueio de chamadas indesejadas" />
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_phone" android:text="Alertas de chamadas suspeitas" />
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_link" android:text="Verificação de links" />
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_history" android:text="Histórico de análises" />
+    <TextView style="@style/GuardianBenefit" android:tag="benefit_headset" android:text="Suporte e atendimento" />
+</LinearLayout>

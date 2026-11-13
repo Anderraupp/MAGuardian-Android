@@ -56,13 +56,15 @@ class SubscriptionActivity : AppCompatActivity() {
         tvLoading.visibility     = View.VISIBLE
         layoutContent.visibility = View.VISIBLE
         btnSubscribe.isEnabled   = false
-        tvPrice.text             = "Consultando preço…"
+        tvPrice.text             = "R$ 9,99"
+        findViewById<View>(R.id.tvPriceReference).visibility = View.VISIBLE
     }
 
     private fun updatePrice() {
         val offer = billing.offerPresentation()
         val active = PrefsHelper.isSubscriptionActive(this)
-        tvPrice.text = offer?.priceLabel ?: "Preço indisponível"
+        tvPrice.text = offer?.priceLabel ?: "R$ 9,99"
+        findViewById<View>(R.id.tvPriceReference).visibility = if (offer == null) View.VISIBLE else View.GONE
         findViewById<TextView>(R.id.tvPremiumState).text = if (active) "ASSINATURA ATIVA" else "PLANO MENSAL"
         findViewById<TextView>(R.id.tvPlayOffer).apply {
             visibility = if (!active && !offer?.conditions.isNullOrBlank()) View.VISIBLE else View.GONE
@@ -70,20 +72,20 @@ class SubscriptionActivity : AppCompatActivity() {
         }
         btnSubscribe.text = when {
             active -> "Gerenciar assinatura"
-            offer == null -> "Consultar plano novamente"
-            offer.sevenDayTrial -> "Começar com Google Play"
+            offer == null -> "Consultar oferta na Google Play"
+            offer.sevenDayTrial -> "Experimentar agora"
             else -> "Assinar com Google Play"
         }
         btnSubscribe.isEnabled = true
         progressBar.visibility = View.GONE
         tvLoading.visibility = if (offer == null && !active) View.VISIBLE else View.GONE
-        tvLoading.text = "Não foi possível consultar o plano. Confira a conexão e a disponibilidade na Google Play."
+        tvLoading.text = "Valor de referência. A oferta e a contratação serão confirmadas pela Google Play."
     }
 
     // ── Listeners ─────────────────────────────────────────────────────────────
 
     private fun setupListeners() {
-        findViewById<Button>(R.id.btnSubscriptionBack).setOnClickListener { finish() }
+        findViewById<View>(R.id.btnSubscriptionBack).setOnClickListener { finish() }
         btnSubscribe.setOnClickListener {
             if (PrefsHelper.isSubscriptionActive(this)) {
                 GuardianExternal.web(this, "https://play.google.com/store/account/subscriptions?sku=${BillingManager.SKU_MONTHLY}&package=$packageName")

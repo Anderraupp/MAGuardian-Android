@@ -46,6 +46,8 @@ class LayoutReferenceCaptureTest {
             val link = Robolectric.buildActivity(LinkCheckerActivity::class.java).create().start()
             try {
                 NativeLayoutChecks.capture(link.get(), "$palette-links")
+                assertNotNull(link.get().findViewById<TextView>(R.id.btnPaste).compoundDrawables[0])
+                assertNotNull(link.get().findViewById<TextView>(R.id.btnCheck).compoundDrawables[0])
                 link.get().findViewById<View>(R.id.btnBack).performClick()
                 assertTrue(link.get().isFinishing)
             } finally { link.stop().destroy() }
@@ -62,8 +64,19 @@ class LayoutReferenceCaptureTest {
             try {
                 SubscriptionActivity::class.java.getDeclaredMethod("updatePrice").apply { isAccessible = true }.invoke(premium.get())
                 NativeLayoutChecks.capture(premium.get(), "$palette-premium")
-                assertEquals("Preço indisponível", premium.get().findViewById<TextView>(R.id.tvMonthlyPrice).text.toString())
+                assertEquals("R$ 9,99", premium.get().findViewById<TextView>(R.id.tvMonthlyPrice).text.toString())
+                assertEquals(View.VISIBLE, premium.get().findViewById<View>(R.id.tvPriceReference).visibility)
                 assertEquals(View.GONE, premium.get().findViewById<View>(R.id.tvPlayOffer).visibility)
+                val button = premium.get().findViewById<View>(R.id.btnSubscribe)
+                val nav = premium.get().findViewById<View>(R.id.guardianBottomNav)
+                val root = premium.get().findViewById<ViewGroup>(android.R.id.content)
+                val buttonBounds = android.graphics.Rect(); val navBounds = android.graphics.Rect()
+                button.getDrawingRect(buttonBounds); nav.getDrawingRect(navBounds)
+                root.offsetDescendantRectToMyCoords(button, buttonBounds)
+                root.offsetDescendantRectToMyCoords(nav, navBounds)
+                assertTrue("Assinatura visível antes da barra em $palette",
+                    buttonBounds.bottom <= navBounds.top)
+                assertFalse(com.maguardian.security.util.PrefsHelper.isSubscriptionActive(ctx))
             } finally { premium.stop().destroy() }
             val support = Robolectric.buildActivity(SupportActivity::class.java).create().start()
             try {

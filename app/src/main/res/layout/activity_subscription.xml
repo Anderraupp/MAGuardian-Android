@@ -5,43 +5,53 @@
     <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="1" android:fillViewport="true">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:padding="@dimen/guardian_screen_padding">
-            <Button android:id="@+id/btnSubscriptionBack" style="@style/GuardianToolbar" android:text="←  Premium" />
-            <FrameLayout android:layout_width="match_parent" android:layout_height="104dp">
-                <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/guardian_waves" android:scaleType="fitXY" android:importantForAccessibility="no" />
-                <ImageView android:layout_width="80dp" android:layout_height="80dp" android:layout_gravity="center" android:src="@drawable/logo"
-                    android:scaleType="fitCenter" android:contentDescription="Logo M&amp;A Guardian" />
+            android:orientation="vertical" android:padding="14dp">
+            <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp">
+                <TextView style="@style/GuardianText" android:minHeight="48dp" android:text="Premium"
+                    android:gravity="center" android:textColor="?attr/guardian_red" android:textStyle="bold" android:textSize="20sp" />
+                <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/btnSubscriptionBack"
+                    android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp"
+                    android:src="@drawable/guardian_ic_back" android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Voltar" />
             </FrameLayout>
-            <TextView style="@style/GuardianPageTitle" android:text="M&amp;A Guardian Pro" android:textSize="24sp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" />
-            <TextView style="@style/GuardianCaption" android:text="Mais controle e cuidado com o seu celular" android:gravity="center" android:layout_marginBottom="12dp" />
-            <ProgressBar android:id="@+id/progressBilling" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
-            <TextView android:id="@+id/tvLoadingPlans" style="@style/GuardianCaption" android:text="Consultando a Google Play…" android:gravity="center" />
+            <FrameLayout android:layout_width="match_parent" android:layout_height="84dp" android:clipChildren="false">
+                <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/guardian_waves"
+                    android:scaleType="fitXY" android:importantForAccessibility="no" />
+                <ImageView android:layout_width="112dp" android:layout_height="112dp" android:layout_gravity="center"
+                    android:src="@drawable/logo" android:scaleType="fitCenter" android:contentDescription="Logo M&amp;A Guardian" />
+            </FrameLayout>
+            <TextView style="@style/GuardianPageTitle" android:text="M&amp;A Guardian Pro" android:textSize="24sp"
+                android:layout_marginTop="2dp" android:layout_marginBottom="0dp" />
+            <TextView style="@style/GuardianCaption" android:text="Mais controle e cuidado com o seu celular"
+                android:gravity="center" android:layout_marginBottom="10dp" />
             <LinearLayout android:id="@+id/layoutContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                <LinearLayout style="@style/GuardianCard" android:gravity="center">
+                <LinearLayout style="@style/GuardianCard" android:gravity="center" android:padding="10dp" android:layout_marginBottom="10dp">
                     <TextView android:id="@+id/tvPremiumState" style="@style/GuardianCaption" android:text="PLANO MENSAL" android:gravity="center" />
-                    <TextView android:id="@+id/tvMonthlyPrice" style="@style/GuardianHeading" android:text="Consultando preço…" android:textSize="30sp" android:gravity="center" android:layout_marginTop="8dp" android:layout_marginBottom="4dp" android:textColor="?attr/guardian_red" />
                     <TextView android:id="@+id/tvPlayOffer" style="@style/GuardianText" android:gravity="center" android:visibility="gone" />
-                    <TextView style="@style/GuardianCaption" android:text="Renovação automática. Cancele pela Google Play." android:gravity="center" android:layout_marginTop="8dp" />
+                    <TextView android:id="@+id/tvMonthlyPrice" style="@style/GuardianHeading" android:text="R$ 9,99"
+                        android:textSize="34sp" android:lineSpacingExtra="0dp" android:gravity="center"
+                        android:layout_marginBottom="0dp" android:textColor="?attr/guardian_red" />
+                    <TextView android:id="@+id/tvPriceReference" style="@style/GuardianCaption" android:text="por mês · valor de referência" android:gravity="center" />
                 </LinearLayout>
-                <TextView style="@style/GuardianSection" android:text="Tudo incluso na assinatura" android:layout_marginTop="0dp" />
-                <LinearLayout style="@style/GuardianCard">
-                    <TextView style="@style/GuardianText" android:text="✓  Análise de aplicativos" android:paddingBottom="10dp" />
-                    <TextView style="@style/GuardianText" android:text="✓  Monitoramento em tempo real" android:paddingBottom="10dp" />
-                    <TextView style="@style/GuardianText" android:text="✓  Revisão de aplicativos sinalizados" android:paddingBottom="10dp" />
-                    <TextView style="@style/GuardianText" android:text="✓  Limpeza guiada de cache" android:paddingBottom="10dp" />
-                    <TextView style="@style/GuardianText" android:text="✓  Verificação de links" android:paddingBottom="10dp" />
-                    <TextView style="@style/GuardianText" android:text="✓  Bloqueio de chamadas indesejadas" android:paddingBottom="10dp" />
-                    <TextView style="@style/GuardianText" android:text="✓  Alertas de chamadas suspeitas" android:paddingBottom="10dp" />
-                    <TextView style="@style/GuardianText" android:text="✓  Atendimento da equipe" />
+                <TextView style="@style/GuardianSection" android:text="Tudo incluso na assinatura" android:layout_marginTop="0dp" android:layout_marginBottom="6dp" />
+                <include layout="@layout/guardian_premium_benefits" />
+                <Button android:id="@+id/btnSubscribe" style="@style/GuardianButton" android:text="Consultar oferta na Google Play"
+                    android:background="@drawable/guardian_subscribe" android:textColor="#FFFFFF"
+                    android:layout_marginTop="8dp" android:layout_marginBottom="6dp" />
+                <ProgressBar android:id="@+id/progressBilling" android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center_horizontal" />
+                <TextView android:id="@+id/tvLoadingPlans" style="@style/GuardianCaption"
+                    android:text="Valor de referência. A oferta e a contratação serão confirmadas pela Google Play." android:gravity="center" />
+                <TextView style="@style/GuardianCaption" android:text="Assinatura pela Google Play. Renovação automática; cancele pela loja." android:gravity="center" android:layout_marginTop="6dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <TextView android:id="@+id/tvTerms" style="@style/GuardianFooter" android:layout_width="0dp" android:layout_weight="1"
+                        android:text="Termos de uso" android:gravity="center" android:clickable="true" android:focusable="true" />
+                    <TextView android:id="@+id/tvPrivacy" style="@style/GuardianFooter" android:layout_width="0dp" android:layout_weight="1"
+                        android:text="Privacidade" android:gravity="center" android:clickable="true" android:focusable="true" />
                 </LinearLayout>
-                <Button android:id="@+id/btnSubscribe" style="@style/GuardianButton" android:text="Continuar com Google Play"
-                    android:background="@drawable/guardian_subscribe" android:textColor="#FFFFFF" />
-                <TextView style="@style/GuardianCaption" android:text="O monitoramento depende das permissões e das condições de execução do Android. A Google Play confirma a oferta e a cobrança antes da compra."
-                    android:gravity="center" android:layout_marginTop="12dp" android:layout_marginBottom="8dp" />
                 <TextView android:id="@+id/btnRestore" style="@style/GuardianFooter" android:text="Restaurar compra anterior"
                     android:gravity="center" android:clickable="true" android:focusable="true" />
-                <TextView android:id="@+id/tvTerms" style="@style/GuardianFooter" android:text="Termos de uso" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <TextView android:id="@+id/tvPrivacy" style="@style/GuardianFooter" android:text="Privacidade" android:gravity="center" android:clickable="true" android:focusable="true" />
+                <TextView style="@style/GuardianCaption" android:text="O monitoramento depende das permissões e das condições de execução do Android."
+                    android:gravity="center" android:layout_marginBottom="8dp" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

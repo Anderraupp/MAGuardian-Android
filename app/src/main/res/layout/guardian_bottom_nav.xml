@@ -2,11 +2,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-    android:background="?attr/guardian_card">
-    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/guardian_line" />
+    android:background="@drawable/guardian_navigation_surface" android:padding="4dp">
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/guardianBottomNav" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:minHeight="68dp" android:background="?attr/guardian_card"
+        android:minHeight="64dp" android:background="@android:color/transparent"
         app:menu="@menu/guardian_bottom_nav" app:labelVisibilityMode="labeled"
         app:itemIconTint="@color/guardian_nav_colors" app:itemTextColor="@color/guardian_nav_colors"
         app:itemIconSize="21dp" app:itemHorizontalTranslationEnabled="false"
