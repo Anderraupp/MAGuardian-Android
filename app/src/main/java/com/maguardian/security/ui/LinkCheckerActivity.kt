@@ -96,9 +96,14 @@ class LinkCheckerActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             try {
+                btnCheck.isEnabled = false
+                btnCheck.text = "Analisando…"
                 showResult(LinkChecker.check(normalized))
             } catch (_: Exception) {
                 showAnalysisError()
+            } finally {
+                btnCheck.isEnabled = true
+                btnCheck.text = "Conferir link"
             }
         }
         savedInstanceState?.getBundle("guardian_link_result")?.let { saved ->
@@ -156,7 +161,7 @@ class LinkCheckerActivity : AppCompatActivity() {
         val verdictLabel = when (verdict) {
             "FRAUDULENTO" -> "Alto risco: não abra este link"
             "SUSPEITO" -> "Suspeito: pode haver risco"
-            else -> "Seguro nesta análise"
+            else -> "Sem indícios de risco nesta análise"
         }
         tvVerdict.text = "$verdictLabel — ${result.category}"
         tvVerdict.setTextColor(color)

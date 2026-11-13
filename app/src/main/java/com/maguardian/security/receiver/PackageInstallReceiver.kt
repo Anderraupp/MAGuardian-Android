@@ -67,6 +67,7 @@ class PackageInstallReceiver : BroadcastReceiver() {
         if (malware != null) {
             Log.w(TAG, "MALWARE instalado: $packageName")
             recordFinding(context, malware)
+            recordCompletedCheck(context, packageName)
             return
         }
 
@@ -89,6 +90,13 @@ class PackageInstallReceiver : BroadcastReceiver() {
             Log.w(TAG, "Suspeito heurístico instalado: $packageName")
             recordFinding(context, heuristic)
         }
+        recordCompletedCheck(context, packageName)
+    }
+
+    private fun recordCompletedCheck(context: Context, packageName: String) {
+        val time = System.currentTimeMillis()
+        com.maguardian.security.data.ActivityJournal.record(context, "install:$packageName:$time", "scan", time,
+            source = "automática · instalação")
     }
 
     private fun recordFinding(context: Context, finding: MalwareDatabase.MalwareEntry): Unit = synchronized(InstallThreatMonitor) {

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="guardian_screen_padding">16dp</dimen>
+    <dimen name="guardian_gap">12dp</dimen>
+    <style name="GuardianPageTitle" parent="GuardianHeading">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:layout_marginTop">16dp</item>
+    </style>
+    <style name="GuardianToolbar" parent="GuardianSecondary">
+        <item name="android:gravity">start|center_vertical</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:textColor">?attr/guardian_red</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+    <style name="GuardianSection" parent="GuardianHeading">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/guardian_red</item>
+        <item name="android:layout_marginTop">16dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+    <style name="GuardianSetting" parent="GuardianSecondary">
+        <item name="android:gravity">start|center_vertical</item>
+        <item name="android:drawablePadding">12dp</item>
+        <item name="android:drawableTint">?attr/guardian_red</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+    <style name="GuardianSwitch">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:textColor">?attr/guardian_ink</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:background">@drawable/guardian_secondary</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+</resources>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/navGuardianHome" android:title="Início" android:icon="@drawable/guardian_ic_home" android:contentDescription="Voltar para a tela de início" />
-    <item android:id="@+id/navGuardianAbout" android:title="Conheça" android:icon="@drawable/guardian_ic_about" android:contentDescription="Conheça o M&amp;A Guardian" />
-    <item android:id="@+id/navGuardianContact" android:title="Contato" android:icon="@drawable/guardian_ic_contact" android:contentDescription="Falar com o atendimento" />
-    <item android:id="@+id/navGuardianSubscription" android:title="Assinatura" android:icon="@drawable/guardian_ic_subscription" android:contentDescription="Ver assinatura Premium" />
-    <item android:id="@+id/navGuardianDesigner" android:title="Designer" android:icon="@drawable/guardian_ic_designer" android:contentDescription="Escolher a aparência do M&amp;A Guardian" />
+    <item android:id="@+id/navGuardianDesigner" android:title="Ferramentas" android:icon="@drawable/guardian_ic_tools" android:contentDescription="Ferramentas e ajustes" />
+    <item android:id="@+id/navGuardianSubscription" android:title="Premium" android:icon="@drawable/guardian_ic_subscription" android:contentDescription="Ver assinatura Premium" />
+    <item android:id="@+id/navGuardianAbout" android:title="Sobre" android:icon="@drawable/guardian_ic_about" android:contentDescription="Sobre o M&amp;A Guardian" />
+    <item android:id="@+id/navGuardianContact" android:title="Atendimento" android:icon="@drawable/guardian_ic_headset" android:contentDescription="Falar com a equipe" />
 </menu>

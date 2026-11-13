@@ -89,7 +89,7 @@ internal object GuardianAppearance {
         }
         val dialog = MaterialAlertDialogBuilder(activity)
             .setBackground(surface)
-            .setTitle("Designer")
+            .setTitle("Aparência")
             .setSingleChoiceItems(options.map { it.label }.toTypedArray(), options.indexOf(current)) { dialog, which ->
                 val chosen = options[which]
                 activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

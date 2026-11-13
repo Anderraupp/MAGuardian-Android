@@ -55,16 +55,20 @@
             android:name="com.facebook.sdk.AdvertiserIDCollectionEnabled"
             android:value="true" />
 
+        <activity android:name=".ui.WelcomeActivity" android:exported="true" android:theme="@style/Theme.MAGuardian.Preview">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ui.SupportActivity" android:exported="false" android:theme="@style/Theme.MAGuardian.Preview" />
+        <activity android:name=".ui.ScanHistoryActivity" android:exported="false" android:theme="@style/Theme.MAGuardian.Preview" />
         <!-- Activity Principal -->
         <activity
             android:name=".ui.MainActivity"
             android:theme="@style/Theme.MAGuardian.Preview"
             android:exported="true"
             android:launchMode="singleTop">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

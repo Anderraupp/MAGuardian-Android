@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="?attr/guardian_paper">
+    <Button android:id="@+id/btnPageBack" style="@style/GuardianToolbar" android:layout_marginStart="12dp" android:layout_marginEnd="12dp" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/guardian_line" android:layout_marginStart="16dp" android:layout_marginEnd="16dp" />
+    <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
+        <LinearLayout android:id="@+id/pageContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" />
+    </ScrollView>
+    <include layout="@layout/guardian_bottom_nav" />
+</LinearLayout>

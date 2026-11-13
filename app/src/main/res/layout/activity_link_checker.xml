@@ -5,19 +5,20 @@
     <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent"
         android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
-        <TextView android:id="@+id/btnBack" style="@style/GuardianText" android:text="← Voltar"
+        <TextView android:id="@+id/btnBack" style="@style/GuardianToolbar" android:text="←  Verificar link suspeito"
             android:minHeight="48dp" android:gravity="center_vertical" android:clickable="true"
             android:focusable="true" android:background="?android:attr/selectableItemBackground" />
-        <TextView style="@style/GuardianHeading" android:text="Conferir um link" android:textSize="28sp" android:layout_marginTop="20dp" />
-        <TextView style="@style/GuardianText" android:text="Veja sinais que merecem atenção antes de abrir um endereço recebido por mensagem." android:layout_marginBottom="24dp" />
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/guardian_line" />
+        <TextView style="@style/GuardianPageTitle" android:text="Conferir um link" android:textSize="28sp" />
+        <TextView style="@style/GuardianText" android:text="Veja sinais que merecem atenção antes de abrir um endereço recebido por mensagem." android:gravity="center" android:layout_marginBottom="16dp" />
         <LinearLayout style="@style/GuardianCard">
             <TextView style="@style/GuardianText" android:text="Endereço do link" android:textStyle="bold" android:layout_marginBottom="12dp" />
             <EditText android:id="@+id/etUrl" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:minHeight="60dp" android:inputType="textUri" android:hint="https://exemplo.com/"
                 android:textColor="?attr/guardian_ink" android:textColorHint="?attr/guardian_muted"
                 android:textSize="15sp" android:background="@drawable/guardian_card" android:padding="14dp" android:maxLines="4" />
-            <Button android:id="@+id/btnPaste" style="@style/GuardianSecondary" android:text="Colar link" android:layout_marginTop="12dp" />
-            <Button android:id="@+id/btnCheck" style="@style/GuardianButton" android:text="Conferir link" android:layout_marginTop="10dp" />
+            <Button android:id="@+id/btnPaste" style="@style/GuardianSecondary" android:text="Colar link" android:layout_marginTop="12dp" android:drawableStart="@drawable/guardian_ic_clipboard" android:drawableTint="?attr/guardian_ink" />
+            <Button android:id="@+id/btnCheck" style="@style/GuardianButton" android:text="Conferir link" android:layout_marginTop="10dp" android:drawableStart="@drawable/guardian_ic_search" android:drawableTint="?attr/guardian_button_text" />
         </LinearLayout>
         <LinearLayout android:id="@+id/cardResult" style="@style/GuardianCard" android:visibility="gone">
             <TextView android:id="@+id/tvVerdictIcon" style="@style/GuardianText" android:textSize="24sp" />

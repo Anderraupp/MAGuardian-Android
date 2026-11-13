@@ -5,7 +5,7 @@
                 android:startColor="?attr/guardian_primary_start"
                 android:centerColor="?attr/guardian_primary_middle"
                 android:endColor="?attr/guardian_primary_end" />
-            <corners android:radius="8dp" />
+            <corners android:radius="16dp" />
         </shape>
     </item>
 </ripple>

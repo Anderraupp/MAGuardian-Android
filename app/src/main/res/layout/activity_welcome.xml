@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="?attr/guardian_paper" android:orientation="vertical">
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:gravity="center_horizontal" android:padding="24dp">
+            <FrameLayout android:layout_width="match_parent" android:layout_height="200dp" android:layout_marginTop="20dp">
+                <ImageView android:layout_width="match_parent" android:layout_height="180dp" android:layout_gravity="center"
+                    android:src="@drawable/guardian_waves" android:scaleType="fitXY" android:importantForAccessibility="no" />
+                <ImageView android:layout_width="136dp" android:layout_height="136dp" android:layout_gravity="center"
+                    android:src="@drawable/logo" android:scaleType="fitCenter" android:contentDescription="Logo M&amp;A Guardian" />
+            </FrameLayout>
+            <TextView style="@style/GuardianPageTitle" android:text="M&amp;A Guardian" android:textColor="?attr/guardian_red" android:textSize="32sp" android:layout_marginTop="0dp" />
+            <TextView style="@style/GuardianHeading" android:text="Proteção inteligente\npara o seu dispositivo." android:gravity="center" android:textSize="22sp" />
+            <TextView style="@style/GuardianText" android:text="Navegue sem anúncios" android:gravity="center" android:layout_marginTop="12dp" />
+            <TextView style="@style/GuardianCaption" android:text="Proteção contra aplicativos que exibem anúncios invasivos." android:gravity="center" android:layout_marginTop="6dp" android:layout_marginBottom="24dp" />
+            <Button android:id="@+id/btnWelcomeStart" style="@style/GuardianButton" android:text="Começar agora  →" />
+            <Button android:id="@+id/btnWelcomeRestore" style="@style/GuardianSecondary" android:text="Já sou assinante" android:layout_marginTop="12dp" />
+            <TextView android:id="@+id/tvWelcomeOffer" style="@style/GuardianCaption" android:text="Consulte os planos e as condições na Google Play." android:gravity="center" android:layout_marginTop="20dp" />
+            <TextView android:id="@+id/btnWelcomeTerms" style="@style/GuardianFooter" android:text="Termos de uso" android:gravity="center" android:clickable="true" android:focusable="true" android:layout_marginTop="16dp" />
+            <TextView android:id="@+id/btnWelcomePrivacy" style="@style/GuardianFooter" android:text="Privacidade" android:gravity="center" android:clickable="true" android:focusable="true" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

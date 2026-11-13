@@ -142,6 +142,19 @@ class MainActivity : AppCompatActivity() {
             subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
         setupUI()
+        GuardianTools.bind(this, { showPermissionsDialog() }, { requestPhonePermissionAndSetup() }, { !isScanning })
+        findViewById<View>(R.id.tvStatusBadge).setOnClickListener {
+            subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
+        }
+        GuardianNavigation.selectMain(this, savedInstanceState?.getBoolean("guardian_tools")
+            ?: intent.getBooleanExtra(GuardianNavigation.TOOLS, false))
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (findViewById<View>(R.id.guardianToolsContent).visibility == View.VISIBLE)
+                    GuardianNavigation.selectMain(this@MainActivity, false)
+                else { isEnabled = false; onBackPressedDispatcher.onBackPressed(); isEnabled = true }
+            }
+        })
         GuardianNotices.bind(this) {
             subscriptionLauncher.launch(Intent(this, SubscriptionActivity::class.java))
         }
@@ -192,7 +205,14 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (intent.hasExtra(GuardianNavigation.TOOLS))
+            GuardianNavigation.selectMain(this, intent.getBooleanExtra(GuardianNavigation.TOOLS, false))
         if (com.maguardian.security.util.CatalogAdmin.acceptActivation(this, intent.data)) refreshUI()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean("guardian_tools", findViewById<View>(R.id.guardianToolsContent).visibility == View.VISIBLE)
+        super.onSaveInstanceState(outState)
     }
 
     private fun initAppUpdate() {
@@ -265,8 +285,8 @@ class MainActivity : AppCompatActivity() {
         val pending = ThreatCatalogUpdater.hasPendingUpdate(this)
         val updating = ThreatCatalogUpdater.isUpdating()
         findViewById<Button>(R.id.btnUpdateCatalog).apply {
-            visibility = if (pending) View.VISIBLE else View.GONE
-            isEnabled = !updating
+            visibility = View.VISIBLE
+            isEnabled = pending && !updating
         }
         findViewById<TextView>(R.id.tvCatalogSummary).text = when {
             pending && updating -> "Nova base disponível — atualizando..."
@@ -308,7 +328,7 @@ class MainActivity : AppCompatActivity() {
         billing = BillingManager(this) { isActive ->
             if (isActive) refreshUI()
         }
-        billing.connect { }
+        billing.connect { refreshUI() }
     }
 
     private fun showTrialExpirationReminderIfNeeded() {
@@ -412,10 +432,12 @@ class MainActivity : AppCompatActivity() {
 
         refreshUI()
         updateCallScannerButton()
+        GuardianTools.refresh(this)
         refreshCacheInfo()
         maybeShowTrialPopup()
         val filter = IntentFilter("com.maguardian.security.THREAT_DETECTED").apply {
             addAction(ThreatCatalogUpdater.UPDATED)
+            addAction(com.maguardian.security.data.ActivityJournal.UPDATED)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(threatReceiver, filter, RECEIVER_NOT_EXPORTED)
@@ -479,8 +501,10 @@ class MainActivity : AppCompatActivity() {
         btnScan.setOnClickListener { runManualScan() }
         btnClearThreats.setOnClickListener {
             requireSubscription {
-                PrefsHelper.clearThreats(this)
-                refreshUI()
+                androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Limpar registros de ameaças?")
+                    .setMessage("Remove a lista de resultados atual, sem desinstalar aplicativos. O histórico de análises e suas configurações serão preservados.")
+                    .setPositiveButton("Limpar registros") { _, _ -> PrefsHelper.clearThreats(this); refreshUI() }
+                    .setNegativeButton("Cancelar", null).show()
             }
         }
         btnPermissions.setOnClickListener { showPermissionsDialog() }
@@ -1480,7 +1504,7 @@ class MainActivity : AppCompatActivity() {
         )
         if (isFullyActive) {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_protection_card)
-            tvStatus.text = "Proteção em tempo real ativa."
+            tvStatus.text = "Monitoramento ativo"
             tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             tvStatusBadge.text = "Ativa"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.success))
@@ -1496,9 +1520,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_protection_card)
             tvStatus.text = when {
-                !isSubscribed -> "Seu dispositivo merece proteção."
-                !permStatus.allGranted -> "Conclua a ativação da proteção."
-                else -> "Sua proteção está pausada."
+                !isSubscribed -> "Monitoramento disponível com Premium"
+                !permStatus.allGranted -> "Permissões pendentes"
+                else -> "Monitoramento pausado"
             }
             tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             tvStatusBadge.text = when {
@@ -1511,37 +1535,40 @@ class MainActivity : AppCompatActivity() {
             tvStatusBadge.background = ContextCompat.getDrawable(this,
                 if (!isSubscribed) R.drawable.badge_success else R.drawable.badge_danger)
             tvStatusDesc.text = when {
-                !isSubscribed -> "Ative o monitoramento em tempo real e tenha mais controle sobre aplicativos e atividades suspeitas."
+                !isSubscribed -> "Conheça os planos para ativar."
                 !permStatus.allGranted -> "Conceda as permissões para ativar a proteção."
                 else -> "Ative a proteção para monitorar ameaças automaticamente."
             }
             ivShield.setImageResource(R.drawable.guardian_status_shield)
-            btnToggle.text = if (!isSubscribed) "Conhecer planos e ativar proteção" else "Ativar"
-            btnToggle.setTextColor(if (!isSubscribed) android.graphics.Color.WHITE
-                else GuardianAppearance.color(this, R.color.guardian_button_text))
-            btnToggle.background = ContextCompat.getDrawable(this,
-                if (!isSubscribed) R.drawable.guardian_protection_action else R.drawable.guardian_primary)
+            btnToggle.text = if (!isSubscribed) "Conhecer planos" else "Ativar monitoramento"
+            btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_button_text))
+            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_primary)
         }
         tvStatusBadge.visibility = View.VISIBLE
         findViewById<TextView>(R.id.tvProtectionTrial).apply {
-            val days = PrefsHelper.trialDaysRemaining(this@MainActivity)
-            visibility = if (!PrefsHelper.isSubscriptionActive(this@MainActivity) && days > 0) View.VISIBLE else View.GONE
-            text = if (days >= 7) "7 dias grátis para experimentar"
-                else "$days dia(s) restantes para experimentar"
+            val offer = if (::billing.isInitialized) billing.offerPresentation() else null
+            visibility = if (!PrefsHelper.isSubscriptionActive(this@MainActivity) && offer?.sevenDayTrial == true) View.VISIBLE else View.GONE
+            text = "7 dias grátis para experimentar"
         }
 
-        // Estatísticas
-        tvTotalFound.text = totalFound.toString()
-        tvTotalRemoved.text = totalRemoved.toString()
-        tvTotalScans.text = totalScans.toString()
-        tvLastScan.text = if (lastScanMs > 0) {
-            SimpleDateFormat("dd/MM\nHH:mm", Locale("pt", "BR")).format(Date(lastScanMs))
-        } else {
-            "Nunca"
+        // Daily events are independent of the legacy reset/cyclic counters.
+        try {
+            val daily = com.maguardian.security.data.ActivityJournal.daily(this)
+            tvTotalFound.text = daily.found.toString()
+            tvTotalRemoved.text = daily.removed.toString()
+            tvTotalScans.text = daily.scans.toString()
+            val knownLast = maxOf(daily.lastScan, lastScanMs)
+            tvLastScan.text = if (knownLast > 0) SimpleDateFormat("dd/MM\nHH:mm", Locale("pt", "BR")).format(Date(knownLast)) else "—"
+            findViewById<TextView>(R.id.tvJournalState).text =
+                if (com.maguardian.security.data.ActivityJournal.incomplete(this)) "Alguns eventos não puderam ser registrados; os totais podem estar incompletos."
+                else "Registros a partir desta atualização."
+        } catch (_: Exception) {
+            listOf(tvTotalFound, tvTotalRemoved, tvTotalScans, tvLastScan).forEach { it.text = "—" }
+            findViewById<TextView>(R.id.tvJournalState).text = "Resumo indisponível. Não foi possível ler os registros locais."
         }
 
-        // Badge e lista usam a mesma contagem ativa do topo e das estatísticas.
-        tvThreatCount.text = "${activeThreats.size} registros"
+        // Active findings are distinct from today's events.
+        tvThreatCount.text = "${activeThreats.size} ameaça(s) ativa(s)"
         llThreats.removeAllViews()
 
         if (!isSubscribed && activeThreats.isNotEmpty()) {

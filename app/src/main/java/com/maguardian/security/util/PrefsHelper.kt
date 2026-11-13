@@ -67,6 +67,13 @@ object PrefsHelper {
     fun isBlockTelemarketingEnabled(ctx: Context): Boolean =
         prefs(ctx).getBoolean(KEY_BLOCK_TELEMARKETING, false)
 
+    // Default preserves the existing alert behaviour on upgrade.
+    fun isCallAlertsEnabled(ctx: Context): Boolean =
+        prefs(ctx).getBoolean("call_alerts_enabled", true)
+
+    fun setCallAlertsEnabled(ctx: Context, enabled: Boolean) =
+        prefs(ctx).edit().putBoolean("call_alerts_enabled", enabled).apply()
+
     fun setBlockTelemarketingEnabled(ctx: Context, enabled: Boolean) =
         prefs(ctx).edit().putBoolean(KEY_BLOCK_TELEMARKETING, enabled).apply()
 
@@ -110,8 +117,11 @@ object PrefsHelper {
     fun getLastScan(ctx: Context): Long =
         prefs(ctx).getLong(KEY_LAST_SCAN, 0L)
 
-    fun setLastScan(ctx: Context, time: Long) =
+    fun setLastScan(ctx: Context, time: Long) {
         prefs(ctx).edit().putLong(KEY_LAST_SCAN, time).apply()
+        val source = if (ctx is android.app.Activity) "manual" else "automática"
+        com.maguardian.security.data.ActivityJournal.record(ctx, "scan:$time:$source", "scan", time, source = source)
+    }
 
     @Synchronized
     fun getScanCount(ctx: Context): Int {
@@ -163,6 +173,9 @@ object PrefsHelper {
             .putString(KEY_THREATS, arr.toString())
             .putInt(KEY_TOTAL_FOUND, total)
             .apply()
+        val detectedAt = obj.getLong("detectedAt")
+        com.maguardian.security.data.ActivityJournal.record(ctx,
+            "found:${malware.packageName}:$detectedAt", "found", detectedAt, malware.appName)
     }
 
     /**
@@ -211,6 +224,9 @@ object PrefsHelper {
                 obj.optString("status", "detected") == "detected") {
                 obj.put("status", "removed")
                 obj.put("removedAt", System.currentTimeMillis())
+                com.maguardian.security.data.ActivityJournal.record(ctx,
+                    "removed:$packageName:${obj.optLong("detectedAt")}", "removed",
+                    obj.getLong("removedAt"), obj.optString("appName", packageName))
                 newlyRemoved = true
             }
             updated.put(obj)

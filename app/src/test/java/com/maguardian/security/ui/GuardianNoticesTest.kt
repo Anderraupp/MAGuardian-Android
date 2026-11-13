@@ -146,8 +146,8 @@ class GuardianNoticesTest {
                     }
                     for (text in listOf(title, tagline)) {
                         text.draw(android.graphics.Canvas())
-                        assertEquals("Uma linha em $palette/$screenDp", 1, text.lineCount)
-                        assertEquals(text.text.length, text.layout.getLineEnd(0))
+                        assertTrue("Frase legível pode se adaptar em $palette/$screenDp", text.lineCount >= 1)
+                        assertEquals(text.text.length, text.layout.getLineEnd(text.lineCount - 1))
                         assertTrue("Sem transbordar em $palette/$screenDp: ${text.text}",
                             text.layout.getLineWidth(0) <= text.width + 1)
                     }

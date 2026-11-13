@@ -221,6 +221,8 @@ class BillingManager(
             ?.firstOrNull()?.pricingPhases?.pricingPhaseList
             ?.lastOrNull()?.formattedPrice ?: "R$ 9,99"
 
+    fun offerPresentation(): PlayOfferPresentation? = PlayOfferPresentation.from(monthlyDetails)
+
     fun destroy() {
         scope.cancel()
         if (billingClient.isReady) billingClient.endConnection()

@@ -140,6 +140,7 @@ class CallMonitorService : Service() {
         val nm = getSystemService(NotificationManager::class.java)
         when (state) {
             TelephonyManager.CALL_STATE_RINGING -> {
+                if (!PrefsHelper.isCallAlertsEnabled(this)) return
                 if (numberUnavailable) {
                     // Android 12+: número indisponível via TelephonyCallback.
                     // CallScannerService tem o número real e mostra o overlay/notificação corretos.

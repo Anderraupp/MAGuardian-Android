@@ -104,10 +104,15 @@ class AppCacheMeasurementsTest {
 
     private fun labels(activity: AppCacheActivity): List<String> {
         val rows = activity.findViewById<LinearLayout>(R.id.llAppCaches)
-        return (0 until rows.childCount).mapNotNull {
-            val row = rows.getChildAt(it) as? LinearLayout ?: return@mapNotNull null
-            ((row.getChildAt(0) as LinearLayout).getChildAt(0) as TextView).text.toString()
+        fun labels(view: android.view.View): List<String> {
+            if (view is LinearLayout && view.childCount == 2 && view.getChildAt(0) is TextView &&
+                view.getChildAt(0) !is android.widget.Button && view.getChildAt(1) is TextView) {
+                return listOf((view.getChildAt(0) as TextView).text.toString())
+            }
+            if (view !is android.view.ViewGroup) return emptyList()
+            return (0 until view.childCount).flatMap { labels(view.getChildAt(it)) }
         }
+        return labels(rows)
     }
 
     private fun total(activity: AppCacheActivity) =

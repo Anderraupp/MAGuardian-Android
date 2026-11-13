@@ -45,7 +45,7 @@ class LinkCheckerFlowTest {
             val controller = Robolectric.buildActivity(LinkCheckerActivity::class.java).setup()
             val activity = controller.get()
             for ((url, prefix, color) in listOf(
-                Triple("https://gov.br", "Seguro", R.color.guardian_success),
+                Triple("https://gov.br", "Sem indícios", R.color.guardian_success),
                 Triple("https://bit.ly/abc", "Suspeito", R.color.guardian_warning),
                 Triple("https://example.org/arquivo.exe", "Alto risco", R.color.guardian_danger),
                 Triple("https://seguroitau.com/", "Suspeito", R.color.guardian_warning),
@@ -70,7 +70,7 @@ class LinkCheckerFlowTest {
             "mailto:name@example.org", "ftp://example.org/file", "https://example.org:99999/",
             "https://example..org/", "https://exa mple.org")) {
             check(activity, "https://gov.br")
-            assertVerdict(activity, "Seguro", R.color.guardian_success)
+            assertVerdict(activity, "Sem indícios", R.color.guardian_success)
             activity.findViewById<EditText>(R.id.etUrl).setText(invalid)
             assertEquals(View.GONE, activity.findViewById<View>(R.id.cardResult).visibility)
             activity.findViewById<Button>(R.id.btnCheck).performClick()
@@ -78,7 +78,7 @@ class LinkCheckerFlowTest {
             assertNotNull(invalid, activity.findViewById<EditText>(R.id.etUrl).error)
         }
         check(activity, "gov.br")
-        assertVerdict(activity, "Seguro", R.color.guardian_success)
+        assertVerdict(activity, "Sem indícios", R.color.guardian_success)
         controller.pause().stop().destroy()
     }
 
@@ -94,7 +94,7 @@ class LinkCheckerFlowTest {
         activity.findViewById<Button>(R.id.btnCheck).performClick()
         assertVerdict(activity, "Alto risco", R.color.guardian_danger)
         check(activity, "https://gov.br")
-        assertVerdict(activity, "Seguro", R.color.guardian_success)
+        assertVerdict(activity, "Sem indícios", R.color.guardian_success)
         controller.pause().stop().destroy()
     }
 

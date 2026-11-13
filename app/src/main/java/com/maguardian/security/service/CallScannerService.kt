@@ -145,11 +145,12 @@ class CallScannerService : CallScreeningService() {
         )
 
         // ── Overlay SYSTEM_ALERT_WINDOW (se permissão concedida) ──────────────────
-        CallOverlayManager.show(applicationContext, number, result)
+        if (PrefsHelper.isCallAlertsEnabled(this))
+            CallOverlayManager.show(applicationContext, number, result)
 
         // ── Notificação na barra + fullScreenIntent → CallAlertActivity ───────────
         if (shouldBlock) showBlockedNotification(number, result)
-        else             showAnalysisNotification(number, result)
+        else if (PrefsHelper.isCallAlertsEnabled(this)) showAnalysisNotification(number, result)
     }
 
     // ── Notificação: ligação bloqueada ────────────────────────────────────────

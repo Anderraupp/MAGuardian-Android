@@ -121,7 +121,7 @@ class AppCacheActivity : AppCompatActivity() {
                             if (unavailable > 0) "\n$unavailable apps sem tamanho disponível; não incluídos no total." else ""
                     }
                     if (sorted.isEmpty()) addMessage("Nenhum aplicativo disponível para consulta.")
-                    sorted.forEach { addEntry(it) }
+                    renderEntries(sorted)
                 }
             } catch (_: Exception) {
                 runOnUiThread {
@@ -145,20 +145,51 @@ class AppCacheActivity : AppCompatActivity() {
     }
 
     private fun addEntry(entry: CacheEntry) {
+        addEntryTo(entry, rows, false)
+    }
+
+    private fun renderEntries(entries: List<CacheEntry>) {
+        val twoColumns = resources.configuration.screenWidthDp >= 360 && resources.configuration.fontScale <= 1.15f
+        if (!twoColumns) { entries.forEach { addEntry(it) }; return }
+        entries.chunked(2).forEach { pair ->
+            val line = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                isBaselineAligned = false
+                layoutParams = LinearLayout.LayoutParams(-1, -2)
+            }
+            pair.forEach { entry -> addEntryTo(entry, line, true) }
+            if (pair.size == 1) line.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+            rows.addView(line)
+        }
+    }
+
+    private fun addEntryTo(entry: CacheEntry, parent: LinearLayout, compact: Boolean) {
         val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+            orientation = if (compact) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_card)
-            setPadding(dp(14), dp(12), dp(14), dp(12))
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) }
+            setPadding(dp(10), dp(12), dp(10), dp(12))
+            layoutParams = LinearLayout.LayoutParams(if (compact) 0 else -1, -2, if (compact) 1f else 0f).apply {
+                bottomMargin = dp(10)
+                if (compact) { marginStart = dp(4); marginEnd = dp(4) }
+            }
         }
+        row.addView(android.widget.ImageView(this).apply {
+            setImageDrawable(try { packageManager.getApplicationIcon(entry.pkg) }
+                catch (_: Exception) { ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_ic_app) })
+            contentDescription = null
+            layoutParams = LinearLayout.LayoutParams(dp(32), dp(32)).apply {
+                if (compact) bottomMargin = dp(6) else marginEnd = dp(10)
+            }
+        })
         val labels = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+            layoutParams = if (compact) LinearLayout.LayoutParams(-1, -2) else LinearLayout.LayoutParams(0, -2, 1f)
         }
         labels.addView(TextView(this).apply {
             text = entry.label
-            textSize = 15f
+            textSize = 14f
+            if (compact) minHeight = dp(48)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_ink))
         })
@@ -176,7 +207,7 @@ class AppCacheActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             maxLines = 1
             includeFontPadding = false
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(48))
+            layoutParams = LinearLayout.LayoutParams(if (compact) -1 else -2, dp(48)).apply { if (compact) topMargin = dp(8) }
             minWidth = dp(76)
             minHeight = dp(48)
             setPadding(dp(10), 0, dp(10), 0)
@@ -188,7 +219,7 @@ class AppCacheActivity : AppCompatActivity() {
                 openSystem(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${entry.pkg}")))
             }
         })
-        rows.addView(row)
+        parent.addView(row)
     }
 
     private fun openSystem(intent: Intent, fallback: Intent? = null) {

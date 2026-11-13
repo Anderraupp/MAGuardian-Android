@@ -4,30 +4,31 @@
     android:orientation="vertical" android:background="?attr/guardian_paper">
     <ScrollView android:id="@+id/guardianScrollContent" android:layout_width="match_parent"
         android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
-        <Button android:id="@+id/btnCacheBack" style="@style/GuardianSecondary" android:text="← Voltar para a tela principal" />
-        <TextView style="@style/GuardianHeading" android:text="Cache por aplicativo" android:textSize="28sp" android:layout_marginTop="24dp" />
-        <TextView style="@style/GuardianText" android:text="Consulte o espaço ocupado por cada aplicativo. Para liberar espaço, acesse Armazenamento nas configurações do app e toque em Limpar cache." android:layout_marginBottom="24dp" />
-        <LinearLayout style="@style/GuardianCard">
-            <TextView style="@style/GuardianCaption" android:text="CACHE DOS APPS" android:textColor="?attr/guardian_button_bg" android:letterSpacing="0.1" />
-            <TextView android:id="@+id/tvAppCacheTotal" style="@style/GuardianHeading" android:text="Consultando…" android:textSize="30sp" android:layout_marginTop="12dp" />
-            <TextView android:id="@+id/tvAppCacheSummary" style="@style/GuardianCaption" android:text="Os tamanhos dependem das informações disponibilizadas pelo Android." android:accessibilityLiveRegion="polite" />
-            <ProgressBar android:id="@+id/progressAppCache" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:layout_marginTop="12dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="@dimen/guardian_screen_padding">
+            <Button android:id="@+id/btnCacheBack" style="@style/GuardianToolbar" android:text="←  Cache por aplicativo" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/guardian_line" android:layout_marginBottom="12dp" />
+            <LinearLayout style="@style/GuardianCard">
+                <TextView style="@style/GuardianHeading" android:text="Libere espaço com uma limpeza guiada." android:textSize="18sp" />
+                <TextView style="@style/GuardianText" android:text="Como limpar o cache:" android:textStyle="bold" />
+                <TextView style="@style/GuardianText" android:text="1. Toque em Abrir no aplicativo desejado.\n2. Acesse Armazenamento nas configurações.\n3. Toque em Limpar cache.\n4. Retorne aqui e toque em Atualizar valores." android:layout_marginTop="8dp" />
+                <TextView style="@style/GuardianCaption" android:text="O Android protege os dados de cada aplicativo e não permite que o M&amp;A Guardian limpe automaticamente o cache de outros apps. Você escolhe o que deseja limpar." android:layout_marginTop="10dp" />
+            </LinearLayout>
+            <LinearLayout style="@style/GuardianCard">
+                <TextView style="@style/GuardianCaption" android:text="CACHE IDENTIFICADO" android:textColor="?attr/guardian_red" />
+                <TextView android:id="@+id/tvAppCacheTotal" style="@style/GuardianHeading" android:text="Consultando…" android:textSize="28sp" android:layout_marginTop="8dp" android:layout_marginBottom="4dp" />
+                <TextView android:id="@+id/tvAppCacheSummary" style="@style/GuardianCaption" android:accessibilityLiveRegion="polite" />
+                <ProgressBar android:id="@+id/progressAppCache" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
+                <Button android:id="@+id/btnCacheRefresh" style="@style/GuardianButton" android:text="Atualizar valores" android:layout_marginTop="10dp" />
+            </LinearLayout>
+            <Button android:id="@+id/btnCachePermission" style="@style/GuardianButton" android:text="Autorizar acesso de uso" android:visibility="gone" android:layout_marginBottom="12dp" />
+            <TextView style="@style/GuardianSection" android:text="Aplicativos" android:layout_marginTop="0dp" />
+            <LinearLayout android:id="@+id/llAppCaches" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
         </LinearLayout>
-        <Button android:id="@+id/btnCachePermission" style="@style/GuardianButton" android:text="Autorizar acesso de uso" android:visibility="gone" android:layout_marginBottom="14dp" />
-        <TextView style="@style/GuardianHeading" android:text="Cache por app" />
-        <LinearLayout android:id="@+id/llAppCaches" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-        <LinearLayout style="@style/GuardianCard">
-            <TextView style="@style/GuardianHeading" android:text="Como funciona:" />
-            <TextView style="@style/GuardianText" android:text="O Android protege os dados de cada aplicativo e, por segurança e privacidade, não permite que o M&amp;A Guardian limpe automaticamente o cache de outros apps" />
-            <TextView style="@style/GuardianHeading" android:text="Atualização dos valores:" android:layout_marginTop="20dp" />
-            <TextView style="@style/GuardianText" android:text="Após realizar as limpezas, retorne ao M&amp;A Guardian e toque em Atualizar valores para consultar novamente o cache dos aplicativos e atualizar o total identificado." />
-            <TextView style="@style/GuardianHeading" android:text="Mais controle para você:" android:layout_marginTop="20dp" />
-            <TextView style="@style/GuardianText" android:text="Você escolhe o que deseja limpar, com autonomia e segurança." />
-        </LinearLayout>
-        <Button android:id="@+id/btnCacheRefresh" style="@style/GuardianSecondary" android:text="Atualizar valores" android:layout_marginBottom="12dp" />
-        <TextView style="@style/GuardianCaption" android:text="Arquivos pessoais não são removidos por esta tela. A limpeza e os números apresentados dependem do sistema." />
-    </LinearLayout>
     </ScrollView>
+    <TextView android:id="@+id/tvCacheLimitations" style="@style/GuardianCaption"
+        android:text="Valores fornecidos pelo Android; podem estar indisponíveis ou levar algum tempo para atualizar. Arquivos pessoais não são removidos por esta tela."
+        android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingTop="8dp" android:paddingBottom="8dp"
+        android:background="?attr/guardian_card" />
     <include layout="@layout/guardian_bottom_nav" />
 </LinearLayout>

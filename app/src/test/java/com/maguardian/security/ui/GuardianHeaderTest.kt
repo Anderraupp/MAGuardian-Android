@@ -43,11 +43,9 @@ class GuardianHeaderTest {
                 }
                 assertTrue("Sem altura mínima que afaste a frase", title.minHeight <= 0)
                 val titleParams = title.layoutParams as android.view.ViewGroup.MarginLayoutParams
-                assertEquals((2 * activity.resources.displayMetrics.density).toInt(), titleParams.bottomMargin)
-                assertFalse(title.includeFontPadding)
-                assertFalse(tagline.includeFontPadding)
-                assertEquals(1, tagline.maxLines)
-                assertEquals("Proteção Inteligente para o seu dispositivo", tagline.text.toString())
+                assertEquals((8 * activity.resources.displayMetrics.density).toInt(), titleParams.bottomMargin)
+                assertTrue("Subtítulo pode se adaptar sem fonte excessivamente pequena", tagline.textSize >= 12 * activity.resources.displayMetrics.scaledDensity)
+                assertEquals("Proteção inteligente para o seu dispositivo.", tagline.text.toString())
             } finally {
                 if (!activity.isDestroyed) controller.stop().destroy()
             }

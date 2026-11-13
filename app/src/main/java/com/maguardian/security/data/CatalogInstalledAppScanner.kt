@@ -54,6 +54,8 @@ object CatalogInstalledAppScanner {
             ctx.sendBroadcast(Intent("com.maguardian.security.THREAT_DETECTED")
                 .setPackage(ctx.packageName))
         }
+        val completedAt = System.currentTimeMillis()
+        ActivityJournal.record(ctx, "catalog:$completedAt", "scan", completedAt, source = "automática · base")
         return found
     }
 
