@@ -16,8 +16,8 @@ object AppConfig {
     /** Administração separada da API colaborativa. Ativar o Worker antes de distribuir o APK. */
     const val ADMIN_BASE_URL = "https://maguardian-admin.anderalves2180.workers.dev"
 
-    /** Mínimo de denúncias para um número entrar na lista comunitária local. */
-    const val COMMUNITY_BLOCK_MIN_REPORTS = 2
+    /** Um único bloqueio reportado já deve entrar na lista compartilhada. */
+    const val COMMUNITY_BLOCK_MIN_REPORTS = 1
 
     /** Intervalo de sincronização da lista comunitária (6 horas em ms). */
     const val COMMUNITY_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000L
