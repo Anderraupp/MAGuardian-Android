@@ -70,7 +70,8 @@ class LayoutReferenceCaptureTest {
                 SubscriptionActivity::class.java.getDeclaredMethod("updatePrice").apply { isAccessible = true }.invoke(premium.get())
                 NativeLayoutChecks.capture(premium.get(), "$palette-premium")
                 assertEquals("R$ 9,99", premium.get().findViewById<TextView>(R.id.tvMonthlyPrice).text.toString())
-                assertEquals(View.VISIBLE, premium.get().findViewById<View>(R.id.tvPriceReference).visibility)
+                assertEquals(View.GONE, premium.get().findViewById<View>(R.id.tvPriceReference).visibility)
+                assertEquals("R$ 9,99 por mês.", premium.get().findViewById<TextView>(R.id.tvSubscriptionFooterPrice).text.toString())
                 assertEquals(View.GONE, premium.get().findViewById<View>(R.id.tvPlayOffer).visibility)
                 val button = premium.get().findViewById<View>(R.id.btnSubscribe)
                 val nav = premium.get().findViewById<View>(R.id.guardianBottomNav)
@@ -86,6 +87,13 @@ class LayoutReferenceCaptureTest {
             val support = Robolectric.buildActivity(SupportActivity::class.java).create().start()
             try {
                 NativeLayoutChecks.capture(support.get(), "$palette-atendimento")
+                val brand = support.get().findViewById<ViewGroup>(R.id.pageContent).getChildAt(0) as android.widget.FrameLayout
+                assertEquals(2, brand.childCount)
+                assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO, brand.getChildAt(0).importantForAccessibility)
+                val logo = brand.getChildAt(1) as android.widget.ImageView
+                assertEquals("Logo M&A Guardian", logo.contentDescription)
+                assertEquals((brand.width - logo.width) / 2, logo.left)
+                assertEquals((brand.height - logo.height) / 2, logo.top)
                 val text = StringBuilder()
                 fun collect(view: View) {
                     if (view is TextView) text.append(view.text).append('\n')

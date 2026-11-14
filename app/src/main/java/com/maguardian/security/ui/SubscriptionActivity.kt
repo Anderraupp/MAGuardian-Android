@@ -8,6 +8,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.maguardian.security.R
 import com.maguardian.security.billing.BillingManager
+import com.maguardian.security.billing.PlayOfferPresentation
 import com.maguardian.security.util.PrefsHelper
 
 class SubscriptionActivity : AppCompatActivity() {
@@ -43,6 +44,9 @@ class SubscriptionActivity : AppCompatActivity() {
         progressBar   = findViewById(R.id.progressBilling)
         tvLoading     = findViewById(R.id.tvLoadingPlans)
         layoutContent = findViewById(R.id.layoutContent)
+        findViewById<TextView>(R.id.tvPrivacy).apply {
+            paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        }
 
         showContent()
         setupListeners()
@@ -57,14 +61,13 @@ class SubscriptionActivity : AppCompatActivity() {
         layoutContent.visibility = View.VISIBLE
         btnSubscribe.isEnabled   = false
         tvPrice.text             = "R$ 9,99"
-        findViewById<View>(R.id.tvPriceReference).visibility = View.VISIBLE
+        findViewById<View>(R.id.tvPriceReference).visibility = View.GONE
     }
 
     private fun updatePrice() {
         val offer = billing.offerPresentation()
         val active = PrefsHelper.isSubscriptionActive(this)
         tvPrice.text = offer?.priceLabel ?: "R$ 9,99"
-        findViewById<View>(R.id.tvPriceReference).visibility = if (offer == null) View.VISIBLE else View.GONE
         findViewById<TextView>(R.id.tvPremiumState).text = if (active) "ASSINATURA ATIVA" else "PLANO MENSAL"
         findViewById<TextView>(R.id.tvPlayOffer).apply {
             visibility = if (!active && !offer?.conditions.isNullOrBlank()) View.VISIBLE else View.GONE
@@ -79,7 +82,21 @@ class SubscriptionActivity : AppCompatActivity() {
         btnSubscribe.isEnabled = true
         progressBar.visibility = View.GONE
         tvLoading.visibility = if (offer == null && !active) View.VISIBLE else View.GONE
-        tvLoading.text = "Valor de referência. A oferta e a contratação serão confirmadas pela Google Play."
+        tvLoading.text = "A oferta e a contratação serão confirmadas pela Google Play."
+        updateFooter(offer, active)
+    }
+
+    /** Presentation only: no offer, subscription or purchase state is changed here. */
+    internal fun updateFooter(offer: PlayOfferPresentation?, active: Boolean) {
+        findViewById<View>(R.id.tvPriceReference).visibility =
+            if (!active && offer?.sevenDayTrial == true) View.VISIBLE else View.GONE
+        val recurringPrice = when {
+            offer == null -> "R$ 9,99 por mês"
+            offer.billingPeriod == "P1M" -> "${offer.price} por mês"
+            else -> offer.priceLabel
+        }
+        findViewById<TextView>(R.id.tvSubscriptionFooterPrice).text =
+            "${if (!active && offer?.sevenDayTrial == true) "Depois, " else ""}$recurringPrice."
     }
 
     // ── Listeners ─────────────────────────────────────────────────────────────
@@ -131,9 +148,6 @@ class SubscriptionActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<TextView>(R.id.tvTerms).setOnClickListener {
-            GuardianExternal.web(this, GuardianExternal.TERMS)
-        }
         findViewById<TextView>(R.id.tvPrivacy).setOnClickListener {
             GuardianExternal.web(this, GuardianExternal.PRIVACY)
         }

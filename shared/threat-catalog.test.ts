@@ -9,8 +9,10 @@ const reject = (change: (p: any) => void) => {
   const p = initial(); change(p); assert.throws(() => makeEnvelope(p));
 };
 test("reviewed catalog round trips and contains licensed exact APK indicators", () => {
-  const { payload } = validateCatalog(makeEnvelope(initial()));
-  assert.equal(payload.indicators.length, 2);
+  const reviewed = initial();
+  const { payload } = validateCatalog(makeEnvelope(reviewed));
+  assert.deepEqual(payload, reviewed);
+  assert.ok(payload.indicators.length >= 2, "The reviewed baseline must retain its licensed indicators");
   assert.equal(payload.indicators[0].source.license, "BSD-2-Clause");
   assert.equal(payload.indicators[0].apkSha256.length, 3);
 });

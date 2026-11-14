@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
 import com.maguardian.security.R
 import com.maguardian.security.service.CallMonitorService
 import com.maguardian.security.util.PrefsHelper
@@ -24,11 +25,33 @@ internal object GuardianTools {
         action(R.id.btnToolsBack) { GuardianNavigation.selectMain(activity, false) }
         action(R.id.btnToolsPermissions, permissions)
         action(R.id.btnToolsNotifications) {
+            // A settings shortcut is not permission: restore the actual system state.
+            activity.findViewById<SwitchCompat>(R.id.btnToolsNotifications).isChecked =
+                androidx.core.app.NotificationManagerCompat.from(activity).areNotificationsEnabled()
             GuardianExternal.open(activity, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName), "Configurações → Apps → M&A Guardian → Notificações")
         }
+        action(R.id.btnToolsLegal) {
+            val actions = listOf(
+                "Política de privacidade" to R.id.btnToolsPrivacy,
+                "Informações legais" to R.id.btnCatalogSources,
+                "Solicitar exclusão de conta e dados" to R.id.btnRequestDataDeletion
+            )
+            AlertDialog.Builder(activity).setTitle("Privacidade e informações legais")
+                .setItems((actions.map { it.first } + "Detalhes e avisos do aplicativo").toTypedArray()) { _, index ->
+                    if (index < actions.size) activity.findViewById<View>(actions[index].second).performClick()
+                    else {
+                        activity.findViewById<View>(R.id.toolsAuxiliary).apply {
+                            visibility = View.VISIBLE
+                            doOnLayout {
+                                requestRectangleOnScreen(android.graphics.Rect(0, 0, width,
+                                    (48 * resources.displayMetrics.density).toInt()), false)
+                            }
+                        }
+                    }
+                }.setNegativeButton("Voltar", null).show()
+        }
         action(R.id.btnAppearance) { GuardianAppearance.showDesigner(activity, canChange) }
-        action(R.id.btnToolsTerms) { GuardianExternal.web(activity, GuardianExternal.TERMS) }
         action(R.id.btnToolsPrivacy) { GuardianExternal.web(activity, GuardianExternal.PRIVACY) }
         action(R.id.btnScanHistory) { activity.startActivity(Intent(activity, ScanHistoryActivity::class.java)) }
         val block = activity.findViewById<SwitchCompat>(R.id.switchBlockTelemarketing)
@@ -76,6 +99,8 @@ internal object GuardianTools {
         try {
             val desiredBlock = PrefsHelper.isBlockTelemarketingEnabled(activity)
             val blocking = desiredBlock && PrefsHelper.hasFullAccess(activity) && screeningAvailable(activity)
+            activity.findViewById<SwitchCompat>(R.id.btnToolsNotifications).isChecked =
+                androidx.core.app.NotificationManagerCompat.from(activity).areNotificationsEnabled()
             activity.findViewById<SwitchCompat>(R.id.switchBlockTelemarketing).isChecked = blocking
             activity.findViewById<TextView>(R.id.tvBlockTelemarketingStatus).text = when {
                 blocking -> "Ativado"
@@ -83,6 +108,8 @@ internal object GuardianTools {
                 desiredBlock -> "Pendente: autorize a triagem de chamadas no Android."
                 else -> "Desativado"
             }
+            activity.findViewById<View>(R.id.tvBlockTelemarketingStatus).visibility =
+                if (desiredBlock && !blocking) View.VISIBLE else View.GONE
             val desiredAlerts = PrefsHelper.isCallAlertsEnabled(activity)
             activity.findViewById<SwitchCompat>(R.id.switchCallAlerts).isChecked = desiredAlerts && alertsAvailable(activity)
             activity.findViewById<TextView>(R.id.tvCallAlertsStatus).text = when {
@@ -92,6 +119,8 @@ internal object GuardianTools {
                     !Settings.canDrawOverlays(activity) -> "Sem canal de alerta autorizado. Ative notificações ou a exibição sobre apps."
                 else -> "Ativado conforme as permissões do Android."
             }
+            activity.findViewById<View>(R.id.tvCallAlertsStatus).visibility =
+                if (desiredAlerts && !alertsAvailable(activity)) View.VISIBLE else View.GONE
         } finally { synchronizing = false }
     }
 }

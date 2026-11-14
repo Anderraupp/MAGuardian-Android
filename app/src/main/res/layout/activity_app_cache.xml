@@ -15,15 +15,36 @@
                 <TextView style="@style/GuardianCaption" android:text="O Android protege os dados de cada aplicativo e não permite que o M&amp;A Guardian limpe automaticamente o cache de outros apps. Você escolhe o que deseja limpar." android:layout_marginTop="10dp" />
             </LinearLayout>
             <LinearLayout style="@style/GuardianCard">
-                <TextView style="@style/GuardianCaption" android:text="CACHE IDENTIFICADO" android:textColor="?attr/guardian_red" />
+                <TextView style="@style/GuardianHeading" android:text="Cache identificado" android:textSize="16sp" android:textColor="?attr/guardian_red" />
                 <TextView android:id="@+id/tvAppCacheTotal" style="@style/GuardianHeading" android:text="Consultando…" android:textSize="28sp" android:layout_marginTop="8dp" android:layout_marginBottom="4dp" />
                 <TextView android:id="@+id/tvAppCacheSummary" style="@style/GuardianCaption" android:accessibilityLiveRegion="polite" />
                 <ProgressBar android:id="@+id/progressAppCache" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" />
-                <Button android:id="@+id/btnCacheRefresh" style="@style/GuardianButton" android:text="Atualizar valores" android:layout_marginTop="10dp" />
+                <com.maguardian.security.ui.CenteredIconButton android:id="@+id/btnCacheRefresh" style="@style/GuardianButton" android:text="Atualizar valores" android:layout_marginTop="10dp" />
             </LinearLayout>
-            <Button android:id="@+id/btnCachePermission" style="@style/GuardianButton" android:text="Autorizar acesso de uso" android:visibility="gone" android:layout_marginBottom="12dp" />
-            <TextView style="@style/GuardianSection" android:text="Aplicativos" android:layout_marginTop="0dp" />
-            <LinearLayout android:id="@+id/llAppCaches" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false"
+                android:layout_marginBottom="6dp">
+                <TextView style="@style/GuardianSection" android:layout_width="0dp" android:layout_weight="1"
+                    android:text="Aplicativos" android:layout_marginTop="0dp" android:layout_marginBottom="0dp" />
+                <TextView style="@style/GuardianCaption" android:layout_width="0dp" android:layout_weight="1"
+                    android:text="Maior cache primeiro" android:gravity="end" android:textSize="11sp" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/cacheListFrame" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:padding="4dp" android:background="@drawable/guardian_compact_card">
+                <androidx.core.widget.NestedScrollView android:id="@+id/cacheListScroll"
+                    android:layout_width="match_parent" android:layout_height="300dp"
+                    android:scrollbars="vertical"
+                    android:fadeScrollbars="false" android:scrollbarSize="3dp"
+                    android:scrollbarThumbVertical="@drawable/guardian_cache_scroll_thumb"
+                    android:scrollbarStyle="insideInset">
+                    <LinearLayout android:id="@+id/llAppCaches" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:orientation="vertical" />
+                </androidx.core.widget.NestedScrollView>
+                <ImageView android:id="@+id/cacheListScrollHint" android:layout_width="match_parent"
+                    android:layout_height="20dp" android:src="@drawable/guardian_ic_chevron_down"
+                    android:scaleType="center" android:visibility="invisible" android:importantForAccessibility="no" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
     <TextView android:id="@+id/tvCacheLimitations" style="@style/GuardianCaption"

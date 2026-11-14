@@ -31,7 +31,9 @@
                     <TextView android:id="@+id/tvMonthlyPrice" style="@style/GuardianHeading" android:text="R$ 9,99"
                         android:textSize="34sp" android:lineSpacingExtra="0dp" android:gravity="center"
                         android:layout_marginBottom="0dp" android:textColor="?attr/guardian_red" />
-                    <TextView android:id="@+id/tvPriceReference" style="@style/GuardianCaption" android:text="por mês · valor de referência" android:gravity="center" />
+                    <TextView android:id="@+id/tvPriceReference" style="@style/GuardianCaption"
+                        android:text="Teste 7 dias grátis" android:textStyle="bold" android:textColor="?attr/guardian_ink"
+                        android:gravity="center" android:visibility="gone" />
                 </LinearLayout>
                 <TextView style="@style/GuardianSection" android:text="Tudo incluso na assinatura" android:layout_marginTop="0dp" android:layout_marginBottom="6dp" />
                 <include layout="@layout/guardian_premium_benefits" />
@@ -39,15 +41,26 @@
                     android:background="@drawable/guardian_subscribe" android:textColor="#FFFFFF"
                     android:layout_marginTop="8dp" android:layout_marginBottom="6dp" />
                 <ProgressBar android:id="@+id/progressBilling" android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center_horizontal" />
-                <TextView android:id="@+id/tvLoadingPlans" style="@style/GuardianCaption"
-                    android:text="Valor de referência. A oferta e a contratação serão confirmadas pela Google Play." android:gravity="center" />
-                <TextView style="@style/GuardianCaption" android:text="Assinatura pela Google Play. Renovação automática; cancele pela loja." android:gravity="center" android:layout_marginTop="6dp" />
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                    <TextView android:id="@+id/tvTerms" style="@style/GuardianFooter" android:layout_width="0dp" android:layout_weight="1"
-                        android:text="Termos de uso" android:gravity="center" android:clickable="true" android:focusable="true" />
-                    <TextView android:id="@+id/tvPrivacy" style="@style/GuardianFooter" android:layout_width="0dp" android:layout_weight="1"
-                        android:text="Privacidade" android:gravity="center" android:clickable="true" android:focusable="true" />
+                <LinearLayout android:id="@+id/subscriptionFooter" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical">
+                <TextView android:id="@+id/tvSubscriptionFooterPrice" style="@style/GuardianCaption"
+                    android:text="R$ 9,99 por mês." android:textSize="14sp"
+                    android:textColor="?attr/guardian_ink" android:gravity="center" android:lineSpacingExtra="0dp" />
+                <TextView android:id="@+id/tvSubscriptionFooterBilling" style="@style/GuardianCaption"
+                    android:text="Assinatura pela Google Play" android:textSize="14sp"
+                    android:textColor="?attr/guardian_ink" android:gravity="center" android:lineSpacingExtra="0dp" />
+                <LinearLayout android:id="@+id/subscriptionLegalLinks" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="horizontal"
+                    android:gravity="center" android:baselineAligned="false">
+                    <TextView android:id="@+id/tvPrivacy" style="@style/GuardianFooter" android:layout_width="wrap_content"
+                        android:text="Privacidade" android:gravity="top|center_horizontal" android:padding="4dp"
+                        android:clickable="true" android:focusable="true" />
                 </LinearLayout>
+                </LinearLayout>
+                <TextView style="@style/GuardianCaption" android:text="Renovação automática. Cancele pela Google Play."
+                    android:gravity="center" />
+                <TextView android:id="@+id/tvLoadingPlans" style="@style/GuardianCaption"
+                    android:text="A oferta e a contratação serão confirmadas pela Google Play." android:gravity="center" />
                 <TextView android:id="@+id/btnRestore" style="@style/GuardianFooter" android:text="Restaurar compra anterior"
                     android:gravity="center" android:clickable="true" android:focusable="true" />
                 <TextView style="@style/GuardianCaption" android:text="O monitoramento depende das permissões e das condições de execução do Android."

@@ -36,7 +36,6 @@ class WelcomeActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnWelcomeRestore).setOnClickListener {
             restoreLauncher.launch(Intent(this, SubscriptionActivity::class.java).putExtra("guardian_restore", true))
         }
-        findViewById<View>(R.id.btnWelcomeTerms).setOnClickListener { GuardianExternal.web(this, GuardianExternal.TERMS) }
         findViewById<View>(R.id.btnWelcomePrivacy).setOnClickListener { GuardianExternal.web(this, GuardianExternal.PRIVACY) }
         val manager = BillingManager(this) {}
         billing = manager

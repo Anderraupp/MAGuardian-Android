@@ -17,7 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.maguardian.security.R
 import com.maguardian.security.util.PermissionHelper
-import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -26,6 +26,12 @@ import java.util.concurrent.Future
 class AppCacheActivity : AppCompatActivity() {
     private data class CacheEntry(val pkg: String, val label: String, val bytes: Long?)
     private val worker = Executors.newSingleThreadExecutor()
+    private val megabytes = java.text.DecimalFormat("#,##0.0",
+        java.text.DecimalFormatSymbols(java.util.Locale.ROOT).apply {
+            decimalSeparator = ','
+            groupingSeparator = '.'
+            zeroDigit = '0'
+        }).apply { roundingMode = java.math.RoundingMode.HALF_UP }
     private var pending: Future<*>? = null
     private var generation = 0
     private lateinit var rows: LinearLayout
@@ -33,7 +39,6 @@ class AppCacheActivity : AppCompatActivity() {
     private lateinit var summary: TextView
     private lateinit var progress: ProgressBar
     private lateinit var refresh: Button
-    private lateinit var permission: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         GuardianAppearance.apply(this)
@@ -47,10 +52,18 @@ class AppCacheActivity : AppCompatActivity() {
         summary = findViewById(R.id.tvAppCacheSummary)
         progress = findViewById(R.id.progressAppCache)
         refresh = findViewById(R.id.btnCacheRefresh)
-        permission = findViewById(R.id.btnCachePermission)
+        centerButtonIcon(refresh, R.drawable.guardian_ic_refresh)
+        val listScroll = findViewById<androidx.core.widget.NestedScrollView>(R.id.cacheListScroll)
+        val hint = findViewById<View>(R.id.cacheListScrollHint)
+        fun updateScrollHint() {
+            hint.visibility = if (listScroll.canScrollVertically(1)) View.VISIBLE else View.INVISIBLE
+        }
+        rows.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateScrollHint() }
+        listScroll.setOnScrollChangeListener(androidx.core.widget.NestedScrollView.OnScrollChangeListener {
+                _, _, _, _, _ -> updateScrollHint()
+        })
         findViewById<Button>(R.id.btnCacheBack).setOnClickListener { finish() }
         refresh.setOnClickListener { refreshMeasurements() }
-        permission.setOnClickListener { openSystem(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
     }
 
     override fun onResume() {
@@ -75,7 +88,6 @@ class AppCacheActivity : AppCompatActivity() {
         progress.visibility = View.VISIBLE
         refresh.isEnabled = false
         val allowed = PermissionHelper.hasUsageStatsPermission(this)
-        permission.visibility = if (allowed) View.GONE else View.VISIBLE
         pending = worker.submit {
             try {
                 val stats = getSystemService(STORAGE_STATS_SERVICE) as StorageStatsManager
@@ -91,9 +103,8 @@ class AppCacheActivity : AppCompatActivity() {
                 val entries = ArrayList<CacheEntry>()
                 for (app in installed) {
                     if (Thread.currentThread().isInterrupted) return@submit
-                    // Without usage access, only our own measurement is authorized.
-                    if (!allowed && app.packageName != packageName) continue
-                    val bytes = try {
+                    // Listing an app does not require access to its storage statistics.
+                    val bytes = if (!allowed && app.packageName != packageName) null else try {
                         stats.queryStatsForPackage(
                             StorageManager.UUID_DEFAULT, app.packageName, android.os.Process.myUserHandle()
                         ).cacheBytes.coerceAtLeast(0)
@@ -113,12 +124,12 @@ class AppCacheActivity : AppCompatActivity() {
                     total.text = if (measured.isEmpty()) "Indisponível"
                         else formatBytes(measured.sumOf { it.bytes!! })
                     val unavailable = sorted.size - measured.size
-                    val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date())
+                    val time = SimpleDateFormat("HH:mm", java.util.Locale("pt", "BR")).format(Date())
                     summary.text = if (!allowed) {
-                        "Acesso de uso não autorizado. Somente o próprio app pôde ser consultado. Autorize para consultar os demais."
+                        "${sorted.size} aplicativos · atualizado às $time\nAcesso de uso não autorizado. Autorize para medir o cache dos demais aplicativos. Tamanhos indisponíveis não entram no total."
                     } else {
-                        "${sorted.size} apps com ícone · atualizado às $time" +
-                            if (unavailable > 0) "\n$unavailable apps sem tamanho disponível; não incluídos no total." else ""
+                        "${sorted.size} ${if (sorted.size == 1) "aplicativo" else "aplicativos"} · atualizado às $time" +
+                            if (unavailable > 0) "\n$unavailable ${if (unavailable == 1) "aplicativo sem tamanho disponível; não incluído" else "aplicativos sem tamanho disponível; não incluídos"} no total." else ""
                     }
                     if (sorted.isEmpty()) addMessage("Nenhum aplicativo disponível para consulta.")
                     renderEntries(sorted)
@@ -183,10 +194,10 @@ class AppCacheActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_compact_card)
-            setPadding(dp(6), dp(6), dp(6), dp(6))
+            setPadding(dp(4), dp(4), dp(4), dp(4))
             layoutParams = LinearLayout.LayoutParams(if (compact) 0 else -1, -2, if (compact) 1f else 0f).apply {
-                bottomMargin = dp(8)
-                if (compact) { marginStart = dp(4); marginEnd = dp(4) }
+                bottomMargin = dp(6)
+                if (compact) { marginStart = dp(3); marginEnd = dp(3) }
             }
         }
         val header = LinearLayout(this).apply {
@@ -196,10 +207,11 @@ class AppCacheActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
         }
         header.addView(android.widget.ImageView(this).apply {
-            setImageDrawable(try { packageManager.getApplicationIcon(entry.pkg) }
-                catch (_: Exception) { ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_ic_app) })
+            setImageDrawable((try { packageManager.getApplicationIcon(entry.pkg) }
+                catch (_: Exception) { null })
+                ?: ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_ic_app))
             contentDescription = null
-            layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply { marginEnd = dp(8) }
+            layoutParams = LinearLayout.LayoutParams(dp(32), dp(32)).apply { marginEnd = dp(6) }
         })
         val labels = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -221,29 +233,33 @@ class AppCacheActivity : AppCompatActivity() {
         })
         header.addView(labels)
         row.addView(header)
-        row.addView(androidx.appcompat.widget.AppCompatButton(this, null, 0).apply {
+        row.addView(CenteredIconButton(this).apply {
             text = "Abrir"
             textSize = 13f
             isAllCaps = false
             gravity = Gravity.CENTER
             maxLines = 1
             includeFontPadding = false
-            layoutParams = LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(2) }
+            layoutParams = LinearLayout.LayoutParams(-1, dp(48))
             minWidth = dp(76)
             minHeight = dp(48)
             setPadding(dp(10), 0, dp(10), 0)
             background = android.graphics.drawable.InsetDrawable(
                 ContextCompat.getDrawable(this@AppCacheActivity, R.drawable.guardian_compact_card), 0, dp(6), 0, dp(6))
             backgroundTintList = null
-            setCompoundDrawablesWithIntrinsicBounds(R.drawable.guardian_ic_external, 0, 0, 0)
-            compoundDrawablePadding = dp(6)
             setTextColor(GuardianAppearance.color(this@AppCacheActivity, R.color.guardian_ink))
             contentDescription = "Abrir configurações de ${entry.label}"
             setOnClickListener {
                 openSystem(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${entry.pkg}")))
             }
-        })
+        }.also { centerButtonIcon(it, R.drawable.guardian_ic_external) })
         parent.addView(row)
+    }
+
+    /** Center the icon and label as a group without replacing the actual button. */
+    private fun centerButtonIcon(button: Button, drawable: Int) {
+        button.setCompoundDrawablesWithIntrinsicBounds(drawable, 0, 0, 0)
+        button.compoundDrawablePadding = dp(6)
     }
 
     private fun openSystem(intent: Intent, fallback: Intent? = null) {
@@ -259,7 +275,7 @@ class AppCacheActivity : AppCompatActivity() {
         bytes == 0L -> "0 MB"
         bytes < 1024 -> "$bytes B"
         bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        else -> String.format(java.util.Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024))
+        else -> "${megabytes.format(bytes / (1024.0 * 1024))} MB"
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()

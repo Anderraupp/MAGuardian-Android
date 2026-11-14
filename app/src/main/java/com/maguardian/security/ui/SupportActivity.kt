@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import com.maguardian.security.R
@@ -12,10 +13,19 @@ class SupportActivity : GuardianPageActivity() {
     override val pageTitle = "Atendimento"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        content.addView(ImageView(this).apply {
-            setImageResource(R.drawable.logo); contentDescription = "Logo M&A Guardian"
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            layoutParams = LinearLayout.LayoutParams(dp(80), dp(80)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = dp(12) }
+        content.addView(FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(-1, dp(80)).apply { bottomMargin = dp(12) }
+            addView(ImageView(this@SupportActivity).apply {
+                setImageResource(R.drawable.guardian_waves)
+                scaleType = ImageView.ScaleType.FIT_XY
+                importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = FrameLayout.LayoutParams(-1, dp(140), Gravity.CENTER)
+            })
+            addView(ImageView(this@SupportActivity).apply {
+                setImageResource(R.drawable.logo); contentDescription = "Logo M&A Guardian"
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                layoutParams = FrameLayout.LayoutParams(dp(80), dp(80), Gravity.CENTER)
+            })
         })
         content.addView(label("Como podemos ajudar?", true).apply { gravity = Gravity.CENTER })
         content.addView(label("Conte com nossa equipe para tirar dúvidas e receber orientações sobre o aplicativo.").apply { gravity = Gravity.CENTER })

@@ -82,14 +82,17 @@ class ProtectionPromoCardTest {
             } finally { controller.stop().destroy() }
         }
     }
-    @Test fun localTrialAloneCannotAdvertiseAnUnconfirmedPlayOffer() {
+    @Test fun promotionalInvitationDoesNotGrantSubscription() {
         val ctx = RuntimeEnvironment.getApplication()
         ctx.getSharedPreferences("maguardian_prefs", 0).edit().clear().commit()
         PrefsHelper.initTrial(ctx)
         val controller = Robolectric.buildActivity(MainActivity::class.java).create().start()
         try {
             MainActivity::class.java.getDeclaredMethod("refreshUI").apply { isAccessible = true }.invoke(controller.get())
-            assertEquals(View.GONE, controller.get().findViewById<View>(R.id.tvProtectionTrial).visibility)
+            assertEquals(View.VISIBLE, controller.get().findViewById<View>(R.id.tvProtectionTrial).visibility)
+            assertEquals("Experimente 7 dias grátis",
+                controller.get().findViewById<TextView>(R.id.tvProtectionTrial).text.toString())
+            assertFalse(PrefsHelper.isSubscriptionActive(ctx))
             assertTrue(PrefsHelper.isTrialActive(ctx))
         } finally { controller.stop().destroy() }
     }

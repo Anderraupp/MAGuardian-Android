@@ -253,12 +253,15 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnUpdateCatalog).setOnClickListener {
             val button = findViewById<Button>(R.id.btnUpdateCatalog)
             button.isEnabled = false
+            val feedback = findViewById<TextView>(R.id.tvCatalogUpdateFeedback)
+            feedback.visibility = View.VISIBLE
+            feedback.text = "Verificando atualização..."
             findViewById<TextView>(R.id.tvCatalogSummary).text = "Verificando atualização..."
             findViewById<TextView>(R.id.tvCatalogStatus).text = "Verificando atualização..."
             ThreatCatalogUpdater.update(this, manual = true, done = { status ->
                 if (!isFinishing && !isDestroyed) {
-                    button.isEnabled = true
                     showCatalogStatus()
+                    feedback.text = status
                     Toast.makeText(this, status, Toast.LENGTH_LONG).show()
                 }
             })
@@ -286,7 +289,15 @@ class MainActivity : AppCompatActivity() {
         val updating = ThreatCatalogUpdater.isUpdating()
         findViewById<Button>(R.id.btnUpdateCatalog).apply {
             visibility = View.VISIBLE
-            isEnabled = pending && !updating
+            isEnabled = !updating
+        }
+        findViewById<TextView>(R.id.tvCatalogUpdateFeedback).apply {
+            if (updating) {
+                visibility = View.VISIBLE
+                text = "Verificando atualização..."
+            } else if (visibility == View.VISIBLE) {
+                text = status
+            }
         }
         findViewById<TextView>(R.id.tvCatalogSummary).text = when {
             pending && updating -> "Nova base disponível — atualizando..."
@@ -1548,7 +1559,8 @@ class MainActivity : AppCompatActivity() {
         tvStatusBadge.visibility = View.VISIBLE
         findViewById<TextView>(R.id.tvProtectionTrial).apply {
             val offer = if (::billing.isInitialized) billing.offerPresentation() else null
-            visibility = if (!PrefsHelper.isSubscriptionActive(this@MainActivity) && offer?.sevenDayTrial == true) View.VISIBLE else View.GONE
+            visibility = if (!PrefsHelper.isSubscriptionActive(this@MainActivity) &&
+                (offer == null || offer.sevenDayTrial)) View.VISIBLE else View.GONE
             text = "Experimente 7 dias grátis"
         }
 

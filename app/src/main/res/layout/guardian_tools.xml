@@ -3,54 +3,96 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/guardianToolsContent" android:layout_width="match_parent"
     android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-    <Button android:id="@+id/btnToolsBack" style="@style/GuardianToolbar" android:text="←  Ferramentas e ajustes" />
-    <TextView style="@style/GuardianSection" android:text="Ferramentas" />
-    <Button android:id="@+id/btnLinkChecker" style="@style/GuardianSetting" android:text="Verificar link suspeito"
-        android:drawableStart="@drawable/guardian_ic_link" />
-    <Button android:id="@+id/btnAppCache" style="@style/GuardianSetting" android:text="Cache por aplicativo"
-        android:drawableStart="@drawable/guardian_ic_cache" />
-    <TextView style="@style/GuardianSection" android:text="Ligações" />
-    <LinearLayout android:id="@+id/cardBlockTelemarketing" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchBlockTelemarketing" style="@style/GuardianSwitch"
-            android:text="Bloquear telemarketing" app:thumbTint="?attr/guardian_red" />
-        <TextView android:id="@+id/tvBlockTelemarketingStatus" style="@style/GuardianCaption" android:layout_marginBottom="8dp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/btnToolsBack" style="@style/GuardianToolAction"
+            android:layout_width="48dp" android:text="←" android:textSize="24sp"
+            android:contentDescription="Voltar ao início" android:textColor="?attr/guardian_red" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:text="Ferramentas e ajustes" android:textSize="20sp" android:textStyle="bold"
+            android:textColor="?attr/guardian_red" android:paddingEnd="4dp" />
+        <Button android:id="@+id/btnAppearance" style="@style/GuardianToolAction"
+            android:layout_width="wrap_content" android:text="Tema" android:textStyle="bold"
+            android:textColor="?attr/guardian_red" android:background="@drawable/guardian_theme_button" />
     </LinearLayout>
-    <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchCallAlerts" style="@style/GuardianSwitch"
-        android:text="Alertar ligações suspeitas" app:thumbTint="?attr/guardian_red" />
-    <TextView android:id="@+id/tvCallAlertsStatus" style="@style/GuardianCaption" android:layout_marginBottom="8dp" />
-    <LinearLayout android:id="@+id/cardReportNumber" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-        <Button android:id="@+id/btnReportNumber" style="@style/GuardianSetting" android:text="Reportar ou bloquear número" android:drawableStart="@drawable/guardian_ic_phone" />
+    <TextView style="@style/GuardianToolsHeading" android:text="Links" />
+    <LinearLayout style="@style/GuardianToolsGroup">
+        <Button android:id="@+id/btnLinkChecker" style="@style/GuardianToolAction"
+            android:text="Verificar link suspeito&#10;Cole o link na próxima tela" />
     </LinearLayout>
-    <TextView style="@style/GuardianSection" android:text="Permissões e manutenção" />
-    <LinearLayout android:id="@+id/layoutPermWarning" style="@style/GuardianCard" android:visibility="gone">
-        <TextView android:id="@+id/tvPermWarning" style="@style/GuardianText" />
-        <Button android:id="@+id/btnPermissions" style="@style/GuardianSecondary" android:text="Revisar permissões" android:layout_marginTop="8dp" />
+    <TextView style="@style/GuardianToolsHeading" android:text="Limpeza" />
+    <LinearLayout style="@style/GuardianToolsGroup">
+        <Button android:id="@+id/btnAppCache" style="@style/GuardianToolAction"
+            android:text="Cache por aplicativo&#10;Veja como limpar nas configurações" />
     </LinearLayout>
-    <LinearLayout android:id="@+id/layoutNotifWarning" style="@style/GuardianCard" android:visibility="gone">
-        <TextView style="@style/GuardianText" android:text="Ative as notificações para receber os alertas do M&amp;A Guardian." />
-        <Button android:id="@+id/btnNotifPermission" style="@style/GuardianSecondary" android:text="Ativar notificações" android:layout_marginTop="8dp" />
+    <TextView style="@style/GuardianToolsHeading" android:text="Ligações" />
+    <LinearLayout android:id="@+id/toolsCallsGroup" style="@style/GuardianToolsGroup">
+        <LinearLayout android:id="@+id/cardBlockTelemarketing" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical">
+            <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchBlockTelemarketing"
+                style="@style/GuardianToolsSwitch" android:text="Bloquear telemarketing" />
+            <TextView android:id="@+id/tvBlockTelemarketingStatus" style="@style/GuardianCaption"
+                android:paddingStart="60dp" android:paddingEnd="8dp" android:visibility="gone" />
+        </LinearLayout>
+        <View style="@style/GuardianToolsDivider" />
+        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchCallAlerts"
+            style="@style/GuardianToolsSwitch" android:text="Alertar ligações suspeitas" />
+        <TextView android:id="@+id/tvCallAlertsStatus" style="@style/GuardianCaption"
+            android:paddingStart="60dp" android:paddingEnd="8dp" android:visibility="gone" />
+        <View style="@style/GuardianToolsDivider" />
+        <LinearLayout android:id="@+id/cardReportNumber" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical">
+            <Button android:id="@+id/btnReportNumber" style="@style/GuardianToolAction"
+                android:text="Reportar ou bloquear número" />
+        </LinearLayout>
     </LinearLayout>
-    <Button android:id="@+id/btnToolsPermissions" style="@style/GuardianSetting" android:text="Revisar permissões do aplicativo" />
-    <Button android:id="@+id/btnToolsNotifications" style="@style/GuardianSetting" android:text="Ativar ou gerenciar notificações" />
-    <Button android:id="@+id/btnUpdateCatalog" style="@style/GuardianSetting" android:text="Atualizar a base de ameaças" />
-    <TextView android:id="@+id/tvCatalogSummary" style="@style/GuardianCaption" android:layout_marginBottom="8dp" />
-    <Button android:id="@+id/btnCatalogDetails" style="@style/GuardianSetting" android:text="Detalhes da base" />
-    <LinearLayout android:id="@+id/layoutCatalogDetails" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-        <TextView android:id="@+id/tvCatalogStatus" style="@style/GuardianCaption" android:textIsSelectable="true" />
+    <TextView style="@style/GuardianToolsHeading" android:text="Configurações e histórico" />
+    <LinearLayout android:id="@+id/toolsSettingsGroup" style="@style/GuardianToolsGroup">
+        <Button android:id="@+id/btnToolsPermissions" style="@style/GuardianToolAction"
+            android:text="Permissões do aplicativo" />
+        <View style="@style/GuardianToolsDivider" />
+        <androidx.appcompat.widget.SwitchCompat android:id="@+id/btnToolsNotifications"
+            style="@style/GuardianToolsSwitch" android:text="Ativar notificações"
+            android:contentDescription="Notificações. Abrir configurações do Android" />
+        <View style="@style/GuardianToolsDivider" />
+        <Button android:id="@+id/btnUpdateCatalog" style="@style/GuardianToolAction"
+            android:text="Atualizar base de ameaças" />
+        <TextView android:id="@+id/tvCatalogUpdateFeedback" style="@style/GuardianCaption"
+            android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingBottom="8dp"
+            android:visibility="gone" android:accessibilityLiveRegion="polite" />
+        <View style="@style/GuardianToolsDivider" />
+        <Button android:id="@+id/btnScanHistory" style="@style/GuardianToolAction"
+            android:text="Histórico de análises" />
     </LinearLayout>
-    <Button android:id="@+id/btnScanHistory" style="@style/GuardianSetting" android:text="Histórico de análises" />
-    <Button android:id="@+id/btnClearThreats" style="@style/GuardianSetting" android:text="Limpar registros de ameaças" />
-    <TextView style="@style/GuardianSection" android:text="Aparência" />
-    <Button android:id="@+id/btnAppearance" style="@style/GuardianSetting" android:text="Escolher tema" android:drawableStart="@drawable/guardian_ic_designer" />
-    <TextView style="@style/GuardianSection" android:text="Privacidade e informações legais" />
-    <Button android:id="@+id/btnToolsTerms" style="@style/GuardianSetting" android:text="Termos de uso" />
-    <Button android:id="@+id/btnToolsPrivacy" style="@style/GuardianSetting" android:text="Política de privacidade" />
-    <Button android:id="@+id/btnRequestDataDeletion" style="@style/GuardianSetting" android:text="Solicitar exclusão de conta e dados" />
-    <TextView android:id="@+id/btnCatalogSources" style="@style/GuardianText" android:text="Informações legais"
-        android:minHeight="48dp" android:padding="12dp" android:gravity="center_vertical"
-        android:background="@drawable/guardian_secondary" android:clickable="true" android:focusable="true" />
+    <LinearLayout style="@style/GuardianToolsGroup" android:layout_marginTop="14dp">
+        <Button android:id="@+id/btnToolsLegal" style="@style/GuardianToolAction"
+            android:text="Privacidade e informações legais" />
+    </LinearLayout>
+    <!-- Original actions remain reachable through the legal/details menu. -->
+    <Button android:id="@+id/btnToolsPrivacy" style="@style/GuardianSetting" android:text="Política de privacidade" android:visibility="gone" />
+    <Button android:id="@+id/btnRequestDataDeletion" style="@style/GuardianSetting" android:text="Solicitar exclusão de conta e dados" android:visibility="gone" />
+    <TextView android:id="@+id/btnCatalogSources" style="@style/GuardianText"
+        android:text="Informações legais" android:visibility="gone" android:clickable="true" android:focusable="true" />
+    <LinearLayout android:id="@+id/toolsAuxiliary" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+        <TextView style="@style/GuardianToolsHeading" android:text="Detalhes e avisos do aplicativo" />
+        <LinearLayout android:id="@+id/layoutPermWarning" style="@style/GuardianCard" android:visibility="gone">
+            <TextView android:id="@+id/tvPermWarning" style="@style/GuardianText" />
+            <Button android:id="@+id/btnPermissions" style="@style/GuardianSecondary" android:text="Revisar permissões" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/layoutNotifWarning" style="@style/GuardianCard" android:visibility="gone">
+            <TextView style="@style/GuardianText" android:text="Ative as notificações para receber os alertas do M&amp;A Guardian." />
+            <Button android:id="@+id/btnNotifPermission" style="@style/GuardianSecondary" android:text="Ativar notificações" />
+        </LinearLayout>
+        <TextView android:id="@+id/tvCatalogSummary" style="@style/GuardianCaption" />
+        <Button android:id="@+id/btnCatalogDetails" style="@style/GuardianSetting" android:text="Detalhes da base" />
+        <LinearLayout android:id="@+id/layoutCatalogDetails" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+            <TextView android:id="@+id/tvCatalogStatus" style="@style/GuardianCaption" android:textIsSelectable="true" />
+        </LinearLayout>
+        <Button android:id="@+id/btnClearThreats" style="@style/GuardianSetting" android:text="Limpar registros de ameaças" />
+    </LinearLayout>
     <Button android:id="@+id/btnCatalogAdmin" style="@style/GuardianFooter" android:text="Área do administrador" android:visibility="gone" />
-    <!-- Legacy bindings kept for existing cache and call-permission flows, not duplicate destinations. -->
     <Button android:id="@+id/btnCallScanner" style="@style/GuardianSecondary" android:visibility="gone" />
     <Button android:id="@+id/btnCleanCache" style="@style/GuardianSecondary" android:visibility="gone" />
     <Button android:id="@+id/btnLearnAboutGuardian" style="@style/GuardianFooter" android:visibility="gone" />

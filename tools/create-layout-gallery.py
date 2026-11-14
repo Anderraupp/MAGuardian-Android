@@ -39,7 +39,7 @@ for theme, theme_name in themes.items():
 comparisons = []
 for page, reference_name, label in [
     ("inicio", "image_1794600269812.png", "Resumo diário compacto"),
-    ("cache", "image_1794600193688.png", "Cache por aplicativo compacto"),
+    ("cache", "image_1794614370408.png", "Cache por aplicativo com moldura e rolagem interna"),
 ]:
     theme = "original"
     reference = base64.b64encode((root / "attached_assets" / reference_name).read_bytes()).decode("ascii")
@@ -47,8 +47,16 @@ for page, reference_name, label in [
     comparisons.append(
         f'<figure data-theme="{theme}"><figcaption>{label}<small>Referência enviada / APK corrigido</small></figcaption>'
         f'<div class="pair"><img src="data:image/png;base64,{reference}" alt="Referência enviada pelo usuário">'
-        f'<img src="data:image/png;base64,{actual}" alt="Tela renderizada no APK 1.6.27"></div></figure>'
+        f'<img src="data:image/png;base64,{actual}" alt="Tela renderizada no APK 1.6.28"></div></figure>'
     )
+for theme, theme_name in themes.items():
+    fixture = source / f"{theme}-cache-lista-demonstracao.png"
+    if fixture.exists():
+        encoded = base64.b64encode(fixture.read_bytes()).decode("ascii")
+        comparisons.append(
+            f'<figure data-theme="{theme}"><figcaption>{theme_name} — demonstração com dados simulados'
+            '<small>Somente teste de disposição dos cartões; não são dados do seu celular e não estão no APK.</small></figcaption>'
+            f'<img src="data:image/png;base64,{encoded}" alt="Moldura e cartões renderizados com dados simulados de teste"></figure>')
 totals = dict(tests=0, failures=0, errors=0, skipped=0)
 result_source = root / "android-native/app/build/test-results/testDebugUnitTest"
 for file in result_source.glob("TEST-*.xml"):
@@ -93,7 +101,7 @@ section{margin-top:32px}a{color:#70132d}code{background:#eee8df;padding:2px 5px}
 @media(max-width:800px){.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.gallery{grid-template-columns:1fr}header,main{padding:16px}}
 </style>
-<header><h1>M&amp;A Guardian</h1><p>Controles de proteção — APK de teste 1.6.27 (65).</p>
+<header><h1>M&amp;A Guardian</h1><p>Lista de cache conforme a referência — APK de teste 1.6.28 (66).</p>
 <div class="note"><b>O que estas imagens comprovam:</b> são capturas renderizadas dos componentes Android implementados,
 não montagens dos anexos nem testes em aparelho físico. Mostram o primeiro trecho de cada tela; o restante continua acessível por rolagem.
 O preço de R$ 9,99/mês é identificado como referência quando a Play não retorna uma oferta. Listas vazias e eventuais contadores refletem o ambiente automatizado e os eventos de teste nele executados;
@@ -108,7 +116,7 @@ não são medições do seu celular nem ofertas ou valores comerciais inventados
 <div class="gallery">CARDS</div>
 <section><h2>Botões e funcionalidades</h2><table><thead><tr><th>Ação</th><th>Destino real</th></tr></thead><tbody>ROWS</tbody></table></section>
 <section><h2>Verificações executadas</h2><p>RESULTS</p>
-<p>Esta revisão executa verificações focadas nos controles de proteção, bloqueio para não assinantes, ativação e desativação para assinantes, cores de estado, cartões compactos e acessibilidade.
+<p>Esta revisão executa verificações focadas na lista de cache com moldura, rolagem interna até o último aplicativo, cartões compactos, medidas reais do Android, abertura das configurações e acessibilidade.
 Não se repetiu a suíte completa de detecção: o detector e os serviços não foram alterados.
 A ressalva da revisão anterior sobre um teste de detecção em lote continua registrada em layout-update.md e não é declarada resolvida por estes testes visuais.
 Estas capturas não comprovam funcionamento em aparelho físico.</p>

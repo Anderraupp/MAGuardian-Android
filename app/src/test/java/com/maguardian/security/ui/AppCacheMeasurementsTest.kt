@@ -26,12 +26,14 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.util.ReflectionHelpers
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26, 34], application = Application::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AppCacheMeasurementsTest {
     private val ctx: Context get() = RuntimeEnvironment.getApplication()
     private val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -116,7 +118,7 @@ class AppCacheMeasurementsTest {
     }
 
     private fun total(activity: AppCacheActivity) =
-        activity.findViewById<TextView>(R.id.tvAppCacheTotal).text.toString().replace(',', '.')
+        activity.findViewById<TextView>(R.id.tvAppCacheTotal).text.toString()
 
     @Test fun onlyVisibleAppsAreCountedWithoutInternalPackagesOrDuplicateIcons() {
         allowUsage()
@@ -132,8 +134,8 @@ class AppCacheMeasurementsTest {
         val activity = controller.get()
         waitForMeasurements(activity)
         assertEquals(listOf("Câmera", "Notas", ownLabel), labels(activity))
-        assertEquals("3.0 MB", total(activity))
-        assertTrue(activity.findViewById<TextView>(R.id.tvAppCacheSummary).text.startsWith("3 apps com ícone"))
+        assertEquals("3,0 MB", total(activity))
+        assertTrue(activity.findViewById<TextView>(R.id.tvAppCacheSummary).text.startsWith("3 aplicativos"))
         controller.pause().stop().destroy()
     }
 
@@ -145,9 +147,9 @@ class AppCacheMeasurementsTest {
         val controller = openActivity()
         var activity = controller.get()
         waitForMeasurements(activity)
-        assertEquals("4.0 MB", total(activity))
+        assertEquals("4,0 MB", total(activity))
         assertEquals(listOf("Notas", ownLabel, "Sem acesso"), labels(activity))
-        assertTrue(activity.findViewById<TextView>(R.id.tvAppCacheSummary).text.contains("1 apps sem tamanho disponível"))
+        assertTrue(activity.findViewById<TextView>(R.id.tvAppCacheSummary).text.contains("1 aplicativo sem tamanho disponível"))
         controller.pause().stop()
         setCache("org.example.notes", 0)
         controller.start().resume()
@@ -165,7 +167,14 @@ class AppCacheMeasurementsTest {
         val controller = openActivity()
         val activity = controller.get()
         waitForMeasurements(activity)
-        assertFalse(labels(activity).contains("Notas"))
+        assertTrue(labels(activity).contains("Notas"))
+        assertEquals("1,0 MB", total(activity))
+        fun texts(view: android.view.View): List<String> =
+            if (view is TextView) listOf(view.text.toString())
+            else if (view is android.view.ViewGroup) (0 until view.childCount).flatMap { texts(view.getChildAt(it)) }
+            else emptyList()
+        assertTrue(texts(activity.findViewById(R.id.llAppCaches)).contains("Tamanho indisponível"))
+        assertFalse(texts(activity.findViewById(android.R.id.content)).contains("Autorizar acesso de uso"))
         assertTrue(activity.findViewById<TextView>(R.id.tvAppCacheSummary).text.contains("Acesso de uso não autorizado"))
         controller.pause().stop().destroy()
     }

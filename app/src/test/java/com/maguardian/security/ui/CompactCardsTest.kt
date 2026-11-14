@@ -116,4 +116,47 @@ class CompactCardsTest {
             NativeLayoutChecks.visibleTextFits(card)
         } finally { controller.stop().destroy() }
     }
+    @Test fun cacheListHasItsOwnFrameAndScrollsToEveryAppAcrossThemes() {
+        configure(402, 1f)
+        val ctx = RuntimeEnvironment.getApplication()
+        for (palette in listOf("original", "petroleo", "gold")) {
+            ctx.getSharedPreferences("guardian_appearance", 0).edit().putString("palette", palette).commit()
+            val controller = Robolectric.buildActivity(AppCacheActivity::class.java).create().start()
+            try {
+                val activity = controller.get()
+                renderCache(activity, false, 12)
+                val root = activity.findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0)
+                val density = activity.resources.displayMetrics.density
+                NativeLayoutChecks.measure(root, (402 * density).toInt(), (874 * density).toInt())
+                val frame = activity.findViewById<LinearLayout>(R.id.cacheListFrame)
+                val scroll = activity.findViewById<androidx.core.widget.NestedScrollView>(R.id.cacheListScroll)
+                val rows = activity.findViewById<LinearLayout>(R.id.llAppCaches)
+                assertSame(scroll, rows.parent)
+                assertSame(frame, scroll.parent)
+                assertEquals(6, rows.childCount)
+                assertEquals((300 * density).toInt(), scroll.height)
+                assertTrue(scroll.canScrollVertically(1))
+                assertTrue("Rolagem interna deve se comunicar com a página", scroll.startNestedScroll(androidx.core.view.ViewCompat.SCROLL_AXIS_VERTICAL))
+                scroll.stopNestedScroll()
+                assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.cacheListScrollHint).visibility)
+                NativeLayoutChecks.visibleTextFits(rows)
+                // Separate, explicitly labelled test-fixture illustration, never production data.
+                val bitmap = android.graphics.Bitmap.createBitmap(frame.width, frame.height, android.graphics.Bitmap.Config.ARGB_8888)
+                frame.draw(android.graphics.Canvas(bitmap))
+                val file = java.io.File("/tmp/guardian-redesign/$palette-cache-lista-demonstracao.png")
+                file.parentFile!!.mkdirs()
+                file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+                bitmap.recycle()
+                scroll.scrollTo(0, rows.height)
+                assertTrue(scroll.scrollY > 0)
+                assertFalse(scroll.canScrollVertically(1))
+                assertEquals(View.INVISIBLE, activity.findViewById<View>(R.id.cacheListScrollHint).visibility)
+                val lastPair = rows.getChildAt(rows.childCount - 1) as LinearLayout
+                assertEquals(2, lastPair.childCount)
+                val last = lastPair.getChildAt(1) as LinearLayout
+                assertNotNull(((last.getChildAt(0) as LinearLayout).getChildAt(0) as android.widget.ImageView).drawable)
+                assertEquals("Abrir", (last.getChildAt(1) as Button).text.toString())
+            } finally { controller.stop().destroy() }
+        }
+    }
 }

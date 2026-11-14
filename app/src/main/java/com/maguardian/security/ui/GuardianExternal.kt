@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 
 internal object GuardianExternal {
     const val ABOUT = "https://guardian.meacelulareseacessorios.com.br/"
-    const val TERMS = "https://anderraupp.github.io/MAGuardian-Android/terms.html"
     const val PRIVACY = "https://sites.google.com/view/politicaprivacidademaguardian"
     fun web(activity: AppCompatActivity, url: String) = open(activity, Intent(Intent.ACTION_VIEW, Uri.parse(url)), url)
     fun open(activity: AppCompatActivity, intent: Intent, fallbackText: String) {

@@ -24,7 +24,6 @@ internal object GuardianVisuals {
             R.id.btnUpdateCatalog to R.drawable.guardian_ic_cache,
             R.id.btnScanHistory to R.drawable.guardian_ic_history,
             R.id.btnAppearance to R.drawable.guardian_ic_designer,
-            R.id.btnToolsTerms to R.drawable.guardian_ic_about,
             R.id.btnToolsPrivacy to R.drawable.guardian_ic_shield
         )
         val benefits = mapOf(
@@ -50,5 +49,6 @@ internal object GuardianVisuals {
             if (view is ViewGroup) for (i in 0 until view.childCount) visit(view.getChildAt(i))
         }
         visit(activity.findViewById(android.R.id.content))
+        GuardianToolRows.bind(activity)
     }
 }

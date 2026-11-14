@@ -15,9 +15,11 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26, 34], application = Application::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AppCacheActionTest {
     @Test fun compactCenteredActionFitsRowsAndStillOpensTheCorrectApp() {
         for (palette in listOf("original", "petroleo", "gold")) {
@@ -45,9 +47,8 @@ class AppCacheActionTest {
             assertNotNull(button.contentDescription)
             for (screenDp in listOf(320, 360, 402)) {
                 val width = ((screenDp - 40) * density).toInt()
-                row.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
-                row.layout(0, 0, width, row.measuredHeight)
+                // Centering the compound icon updates padding after the first layout.
+                NativeLayoutChecks.measure(row, width)
                 assertTrue("Toque de pelo menos 48dp", button.measuredHeight >= (48 * density).toInt())
                 assertTrue("Ação compacta", button.measuredHeight <= (56 * density).toInt())
                 assertTrue("Sem formato quadrado", button.measuredWidth > button.measuredHeight)
