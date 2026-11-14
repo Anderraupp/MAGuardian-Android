@@ -494,7 +494,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupUI() {
         val btnScan = findViewById<Button>(R.id.btnScan)
-        val btnToggle = findViewById<TextView>(R.id.btnToggle)
+        val btnToggle = findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.btnToggle)
         val btnClearThreats = findViewById<Button>(R.id.btnClearThreats)
         val btnPermissions = findViewById<Button>(R.id.btnPermissions)
 
@@ -508,7 +508,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         btnPermissions.setOnClickListener { showPermissionsDialog() }
-        btnToggle.setOnClickListener { requireSubscription { toggleProtection() } }
+        btnToggle.setOnClickListener {
+            // A click changes CompoundButton's visual state before the entitlement
+            // check. Restore the real state; only the existing action may change it.
+            refreshUI()
+            requireSubscription { toggleProtection() }
+        }
 
         val btnCleanCache = findViewById<Button>(R.id.btnCleanCache)
         btnCleanCache.setOnClickListener { runCacheClean() }
@@ -1432,7 +1437,7 @@ class MainActivity : AppCompatActivity() {
         val tvTotalScans = findViewById<TextView>(R.id.tvTotalScans)
         val tvLastScan = findViewById<TextView>(R.id.tvLastScan)
         val tvThreatCount = findViewById<TextView>(R.id.tvThreatCount)
-        val btnToggle = findViewById<TextView>(R.id.btnToggle)
+        val btnToggle = findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.btnToggle)
         val llThreats = findViewById<LinearLayout>(R.id.llThreats)
         val layoutPermWarning = findViewById<LinearLayout>(R.id.layoutPermWarning)
         val tvPermWarning = findViewById<TextView>(R.id.tvPermWarning)
@@ -1504,51 +1509,47 @@ class MainActivity : AppCompatActivity() {
         )
         if (isFullyActive) {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_protection_card)
-            tvStatus.text = "Monitoramento ativo"
+            tvStatus.text = "Proteção em tempo real"
             tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             tvStatusBadge.text = "Ativa"
             tvStatusBadge.setTextColor(ContextCompat.getColor(this, R.color.success))
             tvStatusBadge.background = ContextCompat.getDrawable(this, R.drawable.badge_success)
-            tvStatusDesc.text = if (totalFound > 0)
-                "$totalFound ameaça(s) detectada(s)."
-            else
-                "Monitoramento em tempo real. Nenhuma ameaça ativa registrada."
-            ivShield.setImageResource(R.drawable.guardian_status_shield)
-            btnToggle.text = "Desativar"
-            btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
-            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_secondary)
+            tvStatusDesc.text = "Monitoramento ativo"
+            ivShield.setImageResource(R.drawable.guardian_outline_shield)
         } else {
             cardStatus.background = ContextCompat.getDrawable(this, R.drawable.guardian_protection_card)
-            tvStatus.text = when {
-                !isSubscribed -> "Monitoramento disponível com Premium"
-                !permStatus.allGranted -> "Permissões pendentes"
-                else -> "Monitoramento pausado"
-            }
+            tvStatus.text = "Proteção em tempo real"
             tvStatus.setTextColor(GuardianAppearance.color(this, R.color.guardian_ink))
             tvStatusBadge.text = when {
-                !isSubscribed -> "Disponível"
+                !isSubscribed -> "Disponível ›"
                 !permStatus.allGranted -> "Permissões"
                 else -> "Pausada"
             }
-            tvStatusBadge.setTextColor(GuardianAppearance.color(this,
-                if (!isSubscribed) R.color.guardian_success else R.color.guardian_warning))
+            tvStatusBadge.setTextColor(if (!isSubscribed) android.graphics.Color.WHITE
+                else GuardianAppearance.color(this, R.color.guardian_warning))
             tvStatusBadge.background = ContextCompat.getDrawable(this,
-                if (!isSubscribed) R.drawable.badge_success else R.drawable.badge_danger)
+                if (!isSubscribed) R.drawable.guardian_availability_button else R.drawable.badge_danger)
             tvStatusDesc.text = when {
-                !isSubscribed -> "Conheça os planos para ativar."
-                !permStatus.allGranted -> "Conceda as permissões para ativar a proteção."
-                else -> "Ative a proteção para monitorar ameaças automaticamente."
+                !isSubscribed -> "Ativar monitoramento"
+                !permStatus.allGranted -> "Permissões pendentes"
+                else -> "Ativar monitoramento"
             }
-            ivShield.setImageResource(R.drawable.guardian_status_shield)
-            btnToggle.text = if (!isSubscribed) "Conhecer planos" else "Ativar monitoramento"
-            btnToggle.setTextColor(GuardianAppearance.color(this, R.color.guardian_button_text))
-            btnToggle.background = ContextCompat.getDrawable(this, R.drawable.guardian_primary)
+            ivShield.setImageResource(R.drawable.guardian_outline_shield)
         }
+        btnToggle.isChecked = isFullyActive
+        btnToggle.contentDescription = if (isFullyActive) "Desativar monitoramento"
+            else if (isSubscribed && !permStatus.allGranted) "Monitoramento inativo: permissões pendentes"
+            else "Ativar monitoramento"
+        // Changing the badge background also changes its drawable padding.
+        tvStatusBadge.setPadding((10 * resources.displayMetrics.density).toInt(),
+            (8 * resources.displayMetrics.density).toInt(),
+            (10 * resources.displayMetrics.density).toInt(),
+            (8 * resources.displayMetrics.density).toInt())
         tvStatusBadge.visibility = View.VISIBLE
         findViewById<TextView>(R.id.tvProtectionTrial).apply {
             val offer = if (::billing.isInitialized) billing.offerPresentation() else null
             visibility = if (!PrefsHelper.isSubscriptionActive(this@MainActivity) && offer?.sevenDayTrial == true) View.VISIBLE else View.GONE
-            text = "7 dias grátis para experimentar"
+            text = "Experimente 7 dias grátis"
         }
 
         // Daily events are independent of the legacy reset/cyclic counters.

@@ -99,3 +99,16 @@ Não foram modificados os filtros da lista, cálculo dos valores, consulta ao
 Android, configurações abertas, estatísticas, regras de detecção ou serviços.
 A validação desta revisão é focada na interface e nos comportamentos do cache;
 não resolve nem declara resolvida a ressalva anterior da suíte de detecção.
+
+## Controles de proteção da revisão 1.6.27
+
+A faixa de monitoramento passa a ter escudo contornado, separador, título
+“Proteção em tempo real”, legenda de estado e interruptor compacto. O controle
+continua chamando as mesmas ações de assinatura, ativação e desativação; sem
+acesso, retorna à posição real e encaminha para os planos, sem liberar proteção.
+
+O cartão Premium passa a usar título na cor de destaque, separador e botão
+verde “Disponível ›”. A linha “Experimente 7 dias grátis” fica abaixo do nome
+Premium somente se a oferta real da Play confirmar esse período, preservando a
+condição existente. O escudo de estado continua vermelho enquanto inativo e
+verde somente com acesso, proteção habilitada e permissões concedidas.

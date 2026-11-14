@@ -50,7 +50,7 @@ class ProtectionShieldColorTest {
                     assertEquals("Estado do escudo em $palette", GuardianAppearance.color(activity,
                         if (active) R.color.guardian_success else R.color.guardian_danger),
                         shield.imageTintList!!.defaultColor)
-                    assertEquals(R.drawable.guardian_status_shield, shadowOf(shield.drawable).createdFromResId)
+                    assertEquals(R.drawable.guardian_outline_shield, shadowOf(shield.drawable).createdFromResId)
                     assertEquals(shield.layoutParams.width, shield.layoutParams.height)
                     if (palette == "original" && android.os.Build.VERSION.SDK_INT == 34 &&
                         permitted && ((subscribed && enabled) || (!subscribed && !enabled))) {
@@ -65,8 +65,8 @@ class ProtectionShieldColorTest {
                             .outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
                         bitmap.recycle()
                     }
-                    assertEquals(if (active) "Desativar" else if (!subscribed) "Conhecer planos" else "Ativar monitoramento",
-                        activity.findViewById<TextView>(R.id.btnToggle).text.toString())
+                    assertEquals(active, activity.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.btnToggle).isChecked)
+                    assertEquals("Proteção em tempo real", activity.findViewById<TextView>(R.id.tvStatus).text.toString())
                     assertEquals(enabled, PrefsHelper.isProtectionEnabled(activity))
                     assertEquals(subscribed, PrefsHelper.isSubscriptionActive(activity))
                 }

@@ -31,9 +31,16 @@ class ProtectionPromoCardTest {
             val activity = controller.get()
             try {
                 MainActivity::class.java.getDeclaredMethod("refreshUI").apply { isAccessible = true }.invoke(activity)
-                assertEquals("Disponível", activity.findViewById<TextView>(R.id.tvStatusBadge).text.toString())
-                assertEquals("Monitoramento disponível com Premium", activity.findViewById<TextView>(R.id.tvStatus).text.toString())
+                assertEquals("Disponível ›", activity.findViewById<TextView>(R.id.tvStatusBadge).text.toString())
+                assertEquals("Proteção em tempo real", activity.findViewById<TextView>(R.id.tvStatus).text.toString())
+                assertEquals("Ativar monitoramento", activity.findViewById<TextView>(R.id.tvStatusDesc).text.toString())
                 val protection = PrefsHelper.isProtectionEnabled(ctx)
+                val toggle = activity.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.btnToggle)
+                toggle.performClick()
+                assertFalse(toggle.isChecked)
+                assertEquals(SubscriptionActivity::class.java.name,
+                    shadowOf(activity).nextStartedActivityForResult.intent.component?.className)
+                assertEquals(protection, PrefsHelper.isProtectionEnabled(ctx))
                 activity.findViewById<View>(R.id.tvStatusBadge).performClick()
                 assertEquals(SubscriptionActivity::class.java.name,
                     shadowOf(activity).nextStartedActivityForResult.intent.component?.className)
@@ -44,6 +51,34 @@ class ProtectionPromoCardTest {
                     NativeLayoutChecks.measure(card, ((width - 32) * activity.resources.displayMetrics.density).toInt())
                     NativeLayoutChecks.visibleTextFits(card)
                 }
+            } finally { controller.stop().destroy() }
+        }
+    }
+    @Test fun subscriberSwitchUsesTheExistingEnableAndDisableActions() {
+        val ctx = RuntimeEnvironment.getApplication()
+        ctx.getSharedPreferences("maguardian_prefs", 0).edit().clear()
+            .putLong("trial_start_date", System.currentTimeMillis() - TimeUnit.DAYS.toMillis(8)).commit()
+        for (palette in listOf("original", "petroleo", "gold")) {
+            ctx.getSharedPreferences("guardian_appearance", 0).edit().putString("palette", palette).commit()
+            PrefsHelper.setProtectionEnabled(ctx, false)
+            PrefsHelper.setSubscriptionActive(ctx, true)
+            val controller = Robolectric.buildActivity(MainActivity::class.java).create().start()
+            try {
+                val activity = controller.get()
+                shadowOf(activity.getSystemService(android.app.AppOpsManager::class.java))
+                    .setMode(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(),
+                        activity.packageName, android.app.AppOpsManager.MODE_ALLOWED)
+                MainActivity::class.java.getDeclaredMethod("refreshUI").apply { isAccessible = true }.invoke(activity)
+                val toggle = activity.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.btnToggle)
+                assertFalse(toggle.isChecked)
+                toggle.performClick()
+                assertTrue(PrefsHelper.isProtectionEnabled(ctx))
+                assertTrue(toggle.isChecked)
+                assertEquals("Monitoramento ativo", activity.findViewById<TextView>(R.id.tvStatusDesc).text.toString())
+                toggle.performClick()
+                assertFalse(PrefsHelper.isProtectionEnabled(ctx))
+                assertFalse(toggle.isChecked)
+                assertTrue(PrefsHelper.isSubscriptionActive(ctx))
             } finally { controller.stop().destroy() }
         }
     }

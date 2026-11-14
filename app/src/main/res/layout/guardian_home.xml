@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/guardianHomeContent" android:layout_width="match_parent"
     android:layout_height="wrap_content" android:orientation="vertical">
     <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -30,37 +31,53 @@
     <TextView style="@style/GuardianPageTitle" android:text="Seu Android, sob controle." android:textSize="22sp" />
     <TextView android:id="@+id/tvIntroDescription" style="@style/GuardianCaption" android:visibility="gone"
         android:text="Mais controle sobre aplicativos, links e ligações no seu dia a dia." />
-    <LinearLayout android:id="@+id/cardStatus" style="@style/GuardianCard">
+    <LinearLayout android:id="@+id/cardStatus" style="@style/GuardianCard" android:padding="10dp">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false">
             <ImageView android:id="@+id/ivShield" android:layout_width="40dp" android:layout_height="40dp"
-                android:src="@drawable/guardian_status_shield" android:tint="?attr/guardian_danger"
+                android:src="@drawable/guardian_outline_shield" android:tint="?attr/guardian_danger"
                 android:contentDescription="Estado da proteção" android:layout_marginEnd="8dp" />
+            <View android:layout_width="1dp" android:layout_height="44dp" android:layout_marginEnd="8dp"
+                android:background="?attr/guardian_line" android:importantForAccessibility="no" />
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
                 android:layout_weight="1" android:orientation="vertical">
-                <TextView style="@style/GuardianText" android:text="Proteção em tempo real" android:textStyle="bold" android:textSize="14sp" />
-                <TextView style="@style/GuardianCaption" android:text="M&amp;A Guardian Premium" android:textSize="11sp" />
+                <TextView style="@style/GuardianText" android:text="Proteção em tempo real" android:textStyle="bold"
+                    android:textColor="?attr/guardian_red" android:textSize="14sp" />
+                <TextView style="@style/GuardianCaption" android:text="M&amp;A Guardian Premium" android:textSize="12sp" />
+                <TextView android:id="@+id/tvProtectionTrial" style="@style/GuardianCaption"
+                    android:textSize="12sp" android:textStyle="bold" android:textColor="?attr/guardian_red"
+                    android:visibility="gone" android:layout_marginTop="2dp" />
             </LinearLayout>
             <TextView android:id="@+id/tvStatusBadge" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:minHeight="48dp" android:maxWidth="100dp" android:padding="8dp" android:gravity="center"
-                android:layout_marginStart="6dp" android:text="Disponível" android:textSize="12sp" android:textStyle="bold"
-                android:background="@drawable/guardian_secondary" android:clickable="true" android:focusable="true" />
+                android:minHeight="48dp" android:minWidth="100dp" android:maxWidth="110dp" android:padding="8dp" android:gravity="center"
+                android:layout_marginStart="6dp" android:text="Disponível ›" android:textSize="13sp" android:textStyle="bold"
+                android:textColor="#FFFFFF" android:includeFontPadding="false"
+                android:background="@drawable/guardian_availability_button" android:clickable="true" android:focusable="true" />
         </LinearLayout>
-        <TextView android:id="@+id/tvProtectionTrial" style="@style/GuardianCaption" android:gravity="center"
-            android:visibility="gone" android:layout_marginTop="6dp" />
     </LinearLayout>
     <Button android:id="@+id/btnScan" style="@style/GuardianButton" android:text="Analisar aplicativos"
         android:drawableStart="@drawable/guardian_ic_search" android:drawableTint="?attr/guardian_button_text"
         android:drawablePadding="8dp" android:layout_marginBottom="12dp" />
-    <LinearLayout style="@style/GuardianCard" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false">
+    <LinearLayout style="@style/GuardianCard" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false"
+        android:background="@drawable/guardian_compact_card" android:minHeight="56dp"
+        android:padding="4dp"
+        android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="4dp" android:paddingBottom="4dp">
+        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/guardian_outline_shield"
+            android:layout_marginStart="6dp" android:tint="?attr/guardian_red" android:importantForAccessibility="no" />
+        <View android:layout_width="1dp" android:layout_height="32dp" android:layout_marginStart="10dp" android:layout_marginEnd="10dp"
+            android:background="?attr/guardian_line" android:importantForAccessibility="no" />
         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-            <TextView android:id="@+id/tvStatus" style="@style/GuardianText" android:text="Monitoramento inativo" android:textStyle="bold" />
-            <TextView android:id="@+id/tvStatusDesc" style="@style/GuardianCaption" android:layout_marginTop="4dp" />
+            <TextView android:id="@+id/tvStatus" style="@style/GuardianText" android:text="Proteção em tempo real"
+                android:textSize="14sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tvStatusDesc" style="@style/GuardianCaption" android:textSize="12sp"
+                android:text="Ativar monitoramento" android:layout_marginTop="1dp" />
         </LinearLayout>
-        <TextView android:id="@+id/btnToggle" style="@style/GuardianText" android:layout_width="wrap_content" android:text="Ativar" android:minHeight="48dp"
-            android:maxWidth="116dp" android:layout_marginStart="10dp" android:textSize="12sp"
-            android:gravity="center" android:padding="10dp"
-            android:background="@drawable/guardian_secondary" android:clickable="true" android:focusable="true" />
+        <androidx.appcompat.widget.SwitchCompat android:id="@+id/btnToggle"
+            android:layout_width="52dp" android:layout_height="48dp" android:minHeight="48dp"
+            android:layout_marginStart="8dp" android:layout_marginEnd="6dp" android:padding="0dp" android:gravity="center"
+            android:contentDescription="Ativar monitoramento" app:showText="false"
+            app:switchMinWidth="44dp" app:thumbTint="@color/guardian_switch_thumb"
+            app:trackTint="@color/guardian_switch_track" android:clickable="true" android:focusable="true" />
         <TextView android:id="@+id/tvSecurityRate" style="@style/GuardianCaption" android:visibility="gone" />
         <TextView android:id="@+id/tvScansClean" style="@style/GuardianCaption" android:visibility="gone" />
     </LinearLayout>
