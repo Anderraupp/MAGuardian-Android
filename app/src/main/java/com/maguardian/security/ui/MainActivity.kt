@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
         }
         // Discovery shortcut only: server-side authorization remains mandatory.
         var adminTitleTaps = 0
-        findViewById<TextView>(R.id.tvAppTitle).setOnClickListener {
+        val adminShortcut = View.OnClickListener {
             if (adminButton.visibility != View.VISIBLE) {
                 adminTitleTaps++
                 if (adminTitleTaps == 5) {
@@ -176,6 +176,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        findViewById<TextView>(R.id.tvAppTitle).setOnClickListener(adminShortcut)
+        findViewById<View>(R.id.ivGuardianLogo).setOnClickListener(adminShortcut)
         findViewById<Button>(R.id.btnRequestDataDeletion).setOnClickListener {
             com.maguardian.security.util.PrivacyRequests.show(this)
         }

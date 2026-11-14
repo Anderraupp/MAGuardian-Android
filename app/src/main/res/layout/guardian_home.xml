@@ -10,7 +10,7 @@
             android:orientation="vertical" android:gravity="center" android:paddingStart="48dp" android:paddingEnd="48dp">
             <TextView android:id="@+id/tvAppTitle" style="@style/GuardianHeading" android:text="M&amp;A Guardian"
                 android:gravity="center" android:textSize="20sp" android:layout_marginBottom="8dp" />
-            <ImageView android:layout_width="68dp" android:layout_height="68dp" android:src="@drawable/logo"
+            <ImageView android:id="@+id/ivGuardianLogo" android:layout_width="68dp" android:layout_height="68dp" android:src="@drawable/logo"
                 android:scaleType="fitCenter" android:contentDescription="Logo M&amp;A Guardian" />
             <TextView android:id="@+id/tvAppTagline" style="@style/GuardianCaption"
                 android:text="Proteção inteligente para o seu dispositivo." android:gravity="center"
