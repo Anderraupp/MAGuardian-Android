@@ -168,12 +168,11 @@ class MainActivity : AppCompatActivity() {
         // Discovery shortcut only: server-side authorization remains mandatory.
         var adminTitleTaps = 0
         val adminShortcut = View.OnClickListener {
-            if (adminButton.visibility != View.VISIBLE) {
-                adminTitleTaps++
-                if (adminTitleTaps == 5) {
-                    adminButton.visibility = View.VISIBLE
-                    adminButton.performClick()
-                }
+            adminTitleTaps++
+            if (adminTitleTaps == 5) {
+                adminTitleTaps = 0
+                adminButton.visibility = View.VISIBLE
+                adminButton.performClick()
             }
         }
         findViewById<TextView>(R.id.tvAppTitle).setOnClickListener(adminShortcut)
