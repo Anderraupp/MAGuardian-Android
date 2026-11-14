@@ -1,6 +1,6 @@
 # Gerar o AAB para teste interno no Android Studio
 
-O código preparado nesta entrega é a versão **1.6.35**, código **73**.
+O código preparado nesta entrega é a versão **1.6.36**, código **74**.
 O AAB de release usa **com.maguardian.security**, o identificador do app publicado.
 Não utilize o APK de pacote `.visualtest` para atualizar o app da Play Console.
 
@@ -30,7 +30,7 @@ e a pasta `app`, e aguarde o Gradle Sync.
 ## 2. Conferir a versão na Play Console
 
 Verifique o maior código já enviado, inclusive em faixas de teste.
-O código **73** precisa estar disponível e ser superior às versões que os
+O código **74** precisa estar disponível e ser superior às versões que os
 testadores podem receber. Se já houver um código igual ou maior, a versão
 deverá ser ajustada antes de gerar o novo AAB.
 
