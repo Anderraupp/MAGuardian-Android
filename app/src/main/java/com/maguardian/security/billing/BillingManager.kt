@@ -25,6 +25,7 @@ class BillingManager(
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var connecting = false
 
     val billingClient: BillingClient = BillingClient.newBuilder(context)
         .setListener(this)
@@ -39,6 +40,7 @@ class BillingManager(
     // ── Conexão ──────────────────────────────────────────────────────────────
 
     fun connect(onReady: (() -> Unit)? = null) {
+        if (!scope.isActive) return
         if (billingClient.isReady) {
             scope.launch {
                 loadProducts()
@@ -47,9 +49,12 @@ class BillingManager(
             }
             return
         }
+        if (connecting) return
+        connecting = true
 
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
+                connecting = false
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     Log.i(TAG, "Billing conectado com sucesso")
                     scope.launch {
@@ -65,6 +70,7 @@ class BillingManager(
             }
 
             override fun onBillingServiceDisconnected() {
+                connecting = false
                 Log.w(TAG, "Billing desconectado — reconectando...")
                 connect(onReady)
             }
@@ -101,26 +107,41 @@ class BillingManager(
 
     // ── Status da assinatura ──────────────────────────────────────────────────
 
+    /** Revalida o acesso ao retornar à tela, sem recarregar os produtos já disponíveis. */
+    fun refreshOnResume() {
+        if (!scope.isActive || connecting) return
+        if (billingClient.isReady) {
+            scope.launch { refreshStatus() }
+        } else {
+            connect()
+        }
+    }
+
     suspend fun refreshStatus(): Boolean {
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
-        val purchases = suspendCancellableCoroutine<List<Purchase>> { continuation ->
+        val result = suspendCancellableCoroutine<Pair<BillingResult, List<Purchase>>> { continuation ->
             billingClient.queryPurchasesAsync(params) { billingResult, purchaseList ->
-                val result = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                    purchaseList
-                } else {
-                    Log.w(TAG, "Erro ao consultar assinatura: ${billingResult.debugMessage}")
-                    emptyList()
-                }
-                if (continuation.isActive) continuation.resume(result)
+                if (continuation.isActive) continuation.resume(billingResult to purchaseList)
             }
+        }
+        return withContext(Dispatchers.Main) {
+            applyStatusQueryResult(result.first, result.second)
+        }
+    }
+
+    /** Executado na main thread; falha de consulta não é confirmação de perda do acesso. */
+    internal fun applyStatusQueryResult(result: BillingResult, purchases: List<Purchase>): Boolean {
+        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+            Log.w(TAG, "Erro ao consultar assinatura: ${result.debugMessage}")
+            return PrefsHelper.isSubscriptionActive(context)
         }
         val active = purchases.any { purchase ->
             purchase.purchaseState == Purchase.PurchaseState.PURCHASED
         }
         PrefsHelper.setSubscriptionActive(context, active)
-        withContext(Dispatchers.Main) { onStatusChanged(active) }
+        onStatusChanged(active)
         return active
     }
 

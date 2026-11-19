@@ -14,7 +14,8 @@ import com.maguardian.security.util.PrefsHelper
 class SubscriptionActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
-        GuardianAppearance.refreshIfChanged(this)
+        if (GuardianAppearance.refreshIfChanged(this)) return
+        if (::billing.isInitialized) billing.refreshOnResume()
     }
 
 

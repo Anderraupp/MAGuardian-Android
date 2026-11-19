@@ -337,8 +337,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initBilling() {
-        billing = BillingManager(this) { isActive ->
-            if (isActive) refreshUI()
+        billing = BillingManager(this) {
+            refreshUI()
         }
         billing.connect { refreshUI() }
     }
@@ -397,6 +397,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (GuardianAppearance.refreshIfChanged(this)) return
+        if (::billing.isInitialized) billing.refreshOnResume()
         screenResumed = true
         showCatalogStatus()
 
