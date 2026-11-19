@@ -13,6 +13,7 @@ import com.maguardian.security.R
 import com.maguardian.security.receiver.BlockCallReceiver
 import com.maguardian.security.ui.MainActivity
 import com.maguardian.security.util.CallOverlayManager
+import com.maguardian.security.util.CarrierCallPolicy
 import com.maguardian.security.util.PhoneAnalyzer
 import com.maguardian.security.util.PrefsHelper
 import com.maguardian.security.util.TelemarketingDatabase
@@ -115,6 +116,18 @@ class CallScannerService : CallScreeningService() {
         val isSubscribed       = PrefsHelper.hasFullAccess(this)
         val blockTelemarketing = isSubscribed && PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = isSubscribed && PrefsHelper.isNumberBlocked(this, number)
+        val carrier = CarrierCallPolicy.identifiedCarrier(displayName)
+        val blockIdentifiedCarrier = blockTelemarketing && carrier != null
+
+        // Preferência expressa do usuário, não uma indicação de golpe. Não somar
+        // risco: com o toggle desligado o nome da operadora não deve bloquear.
+        if (blockIdentifiedCarrier) {
+            result = result.copy(
+                label = if (result.score < 25) "Operadora identificada" else result.label,
+                emoji = if (result.score < 25) "📞" else result.emoji,
+                reasons = result.reasons + "Bloqueio de operadoras ativado — identificação recebida: $carrier"
+            )
+        }
 
         // Normaliza E.164 (+5504533...) → local (004533...) para checar prefixo 0303
         val localNumber = when {
@@ -128,6 +141,7 @@ class CallScannerService : CallScreeningService() {
         val shouldBlock = when {
             isManuallyBlocked                              -> true  // lista negra manual (assinante)
             result.score >= 70 && isSubscribed             -> true  // golpe confirmado (assinante)
+            blockIdentifiedCarrier                         -> true  // TIM/Vivo/Claro + toggle + acesso
             isAnatelTelemarketing && blockTelemarketing    -> true  // 0303 ANATEL + toggle
             isSystemLabeledSpam   && blockTelemarketing    -> true  // label sistema + toggle
             result.score >= 25    && blockTelemarketing    -> true  // score ≥ 25 + toggle
