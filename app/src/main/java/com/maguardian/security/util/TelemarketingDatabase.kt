@@ -454,6 +454,8 @@ object TelemarketingDatabase {
     // Fonte: quemeligou.com.br, 0800legal.com.br (TOP denúncias)
     // ════════════════════════════════════════════════════════════════════════
     private val knownNumbers: Set<String> = setOf(
+        // Oferta comercial denunciada pelo usuário — número exato, sem ampliar a faixa.
+        "4141022516",
         // Denunciados pelo usuário — DDD 45 Paraná
         "45991193388",  // Edson Mandelli Stumpf — cobrança (26/05/2026)
         "45991371335",  // Cobrança/telemarketing Cascavel/PR (26/05/2026)
