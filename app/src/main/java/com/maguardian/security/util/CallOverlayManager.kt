@@ -1,6 +1,7 @@
 package com.maguardian.security.util
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
@@ -11,8 +12,10 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
 import android.widget.ImageButton
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.maguardian.security.receiver.BlockCallReceiver
 
 /**
  * Mostra um card flutuante (TYPE_APPLICATION_OVERLAY) sobre qualquer tela,
@@ -30,7 +33,7 @@ object CallOverlayManager {
         if (!Settings.canDrawOverlays(context)) return
 
         handler.post {
-            dismiss(context) // remove overlay anterior se existir
+            dismissNow(context) // remove apenas o overlay anterior, antes de criar o novo
 
             val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
@@ -108,6 +111,41 @@ object CallOverlayManager {
                 root.addView(tvReasons)
             }
 
+            // Permite bloquear também um número ainda não reconhecido pela análise.
+            if (PrefsHelper.normalizeForBlock(number).isNotBlank() &&
+                !PrefsHelper.isNumberBlocked(context, number)) {
+                val btnBlock = Button(context).apply {
+                    text = "Bloquear número"
+                    contentDescription = "Bloquear número para próximas chamadas"
+                    isAllCaps = false
+                    setTextColor(Color.WHITE)
+                    minHeight = dp(context, 48)
+                    background = GradientDrawable().apply {
+                        cornerRadius = dp(context, 8).toFloat()
+                        setColor(0xFFDC2626.toInt())
+                    }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = dp(context, 12) }
+                    setOnClickListener {
+                        // Reutiliza as mesmas verificações de acesso, gravação e envio
+                        // comunitário da ação já existente na notificação.
+                        val hasAccess = PrefsHelper.hasFullAccess(context)
+                        context.sendBroadcast(
+                            Intent(context, BlockCallReceiver::class.java)
+                                .setAction(BlockCallReceiver.ACTION_BLOCK_NUMBER)
+                                .putExtra(BlockCallReceiver.EXTRA_NUMBER, number)
+                        )
+                        if (hasAccess) {
+                            isEnabled = false
+                            dismiss(context)
+                        }
+                    }
+                }
+                root.addView(btnBlock)
+            }
+
             // ── Parâmetros da janela ─────────────────────────────────────────────
             val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -146,16 +184,19 @@ object CallOverlayManager {
     }
 
     fun dismiss(context: Context) {
-        handler.post {
-            dismissRunnable?.let { handler.removeCallbacks(it) }
-            dismissRunnable = null
-            overlayView?.let { view ->
-                try {
-                    val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                    wm.removeView(view)
-                } catch (_: Exception) {}
-                overlayView = null
-            }
+        handler.post { dismissNow(context) }
+    }
+
+    /** Chamado somente na main thread para não remover um cartão recém-criado. */
+    private fun dismissNow(context: Context) {
+        dismissRunnable?.let { handler.removeCallbacks(it) }
+        dismissRunnable = null
+        overlayView?.let { view ->
+            try {
+                val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+                wm.removeView(view)
+            } catch (_: Exception) {}
+            overlayView = null
         }
     }
 
