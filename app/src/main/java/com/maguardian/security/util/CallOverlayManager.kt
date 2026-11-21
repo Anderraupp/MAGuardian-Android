@@ -152,8 +152,13 @@ object CallOverlayManager {
             else
                 @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
 
+            val windowWidth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                wm.currentWindowMetrics.bounds.width()
+            } else {
+                context.resources.displayMetrics.widthPixels
+            }
             val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
+                (windowWidth - dp(context, 24)).coerceAtLeast(1),
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 type,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -161,10 +166,9 @@ object CallOverlayManager {
                         WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED,
                 PixelFormat.TRANSLUCENT
             ).apply {
-                gravity = Gravity.TOP or Gravity.FILL_HORIZONTAL
-                x = dp(context, 12)
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                x = 0
                 y = dp(context, 48)
-                width = WindowManager.LayoutParams.MATCH_PARENT - dp(context, 24)
             }
 
             try {
