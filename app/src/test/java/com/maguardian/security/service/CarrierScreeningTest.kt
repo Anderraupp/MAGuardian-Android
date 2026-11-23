@@ -6,7 +6,12 @@ import android.net.Uri
 import android.os.Looper
 import android.telecom.Call
 import android.telecom.CallScreeningService
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import com.maguardian.security.util.CallOverlayManager
 import com.maguardian.security.util.PrefsHelper
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -20,6 +25,7 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowService
+import org.robolectric.shadows.ShadowSettings
 import java.util.concurrent.TimeUnit
 
 @Implements(Call.Details::class)
@@ -58,11 +64,28 @@ class CarrierScreeningTest {
     private val context: Context get() = RuntimeEnvironment.getApplication()
 
     @Before fun prepare() {
+        CallOverlayManager.dismiss(context)
+        shadowOf(Looper.getMainLooper()).idle()
+        ShadowSettings.setCanDrawOverlays(true)
         context.getSharedPreferences("maguardian_prefs", 0).edit().clear().commit()
         PrefsHelper.setSubscriptionActive(context, true)
         PrefsHelper.setBlockTelemarketingEnabled(context, true)
         PrefsHelper.setCallAlertsEnabled(context, false)
     }
+
+    @After fun cleanUp() {
+        CallOverlayManager.dismiss(context)
+        shadowOf(Looper.getMainLooper()).idle()
+        ShadowSettings.setCanDrawOverlays(false)
+    }
+
+    private fun currentCard(): View? =
+        CallOverlayManager::class.java.getDeclaredField("overlayView")
+            .apply { isAccessible = true }.get(null) as? View
+
+    private fun descendants(view: View): List<View> =
+        listOf(view) + if (view is ViewGroup)
+            (0 until view.childCount).flatMap { descendants(view.getChildAt(it)) } else emptyList()
 
     private fun screen(
         name: String,
@@ -133,5 +156,36 @@ class CarrierScreeningTest {
     @Test fun existingHighRiskBlockingIsPreservedWithTheSwitchOff() {
         PrefsHelper.setBlockTelemarketingEnabled(context, false)
         assertTrue(requireNotNull(screen("", number = "+554141022516")).disallowCall)
+    }
+
+    @Test fun automaticallyBlockedCallsDoNotOfferBlockingAgain() {
+        PrefsHelper.setCallAlertsEnabled(context, true)
+        for (name in listOf("TIM", "Vivo", "Claro")) {
+            assertTrue(requireNotNull(screen(name)).disallowCall)
+            assertNull(currentCard())
+        }
+        assertTrue(requireNotNull(screen("", number = "+554141022516")).disallowCall)
+        assertNull(currentCard())
+    }
+
+    @Test fun manuallyBlockedCallsDoNotShowTheCard() {
+        PrefsHelper.setCallAlertsEnabled(context, true)
+        PrefsHelper.blockNumber(context, "+554141022517")
+        assertTrue(requireNotNull(screen("Outro nome")).disallowCall)
+        assertNull(currentCard())
+    }
+
+    @Test fun unblockedCallsKeepTheBlockButtonAndBlockedCallsRemoveTheOldCard() {
+        PrefsHelper.setCallAlertsEnabled(context, true)
+        assertFalse(requireNotNull(screen("Outro nome")).disallowCall)
+        val card = requireNotNull(currentCard())
+        assertTrue(descendants(card).filterIsInstance<Button>().any { it.text == "Bloquear número" })
+        assertTrue(requireNotNull(screen("TIM")).disallowCall)
+        assertNull(currentCard())
+    }
+
+    @Test fun disabledAlertsDoNotShowACardForUnblockedCalls() {
+        assertFalse(requireNotNull(screen("Outro nome")).disallowCall)
+        assertNull(currentCard())
     }
 }

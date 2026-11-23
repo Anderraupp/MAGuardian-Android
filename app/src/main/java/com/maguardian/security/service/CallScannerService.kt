@@ -158,8 +158,11 @@ class CallScannerService : CallScreeningService() {
                 .build()
         )
 
-        // ── Overlay SYSTEM_ALERT_WINDOW (se permissão concedida) ──────────────────
-        if (PrefsHelper.isCallAlertsEnabled(this))
+        // Não oferecer bloqueio manual para uma ligação que já foi bloqueada.
+        // Mantém apenas a notificação de bloqueio e remove eventual cartão anterior.
+        if (shouldBlock)
+            CallOverlayManager.dismiss(applicationContext)
+        else if (PrefsHelper.isCallAlertsEnabled(this))
             CallOverlayManager.show(applicationContext, number, result)
 
         // ── Notificação na barra + fullScreenIntent → CallAlertActivity ───────────
