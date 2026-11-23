@@ -188,4 +188,42 @@ class CarrierScreeningTest {
         assertFalse(requireNotNull(screen("Outro nome")).disallowCall)
         assertNull(currentCard())
     }
+
+    @Test fun reportedCarrierIsBlockedWithoutNameInEverySupportedNumberFormat() {
+        PrefsHelper.setCallAlertsEnabled(context, true)
+        for (number in listOf(
+            "01142145253", "1142145253", "+551142145253",
+            "551142145253", "(11) 4214-5253", "+55 (11) 4214-5253"
+        )) {
+            val response = requireNotNull(screen("", number))
+            assertTrue(number, response.disallowCall)
+            assertTrue(number, response.silenceCall)
+            assertFalse("Preservar histórico de chamadas", response.skipCallLog)
+            assertNull("Não oferecer bloquear uma chamada já bloqueada", currentCard())
+        }
+    }
+
+    @Test fun reportedCarrierAloneDoesNotBlockWithTelemarketingDisabled() {
+        PrefsHelper.setBlockTelemarketingEnabled(context, false)
+        val response = requireNotNull(screen("", "+551142145253"))
+        assertFalse(response.disallowCall)
+        assertFalse(response.silenceCall)
+    }
+
+    @Test fun reportedCarrierKeepsSubscriptionAndTrialRules() {
+        PrefsHelper.setSubscriptionActive(context, false)
+        assertFalse(requireNotNull(screen("", "+551142145253")).disallowCall)
+        PrefsHelper.initTrial(context)
+        assertTrue(requireNotNull(screen("", "+551142145253")).disallowCall)
+    }
+
+    @Test fun reportedCarrierDoesNotBlockNeighboringNumbersWithoutOtherEvidence() {
+        for (number in listOf("01142145252", "+551142145254")) {
+            assertFalse(number, requireNotNull(screen("", number)).disallowCall)
+        }
+    }
+
+    @Test fun reportedCarrierDoesNotBlockOutgoingCalls() {
+        assertNull(screen("", "+551142145253", Call.Details.DIRECTION_OUTGOING))
+    }
 }

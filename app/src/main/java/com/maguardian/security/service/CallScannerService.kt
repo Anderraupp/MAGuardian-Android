@@ -116,7 +116,7 @@ class CallScannerService : CallScreeningService() {
         val isSubscribed       = PrefsHelper.hasFullAccess(this)
         val blockTelemarketing = isSubscribed && PrefsHelper.isBlockTelemarketingEnabled(this)
         val isManuallyBlocked  = isSubscribed && PrefsHelper.isNumberBlocked(this, number)
-        val carrier = CarrierCallPolicy.identifiedCarrier(displayName)
+        val carrier = CarrierCallPolicy.identifiedCarrier(displayName, number)
         val blockIdentifiedCarrier = blockTelemarketing && carrier != null
 
         // Preferência expressa do usuário, não uma indicação de golpe. Não somar
@@ -125,7 +125,7 @@ class CallScannerService : CallScreeningService() {
             result = result.copy(
                 label = if (result.score < 25) "Operadora identificada" else result.label,
                 emoji = if (result.score < 25) "📞" else result.emoji,
-                reasons = result.reasons + "Bloqueio de operadoras ativado — identificação recebida: $carrier"
+                reasons = result.reasons + "Bloqueio de operadoras ativado — operadora identificada: $carrier"
             )
         }
 

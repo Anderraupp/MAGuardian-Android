@@ -23,4 +23,22 @@ class CarrierCallPolicyTest {
             assertNull(label, CarrierCallPolicy.identifiedCarrier(label))
         }
     }
+
+    @Test fun reportedCarrierNumberDoesNotRequireADisplayName() {
+        for (number in listOf(
+            "01142145253", "1142145253", "+551142145253",
+            "551142145253", "(11) 4214-5253", "+55 (11) 4214-5253"
+        )) {
+            assertEquals(number, "TIM", CarrierCallPolicy.identifiedCarrier("", number))
+        }
+    }
+
+    @Test fun numberReportDoesNotMatchNeighborsOrForeignNumbers() {
+        for (number in listOf(
+            "01142145252", "01142145254", "+551142145252", "+551142145254",
+            "+441142145253", "", "11421452530"
+        )) {
+            assertNull(number, CarrierCallPolicy.identifiedCarrier("", number))
+        }
+    }
 }
